@@ -139,6 +139,32 @@ template <typename T> struct vec2
   {
     return *this;
   }
+
+  friend vec2 operator << (const vec2& a, unsigned int b)
+  {
+    return { a.x << b, a.y << b };
+  }
+  friend vec2 operator << (unsigned int a, const vec2& b)
+  {
+    return { a << b.x, a << b.y };
+  }
+  vec2& operator <<= (unsigned int b)
+  {
+    return *this = *this << b;
+  }
+
+  friend vec2 operator >> (const vec2& a, unsigned int b)
+  {
+    return { a.x >> b, a.y >> b };
+  }
+  friend vec2 operator >> (unsigned int a, const vec2& b)
+  {
+    return { a >> b.x, a >> b.y };
+  }
+  vec2& operator >>= (unsigned int b)
+  {
+    return *this = *this >> b;
+  }
 };
 
 template <typename T> T inline dot (const vec2<T>& a, const vec2<T>& b)
@@ -317,6 +343,33 @@ template <typename T> struct vec3
   {
     return *this;
   }
+
+  friend vec3 operator << (const vec3& a, unsigned int b)
+  {
+    return { a.x << b, a.y << b, a.z << b };
+  }
+  friend vec3 operator << (unsigned int a, const vec3& b)
+  {
+    return { a << b.x, a << b.y, a << b.z };
+  }
+  vec3& operator <<= (unsigned int b)
+  {
+    return *this = *this << b;
+  }
+
+  friend vec3 operator >> (const vec3& a, unsigned int b)
+  {
+    return { a.x >> b, a.y >> b, a.z >> b };
+  }
+  friend vec3 operator >> (unsigned int a, const vec3& b)
+  {
+    return { a >> b.x, a >> b.y, a >> b.z };
+  }
+  vec3& operator >>= (unsigned int b)
+  {
+    return *this = *this >> b;
+  }
+
 };
 
 template <typename T> T inline dot (const vec3<T>& a, const vec3<T>& b)
@@ -498,6 +551,33 @@ template <typename T> struct vec4
   {
     return *this;
   }
+
+  friend vec4 operator << (const vec4& a, unsigned int b)
+  {
+    return { a.x << b, a.y << b, a.z << b, a.w << b };
+  }
+  friend vec4 operator << (unsigned int a, const vec4& b)
+  {
+    return { a << b.x, a << b.y, a << b.z, a << b.w };
+  }
+  vec4& operator <<= (unsigned int b)
+  {
+    return *this = *this << b;
+  }
+
+  friend vec4 operator >> (const vec4& a, unsigned int b)
+  {
+    return { a.x >> b, a.y >> b, a.z >> b, a.w >> b };
+  }
+  friend vec4 operator >> (unsigned int a, const vec4& b)
+  {
+    return { a >> b.x, a >> b.y, a >> b.z, a >> b.w };
+  }
+  vec4& operator >>= (unsigned int b)
+  {
+    return *this = *this >> b;
+  }
+
 };
 
 template <typename T> T inline dot (const vec4<T>& a, const vec4<T>& b)
