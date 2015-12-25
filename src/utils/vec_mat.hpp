@@ -213,7 +213,12 @@ template <typename T> struct vec3
     {
       T x, y, z;
     };
+    struct
+    {
+      T r, g, b;
+    };
     T xyz[ELEMENT_COUNT];
+    T rgb[ELEMENT_COUNT];
   };
 
   vec3 (void) = default;
@@ -421,7 +426,12 @@ template <typename T> struct vec4
     {
       T x, y, z, w;
     };
+    struct
+    {
+      T r, g, b, a;
+    };
     T xyzw[ELEMENT_COUNT];
+    T rgba[ELEMENT_COUNT];
   };
 
   vec4 (void) = default;
@@ -449,6 +459,7 @@ template <typename T> struct vec4
 
   vec2<T> xy (void) const { return vec2<T> (x, y); }
   vec3<T> xyz (void) const { return vec3<T> (x, y, z); }
+  vec3<T> rgb (void) const { return vec3<T> (r, g, b); }
 
   friend vec4 operator + (const vec4& a, const vec4& b)
   {

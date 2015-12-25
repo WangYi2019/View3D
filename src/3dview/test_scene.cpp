@@ -88,7 +88,7 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
   if (height_img.empty ())
   {
     height_img = image (pixel_format::l_8, 32, 32);
-    height_img.fill (0);
+    height_img.fill (0, 0, 0, 0);
   }
 
   m_color_texture = gl::texture (color_img.format (), color_img.width (), color_img.height (),

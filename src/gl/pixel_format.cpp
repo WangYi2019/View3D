@@ -73,8 +73,8 @@ unsigned int pixel_format::gl_fmt (void) const
   case rgba_5551: return GL_RGBA;
   case rgb_888: return GL_RGB;
   case rgb_565: return GL_RGB;
-  case rgb_555: return GL_RGB;
-  case rgb_444: return GL_RGB;
+  case rgb_555: return GL_RGBA;
+  case rgb_444: return GL_RGBA;
   case l_8: return GL_LUMINANCE;
   case a_8: return GL_ALPHA;
   case la_88: return GL_LUMINANCE_ALPHA;
@@ -92,8 +92,8 @@ unsigned int pixel_format::gl_type (void) const
   case rgba_5551: return GL_UNSIGNED_SHORT_5_5_5_1;
   case rgb_888: return GL_UNSIGNED_BYTE;
   case rgb_565: return GL_UNSIGNED_SHORT_5_6_5;
-  case rgb_555: return GL_UNSIGNED_SHORT_5_5_5_1;  // not sure if that works.
-  case rgb_444: return GL_UNSIGNED_SHORT_4_4_4_4;  // not sure if that works.
+  case rgb_555: return GL_UNSIGNED_SHORT_5_5_5_1;
+  case rgb_444: return GL_UNSIGNED_SHORT_4_4_4_4;
   case l_8: return GL_UNSIGNED_BYTE;
   case a_8: return GL_UNSIGNED_BYTE;
   case la_88: return GL_UNSIGNED_BYTE;

@@ -52,8 +52,37 @@ public:
 
   unsigned int data_line_size_bytes (void) const { return m_bytes_per_line; }
 
-  void fill (uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-  void fill (uint8_t l);
+  // the specified rect is clipped to the actual image size.
+  // if the image pixel format is luma instead of rgb, the red value will be used.
+  // the component float values are clamped and scaled to match the pixel format.
+  // for unsigned pixel formats the normalized value range is [0,+1].
+  // for signed pixel formats the normalized value range is [-1,+1].
+  void fill (int x, int y,
+	     unsigned int width, unsigned int height,
+	     float r, float g, float b, float a);
+
+  void fill (float r, float g, float b, float a)
+  {
+    fill (0, 0, width (), height (), r, g, b, a);
+  }
+
+  // copy the source area from this image to an area in another image.
+  // the source area is clipped to be inside of this image.
+  // the resulting area is then clipped to be inside of the other image.
+  // if the pixel formats of the images differ, they are converted.
+  // converting rgb to luma is done by calculating a grayscale value.
+  // converting luma to rgb is done by replicating the luma values.
+  void copy_to (int src_x, int src_y,
+		unsigned int src_width, unsigned int src_height,
+		image& dst,
+		int dst_x, int dst_y);
+
+  enum down_sample_mode_t
+  {
+    down_sample_avg,
+  };
+
+  image pyr_down (down_sample_mode_t mode = down_sample_avg) const;
 
 private:
   unsigned int m_width;
@@ -61,7 +90,6 @@ private:
   unsigned int m_bytes_per_line;
   pixel_format m_format;
   std::unique_ptr<char[]> m_data;
-
 };
 
 namespace std
