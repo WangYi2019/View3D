@@ -6,6 +6,37 @@
 #include "pixel_format.hpp"
 #include "gl.hpp"
 
+struct pixel_format_desc
+{
+  pixel_format fmt;
+  int8_t r_bits;
+  int8_t g_bits;
+  int8_t b_bits;
+  int8_t a_bits;
+  int8_t rgb_bits;
+  int8_t bpp;
+  uint16_t gl_type;
+  uint16_t gl_fmt;
+  const char* str;
+};
+
+// FIXME: use compile time sort to ensure that this table can be indexed by
+// the enum value.
+static const pixel_format_desc pf_table[] =
+{
+  { pixel_format::invalid,    0,  0,  0,  0,  0, 0, 0, 0, "INVALID" },
+  { pixel_format::rgba_8888,  8,  8,  8,  8, 24, 32, GL_UNSIGNED_BYTE,          GL_RGBA, "RGBA_8888" },
+  { pixel_format::rgba_4444,  4,  4,  4,  4, 12, 16, GL_UNSIGNED_SHORT_4_4_4_4, GL_RGBA, "RGBA_4444" },
+  { pixel_format::rgba_5551,  5,  5,  5,  1, 15, 16, GL_UNSIGNED_SHORT_5_5_5_1, GL_RGBA, "RGBA_5551" },
+  { pixel_format::rgb_888,    8,  8,  8,  0, 24, 24, GL_UNSIGNED_BYTE,          GL_RGB,  "RGB_888" },
+  { pixel_format::rgb_565,    5,  6,  5,  0, 16, 16, GL_UNSIGNED_SHORT_5_6_5,   GL_RGB,  "RGB_565" },
+  { pixel_format::rgb_555,    5,  5,  5,  0, 15, 16, GL_UNSIGNED_SHORT_5_5_5_1, GL_RGBA, "RGB_555" },
+  { pixel_format::rgb_444,    4,  4,  4,  0, 12, 16, GL_UNSIGNED_SHORT_4_4_4_4, GL_RGBA, "RGB_444" },
+  { pixel_format::l_8,        0,  0,  0,  0,  0, 8,  GL_UNSIGNED_BYTE,          GL_LUMINANCE, "L_8" },
+  { pixel_format::a_8,        0,  0,  0,  8,  0, 8,  GL_UNSIGNED_BYTE,          GL_ALPHA,     "A_8" },
+  { pixel_format::la_88,      0,  0,  0,  8,  0, 16, GL_UNSIGNED_BYTE,          GL_LUMINANCE_ALPHA, "LA_88" },
+};
+
 pixel_format::pixel_format (const char* str)
 : m_fmt (invalid)
 {
@@ -17,203 +48,43 @@ pixel_format::pixel_format (const char* str)
   if (*str == '\0')
     return;
 
-  if (std::strstr (str, "RGBA_8888") != nullptr)
-    m_fmt = rgba_8888;
-  else if (std::strstr (str, "RGBA_4444") != nullptr)
-    m_fmt = rgba_4444;
-  else if (std::strstr (str, "RGBA_5551") != nullptr)
-    m_fmt = rgba_5551;
-  else if (std::strstr (str, "RGB_888") != nullptr)
-    m_fmt = rgb_888;
-  else if (std::strstr (str, "RGB_565") != nullptr)
-    m_fmt = rgb_565;
-  else if (std::strstr (str, "RGB_555") != nullptr)
-    m_fmt = rgb_555;
-  else if (std::strstr (str, "RGB_444") != nullptr)
-    m_fmt = rgb_444;
-  else if (std::strstr (str, "L_8") != nullptr)
-    m_fmt = l_8;
-  else if (std::strstr (str, "A_8") != nullptr)
-    m_fmt = a_8;
-  else if (std::strstr (str, "LA_88") != nullptr)
-    m_fmt = la_88;
+  for (auto&& t : pf_table)
+    if (std::strstr (str, t.str) == str)
+    {
+      m_fmt = t.fmt.value ();
+      break;
+    }
 }
 
-const char* pixel_format::str (void) const
+const char* pixel_format::str (void) const { return pf_table[value ()].str; }
+unsigned int pixel_format::bits_per_pixel (void) const { return pf_table[value ()].bpp; }
+unsigned int pixel_format::r_bits (void) const { return pf_table[value ()].r_bits; }
+unsigned int pixel_format::g_bits (void) const { return pf_table[value ()].g_bits; }
+unsigned int pixel_format::b_bits (void) const { return pf_table[value ()].b_bits; }
+unsigned int pixel_format::rgb_bits (void) const { return pf_table[value ()].rgb_bits; }
+unsigned int pixel_format::a_bits (void) const { return pf_table[value ()].a_bits; }
+unsigned int pixel_format::gl_fmt (void) const { return pf_table[value ()].gl_fmt; }
+unsigned int pixel_format::gl_type (void) const { return pf_table[value ()].gl_type; }
+
+struct ds_format_desc
 {
-  switch (m_fmt)
-  {
-  default:
-    assert_unreachable ();
+  ds_format fmt;
+  int8_t d_bits;
+  int8_t s_bits;
+  const char* str;
+};
 
-  case invalid: return "INVALID";
-  case rgba_8888: return "RGBA_8888";
-  case rgba_4444: return "RGBA_4444";
-  case rgba_5551: return "RGBA_5551";
-  case rgb_888: return "RGB_888";
-  case rgb_565: return "RGB_565";
-  case rgb_555: return "RGB_555";
-  case rgb_444: return "RGB_444";
-  case l_8: return "L_8";
-  case a_8: return "A_8";
-  case la_88: return "LA_88";
-  }
-}
-
-unsigned int pixel_format::gl_fmt (void) const
+// FIXME: use compile time sort to ensure that this table can be indexed by
+// the enum value.
+static const ds_format_desc ds_table[] =
 {
-  switch (m_fmt)
-  {
-  default:
-    assert_unreachable ();
-
-  case invalid: return 0;
-  case rgba_8888: return GL_RGBA;
-  case rgba_4444: return GL_RGBA;
-  case rgba_5551: return GL_RGBA;
-  case rgb_888: return GL_RGB;
-  case rgb_565: return GL_RGB;
-  case rgb_555: return GL_RGBA;
-  case rgb_444: return GL_RGBA;
-  case l_8: return GL_LUMINANCE;
-  case a_8: return GL_ALPHA;
-  case la_88: return GL_LUMINANCE_ALPHA;
-  }
-}
-
-unsigned int pixel_format::gl_type (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return GL_UNSIGNED_BYTE;
-  case rgba_4444: return GL_UNSIGNED_SHORT_4_4_4_4;
-  case rgba_5551: return GL_UNSIGNED_SHORT_5_5_5_1;
-  case rgb_888: return GL_UNSIGNED_BYTE;
-  case rgb_565: return GL_UNSIGNED_SHORT_5_6_5;
-  case rgb_555: return GL_UNSIGNED_SHORT_5_5_5_1;
-  case rgb_444: return GL_UNSIGNED_SHORT_4_4_4_4;
-  case l_8: return GL_UNSIGNED_BYTE;
-  case a_8: return GL_UNSIGNED_BYTE;
-  case la_88: return GL_UNSIGNED_BYTE;
-  }
-}
-
-unsigned int pixel_format::bits_per_pixel (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return 32;
-  case rgba_4444: return 16;
-  case rgba_5551: return 16;
-  case rgb_888: return 24;
-  case rgb_565: return 16;
-  case rgb_555: return 16;
-  case rgb_444: return 16;
-  case l_8: return 8;
-  case a_8: return 8;
-  case la_88: return 16;
-  }
-}
-
-unsigned int pixel_format::r_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return 8;
-  case rgba_4444: return 4;
-  case rgba_5551: return 5;
-  case rgb_888: return 8;
-  case rgb_565: return 5;
-  case rgb_555: return 5;
-  case rgb_444: return 4;
-  case l_8: return 0;
-  case a_8: return 0;
-  case la_88: return 0;
-  }
-}
-
-unsigned int pixel_format::g_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return 8;
-  case rgba_4444: return 4;
-  case rgba_5551: return 5;
-  case rgb_888: return 8;
-  case rgb_565: return 6;
-  case rgb_555: return 5;
-  case rgb_444: return 4;
-  case l_8: return 0;
-  case a_8: return 0;
-  case la_88: return 0;
-  }
-}
-
-unsigned int pixel_format::b_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return 8;
-  case rgba_4444: return 4;
-  case rgba_5551: return 5;
-  case rgb_888: return 8;
-  case rgb_565: return 5;
-  case rgb_555: return 5;
-  case rgb_444: return 4;
-  case l_8: return 0;
-  case a_8: return 0;
-  case la_88: return 0;
-  }
-}
-
-unsigned int pixel_format::rgb_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return 24;
-  case rgba_4444: return 12;
-  case rgba_5551: return 15;
-  case rgb_888: return 24;
-  case rgb_565: return 16;
-  case rgb_555: return 15;
-  case rgb_444: return 12;
-  case l_8: return 0;
-  case a_8: return 0;
-  case la_88: return 0;
-  }
-}
-
-unsigned int pixel_format::a_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case rgba_8888: return 8;
-  case rgba_4444: return 4;
-  case rgba_5551: return 1;
-  case rgb_888: return 0;
-  case rgb_565: return 0;
-  case rgb_555: return 0;
-  case rgb_444: return 0;
-  case l_8: return 0;
-  case a_8: return 8;
-  case la_88: return 8;
-  }
-}
-
+  { ds_format::invalid,  0, 0, "INVALID" },
+  { ds_format::ds_24_8, 24, 8, "DS_24_8" },
+  { ds_format::ds_24_0, 24, 0, "DS_24_0" },
+  { ds_format::ds_16_8, 16, 8, "DS_16_8" },
+  { ds_format::ds_0_8,   0, 8, "DS_0_8" },
+  { ds_format::ds_0_0,   0, 0, "DS_0_0" }
+};
 
 ds_format::ds_format (const char* str)
 : m_fmt (invalid)
@@ -226,64 +97,17 @@ ds_format::ds_format (const char* str)
   if (*str == '\0')
     return;
 
-  if (std::strstr (str, "DS_24_8") != nullptr)
-    m_fmt = ds_24_8;
-  if (std::strstr (str, "DS_24_0") != nullptr)
-    m_fmt = ds_24_0;
-  if (std::strstr (str, "DS_16_8") != nullptr)
-    m_fmt = ds_16_8;
-  if (std::strstr (str, "DS_16_0") != nullptr)
-    m_fmt = ds_16_0;
-  if (std::strstr (str, "DS_0_8") != nullptr)
-    m_fmt = ds_0_8;
-  if (std::strstr (str, "DS_0_0") != nullptr)
-    m_fmt = ds_0_0;
+  for (auto&& t : ds_table)
+    if (std::strstr (str, t.str) == str)
+    {
+      m_fmt = t.fmt;
+      break;
+    }
 }
 
-const char* ds_format::str (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return "INVALID";
-  case ds_24_8: return "DS_24_8";
-  case ds_24_0: return "DS_24_0";
-  case ds_16_8: return "DS_16_8";
-  case ds_16_0: return "DS_16_0";
-  case ds_0_8: return "DS_0_8";
-  case ds_0_0: return "DS_0_0";
-  }
-}
-
-unsigned int ds_format::d_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case ds_24_8: return 24;
-  case ds_24_0: return 24;
-  case ds_16_8: return 16;
-  case ds_16_0: return 16;
-  case ds_0_8: return 0;
-  case ds_0_0: return 0;
-  }
-}
-
-unsigned int ds_format::s_bits (void) const
-{
-  switch (m_fmt)
-  {
-  default:
-  case invalid: return 0;
-  case ds_24_8: return 8;
-  case ds_24_0: return 0;
-  case ds_16_8: return 8;
-  case ds_16_0: return 0;
-  case ds_0_8: return 8;
-  case ds_0_0: return 0;
-  }
-}
+const char* ds_format::str (void) const { return ds_table[value ()].str; }
+unsigned int ds_format::d_bits (void) const { return ds_table[value ()].d_bits; }
+unsigned int ds_format::s_bits (void) const { return ds_table[value ()].s_bits; }
 
 std::ostream& operator << (std::ostream& out, const pixel_format& rhs)
 {

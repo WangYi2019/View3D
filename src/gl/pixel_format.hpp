@@ -10,17 +10,16 @@ public:
   enum fmt_t
   {
     invalid = 0,
-
-    rgba_8888 = 0x0000'8888,
-    rgba_4444 = 0x0000'4444,
-    rgba_5551 = 0x0000'5551,
-    rgb_888   = 0x0000'8880,
-    rgb_565   = 0x0000'5650,
-    rgb_555   = 0x0000'5550,
-    rgb_444   = 0x0000'4440,
-    l_8       = 0x0001'0000,
-    a_8       = 0x0002'0000,
-    la_88     = 0x0003'0000,
+    rgba_8888,
+    rgba_4444,
+    rgba_5551,
+    rgb_888,
+    rgb_565,
+    rgb_555,
+    rgb_444,
+    l_8,
+    a_8,
+    la_88,
   };
 
   constexpr pixel_format (void) : m_fmt (invalid) { }
@@ -65,12 +64,12 @@ public:
   {
     invalid = 0,
 
-    ds_24_8 = 0xFFFF1808,
-    ds_24_0 = 0xFFFF1800,
-    ds_16_8 = 0xFFFF1008,
-    ds_16_0 = 0xFFFF1000,
-    ds_0_8  = 0xFFFF0008,
-    ds_0_0  = 0xFFFF0000
+    ds_24_8,
+    ds_24_0,
+    ds_16_8,
+    ds_16_0,
+    ds_0_8,
+    ds_0_0
   };
 
   constexpr ds_format (void) : m_fmt (invalid) { }
@@ -84,7 +83,7 @@ public:
   constexpr bool operator != (const ds_format& rhs) const { return m_fmt != rhs.m_fmt; }
   constexpr bool operator != (fmt_t rhs) const { return m_fmt != rhs; }
 
-  constexpr bool valid (void) const { return (unsigned int)m_fmt >> 16; }
+  constexpr bool valid (void) const { return m_fmt != invalid; }
   constexpr fmt_t value (void) const { return m_fmt; }
 
   constexpr operator fmt_t () const { return m_fmt; }
