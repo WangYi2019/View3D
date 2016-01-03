@@ -23,7 +23,8 @@ add_definitions (
 endif ()
 
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=core2 -mtune=intel")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=corei7 -mtune=intel")
+
 
 add_subdirectory (${CMAKE_SOURCE_DIR}/../utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
