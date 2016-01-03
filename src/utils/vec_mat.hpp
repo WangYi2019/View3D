@@ -22,77 +22,76 @@ template <typename T> struct vec2
     T xy[ELEMENT_COUNT];
   };
 
-  vec2 (void) = default;
+  constexpr vec2 (void) = default;
 
-  template <typename XY>
+  template <typename XY> constexpr
   vec2 (XY xy) : x (xy), y (xy) { }
 
-  template <typename X, typename Y>
+  template <typename X, typename Y> constexpr
   vec2 (X xx, Y yy) : x (xx), y (yy) { }
 
-  template <typename S> explicit vec2 (const vec2<S>& rhs)
+  template <typename S> constexpr explicit vec2 (const vec2<S>& rhs)
   : x (rhs.x), y (rhs.y) { }
 
-  template <typename S> explicit operator vec2<S> () const
+  template <typename S> constexpr explicit operator vec2<S> () const
   {
     return vec2<S> ((S)x, (S)y);
   }
 
-  friend vec2 operator + (const vec2& a, const vec2& b)
+  constexpr T operator [] (unsigned int i) const { return xy[i]; }
+  T& operator [] (unsigned int i) { return xy[i]; }
+
+  friend constexpr vec2 operator + (const vec2& a, const vec2& b)
   {
     return vec2 (a.x + b.x, a.y + b.y);
   }
-  template <typename S> friend vec2 operator + (const vec2& a, S b)
+  template <typename S> friend constexpr vec2 operator + (const vec2& a, S b)
   {
     return vec2 (a.x + b, a.y + b);
   }
-  template <typename S> friend vec2 operator + (S a, const vec2& b)
+  template <typename S> friend constexpr vec2 operator + (S a, const vec2& b)
   {
     return b + a;
   }
   vec2& operator += (const vec2& b)
   {
-    *this = *this + b;
-    return *this;
+    return *this = *this + b;
   }
   template <typename S> vec2& operator += (S b)
   {
-    *this = *this + b;
-    return *this;
+    return *this = *this + b;
   }
 
-  friend vec2 operator - (const vec2& a, const vec2& b)
+  friend vec2 constexpr operator - (const vec2& a, const vec2& b)
   {
-    return vec2 (a.x - b.x, a.y - b.y);
+    return { a.x - b.x, a.y - b.y };
   }
-  template <typename S> friend vec2 operator - (const vec2& a, S b)
+  template <typename S> friend constexpr vec2 operator - (const vec2& a, S b)
   {
-    return vec2 (a.x - b, a.y - b);
+    return { a.x - b, a.y - b };
   }
-  template <typename S> friend vec2 operator - (S a, const vec2& b)
+  template <typename S> friend constexpr vec2 operator - (S a, const vec2& b)
   {
-    return vec2 (a - b.x, a - b.y);
+    return { a - b.x, a - b.y };
   }
   vec2& operator -= (const vec2& b)
   {
-    *this = *this - b;
-    return *this;
+    return *this = *this - b;
   }
   template <typename S> vec2& operator -= (S b)
   {
-    *this = *this - b;
-    return *this;
+    return *this = *this - b;
   }
 
-  friend vec2 operator * (const vec2& a, const vec2& b)
+  friend constexpr vec2 operator * (const vec2& a, const vec2& b)
   {
     return vec2 (a.x * b.x, a.y * b.y);
   }
-  template <typename S> friend vec2 operator * (const vec2& a, S b)
+  template <typename S> friend constexpr vec2 operator * (const vec2& a, S b)
   {
     return vec2 (a.x * b, a.y * b);
   }
-  template <typename S> friend vec2 operator * (S a, const vec2& b)
+  template <typename S> friend constexpr vec2 operator * (S a, const vec2& b)
   {
     return b * a;
   }
@@ -107,15 +106,15 @@ template <typename T> struct vec2
     return *this;
   }
 
-  friend vec2 operator / (const vec2& a, const vec2& b)
+  friend constexpr vec2 operator / (const vec2& a, const vec2& b)
   {
     return vec2 (a.x / b.x, a.y / b.y);
   }
-  template <typename S> friend vec2 operator / (const vec2& a, S b)
+  template <typename S> friend constexpr vec2 operator / (const vec2& a, S b)
   {
     return vec2 (a.x / b, a.y / b);
   }
-  template <typename S> friend vec2 operator / (S a, const vec2& b)
+  template <typename S> friend constexpr vec2 operator / (S a, const vec2& b)
   {
     return vec2 (a / b.x, a / b.y);
   }
@@ -130,21 +129,21 @@ template <typename T> struct vec2
     return *this;
   }
 
-  vec2 operator - (void) const
+  constexpr vec2 operator - (void) const
   {
     return vec2 (-x, -y);
   }
 
-  vec2 operator + (void) const
+  constexpr vec2 operator + (void) const
   {
     return *this;
   }
 
-  friend vec2 operator << (const vec2& a, unsigned int b)
+  friend constexpr vec2 operator << (const vec2& a, unsigned int b)
   {
     return { a.x << b, a.y << b };
   }
-  friend vec2 operator << (unsigned int a, const vec2& b)
+  friend constexpr vec2 operator << (unsigned int a, const vec2& b)
   {
     return { a << b.x, a << b.y };
   }
@@ -153,11 +152,11 @@ template <typename T> struct vec2
     return *this = *this << b;
   }
 
-  friend vec2 operator >> (const vec2& a, unsigned int b)
+  friend constexpr vec2 operator >> (const vec2& a, unsigned int b)
   {
     return { a.x >> b, a.y >> b };
   }
-  friend vec2 operator >> (unsigned int a, const vec2& b)
+  friend constexpr vec2 operator >> (unsigned int a, const vec2& b)
   {
     return { a >> b.x, a >> b.y };
   }
@@ -165,36 +164,54 @@ template <typename T> struct vec2
   {
     return *this = *this >> b;
   }
+
+
+  friend vec2 operator | (const vec2& a, unsigned int b)
+  {
+    return { a.x | b, a.y | b };
+  }
+  friend vec2 operator | (unsigned int a, const vec2& b)
+  {
+    return b | a;
+  }
+  friend vec2 operator | (const vec2& a, const vec2& b)
+  {
+    return { a.x | b.x, a.y | b.y };
+  }
+  template <typename S> vec2& operator |= (const S& b)
+  {
+    return *this = *this | b;
+  }
 };
 
-template <typename T> T inline dot (const vec2<T>& a, const vec2<T>& b)
+template <typename T> T inline constexpr dot (const vec2<T>& a, const vec2<T>& b)
 {
   return a.x * b.x + a.y * b.y;
 }
 
-template <typename T> T inline length (const vec2<T>& a)
+template <typename T> T inline constexpr length (const vec2<T>& a)
 {
   return std::sqrt (dot (a, a));
 }
 
-template <typename T> vec2<T> inline normalize (const vec2<T>& a)
+template <typename T> vec2<T> inline constexpr normalize (const vec2<T>& a)
 {
   return a * (T (1) / length (a));
 }
 
-template <typename T> vec2<T> inline orthogonal (const vec2<T>& a)
+template <typename T> vec2<T> inline constexpr orthogonal (const vec2<T>& a)
 {
   return vec2<T> (a.y, -a.x);
 }
 
 namespace std
 {
-template <typename T> vec2<T> inline min (const vec2<T>& a, const vec2<T>& b)
+template <typename T> vec2<T> inline constexpr min (const vec2<T>& a, const vec2<T>& b)
 {
   return vec2<T> (std::min (a.x, b.x), std::min (a.y, b.y));
 }
 
-template <typename T> vec2<T> inline max (const vec2<T>& a, const vec2<T>& b)
+template <typename T> vec2<T> inline constexpr max (const vec2<T>& a, const vec2<T>& b)
 {
   return vec2<T> (std::max (a.x, b.x), std::max (a.y, b.y));
 }
@@ -221,87 +238,86 @@ template <typename T> struct vec3
     T rgb[ELEMENT_COUNT];
   };
 
-  vec3 (void) = default;
+  constexpr vec3 (void) = default;
 
-  template <typename XYZ>
+  template <typename XYZ> constexpr
   vec3 (XYZ xyz) : x (xyz), y (xyz), z (xyz) { }
 
-  template <typename X, typename Y, typename Z>
+  template <typename X, typename Y, typename Z> constexpr
   vec3 (X xx, Y yy, Z zz)
   : x (xx), y (yy), z (zz) { }
 
-  template <typename XY, typename Z> vec3 (const vec2<XY>& xy, Z zz)
+  template <typename XY, typename Z> constexpr
+  vec3 (const vec2<XY>& xy, Z zz)
   : x (xy.x), y (xy.y), z (zz) { }
 
-  template <typename S> explicit vec3 (const vec3<S>& rhs)
+  template <typename S> constexpr explicit vec3 (const vec3<S>& rhs)
   : x (rhs.x), y (rhs.y), z (rhs.z) { }
 
-  template <typename S> explicit operator vec3<S> () const
+  template <typename S> constexpr explicit operator vec3<S> () const
   {
     return vec3<S> ((S)x, (S)y, (S)z);
   }
 
-  vec2<T> xy (void) const
+  constexpr vec2<T> xy (void) const
   {
     return vec2<T> (x, y);
   }
 
+  constexpr T operator [] (unsigned int i) const { return xyz[i]; }
+  T& operator [] (unsigned int i) { return xyz[i]; }
 
-  friend vec3 operator + (const vec3& a, const vec3& b)
+  friend constexpr vec3 operator + (const vec3& a, const vec3& b)
   {
-    return vec3 (a.x + b.x, a.y + b.y, a.z + b.z);
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
   }
-  template <typename S> friend vec3 operator + (const vec3& a, S b)
+  template <typename S> friend constexpr vec3 operator + (const vec3& a, S b)
   {
-    return vec3 (a.x + b, a.y + b, a.z + b);
+    return { a.x + b, a.y + b, a.z + b };
   }
-  template <typename S> friend vec3 operator + (S a, const vec3& b)
+  template <typename S> friend constexpr vec3 operator + (S a, const vec3& b)
   {
     return b + a;
   }
   vec3& operator += (const vec3& b)
   {
-    *this = *this + b;
-    return *this;
+    return *this = *this + b;
   }
   template <typename S> vec3& operator += (S b)
   {
-    *this = *this + b;
-    return *this;
+    return *this = *this + b;
   }
 
-  friend vec3 operator - (const vec3& a, const vec3& b)
+  constexpr friend vec3 operator - (const vec3& a, const vec3& b)
   {
-    return vec3 (a.x - b.x, a.y - b.y, a.z - b.z);
+    return { a.x - b.x, a.y - b.y, a.z - b.z };
   }
-  template <typename S> friend vec3 operator - (const vec3& a, S b)
+  template <typename S> constexpr friend vec3 operator - (const vec3& a, S b)
   {
-    return vec3 (a.x - b, a.y - b, a.z - b);
+    return { a.x - b, a.y - b, a.z - b };
   }
-  template <typename S> friend vec3 operator - (S a, const vec3& b)
+  template <typename S> constexpr friend vec3 operator - (S a, const vec3& b)
   {
-    return vec3 (a - b.x, a - b.y, a - b.z);
+    return { a - b.x, a - b.y, a - b.z };
   }
   vec3& operator -= (const vec3& b)
   {
-    *this = *this - b;
-    return *this;
+    return *this = *this - b;
   }
   template <typename S> vec3& operator -= (S b)
   {
-    *this = *this - b;
-    return *this;
+    return *this = *this - b;
   }
 
-  friend vec3 operator * (const vec3& a, const vec3& b)
+  constexpr friend vec3 operator * (const vec3& a, const vec3& b)
   {
-    return vec3 (a.x * b.x, a.y * b.y, a.z * b.z);
+    return { a.x * b.x, a.y * b.y, a.z * b.z };
   }
-  template <typename S> friend vec3 operator * (const vec3& a, S b)
+  template <typename S> constexpr friend vec3 operator * (const vec3& a, S b)
   {
-    return vec3 (a.x * b, a.y * b, a.z * b);
+    return { a.x * b, a.y * b, a.z * b };
   }
-  template <typename S> friend vec3 operator * (S a, const vec3& b)
+  template <typename S> constexpr friend vec3 operator * (S a, const vec3& b)
   {
     return b * a;
   }
@@ -316,44 +332,42 @@ template <typename T> struct vec3
     return *this;
   }
 
-  friend vec3 operator / (const vec3& a, const vec3& b)
+  constexpr friend vec3 operator / (const vec3& a, const vec3& b)
   {
-    return vec3 (a.x / b.x, a.y / b.y, a.z / b.z);
+    return { a.x / b.x, a.y / b.y, a.z / b.z };
   }
-  template <typename S> friend vec3 operator / (const vec3& a, S b)
+  template <typename S> constexpr friend vec3 operator / (const vec3& a, S b)
   {
-    return vec3 (a.x / b, a.y / b, a.z / b);
+    return { a.x / b, a.y / b, a.z / b };
   }
-  template <typename S> friend vec3 operator / (S a, const vec3& b)
+  template <typename S> constexpr friend vec3 operator / (S a, const vec3& b)
   {
-    return vec3 (a / b.x, a / b.y, a / b.z);
+    return { a / b.x, a / b.y, a / b.z };
   }
   vec3& operator /= (const vec3& b)
   {
-    *this = *this / b;
-    return *this;
+    return *this = *this / b;
   }
   template <typename S> vec3& operator /= (S b)
   {
-    *this = *this / b;
+    return *this = *this / b;
+  }
+
+  constexpr vec3 operator - (void) const
+  {
+    return { -x, -y, -z };
+  }
+
+  constexpr vec3 operator + (void) const
+  {
     return *this;
   }
 
-  vec3 operator - (void) const
-  {
-    return vec3 (-x, -y, -z);
-  }
-
-  vec3 operator + (void) const
-  {
-    return *this;
-  }
-
-  friend vec3 operator << (const vec3& a, unsigned int b)
+  constexpr friend vec3 operator << (const vec3& a, unsigned int b)
   {
     return { a.x << b, a.y << b, a.z << b };
   }
-  friend vec3 operator << (unsigned int a, const vec3& b)
+  constexpr friend vec3 operator << (unsigned int a, const vec3& b)
   {
     return { a << b.x, a << b.y, a << b.z };
   }
@@ -362,11 +376,11 @@ template <typename T> struct vec3
     return *this = *this << b;
   }
 
-  friend vec3 operator >> (const vec3& a, unsigned int b)
+  constexpr friend vec3 operator >> (const vec3& a, unsigned int b)
   {
     return { a.x >> b, a.y >> b, a.z >> b };
   }
-  friend vec3 operator >> (unsigned int a, const vec3& b)
+  constexpr friend vec3 operator >> (unsigned int a, const vec3& b)
   {
     return { a >> b.x, a >> b.y, a >> b.z };
   }
@@ -375,39 +389,56 @@ template <typename T> struct vec3
     return *this = *this >> b;
   }
 
+  constexpr friend vec3 operator | (const vec3& a, unsigned int b)
+  {
+    return { a.x | b, a.y | b, a.z | b };
+  }
+  constexpr friend vec3 operator | (unsigned int a, const vec3& b)
+  {
+    return b | a;
+  }
+  constexpr friend vec3 operator | (const vec3& a, const vec3& b)
+  {
+    return { a.x | b.x, a.y | b.y, a.z | b.z };
+  }
+  template <typename S> vec3& operator |= (const S& b)
+  {
+    return *this = *this | b;
+  }
+
 };
 
-template <typename T> T inline dot (const vec3<T>& a, const vec3<T>& b)
+template <typename T> constexpr inline T dot (const vec3<T>& a, const vec3<T>& b)
 {
-  return a.x * b.x + a.y * b.y + a.z * b.z;
+  return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
 
 // left-hand cross product
-template <typename T> vec3<T> inline cross (const vec3<T>& a, const vec3<T>& b)
+template <typename T> constexpr inline vec3<T> cross (const vec3<T>& a, const vec3<T>& b)
 {
   return vec3<T> (a.y * b.z - a.z * b.y,
                   a.z * b.x - a.x * b.z,
                   a.x * b.y - a.y * b.x);
 }
 
-template <typename T> T inline length (const vec3<T>& a)
+template <typename T> constexpr inline T length (const vec3<T>& a)
 {
   return std::sqrt (dot (a, a));
 }
 
-template <typename T> vec3<T> inline normalize (const vec3<T>& a)
+template <typename T> constexpr vec3<T> inline normalize (const vec3<T>& a)
 {
   return a * (T (1) / length (a));
 }
 
 namespace std
 {
-template <typename T> vec3<T> inline min (const vec3<T>& a, const vec3<T>& b)
+template <typename T> constexpr inline vec3<T> min (const vec3<T>& a, const vec3<T>& b)
 {
   return vec3<T> (std::min (a.x, b.x), std::min (a.y, b.y), std::min (a.z, b.z));
 }
 
-template <typename T> vec3<T> inline max (const vec3<T>& a, const vec3<T>& b)
+template <typename T> constexpr inline vec3<T> max (const vec3<T>& a, const vec3<T>& b)
 {
   return vec3<T> (std::max (a.x, b.x), std::max (a.y, b.y), std::max (a.z, b.z));
 }
@@ -419,6 +450,10 @@ template <typename T> vec3<T> inline max (const vec3<T>& a, const vec3<T>& b)
 template <typename T> struct vec4
 {
   enum { ELEMENT_COUNT = 4 };
+  typedef T vec_ext_type __attribute__ ((vector_size (sizeof (T) * 4)));
+
+  template <typename X> struct is_vec : std::integral_constant<bool, false> { };
+  template <typename TT> struct is_vec<vec4<TT>> : std::integral_constant<bool, true> { };
 
   union
   {
@@ -432,142 +467,151 @@ template <typename T> struct vec4
     };
     T xyzw[ELEMENT_COUNT];
     T rgba[ELEMENT_COUNT];
+    vec_ext_type vec_ext;
   };
 
-  vec4 (void) = default;
+  constexpr vec4 (void) = default;
 
-  template <typename XYZW>
-  vec4 (XYZW xyzw) : x (xyzw), y (xyzw), z (xyzw), w (xyzw) { }
+  constexpr vec4 (vec_ext_type v) : vec_ext (v) { }
 
-  template <typename X, typename Y, typename Z, typename W>
-  vec4 (X xx, Y yy, Z zz, W ww)
+  template <typename XYZW, typename E = typename std::enable_if<!is_vec<XYZW>::value>::type>
+  constexpr vec4 (XYZW xyzw) : x (xyzw), y (xyzw), z (xyzw), w (xyzw) { }
+
+  template <typename X, typename Y, typename Z, typename W,
+	    typename E = typename std::enable_if<!is_vec<X>::value
+						&& !is_vec<Y>::value
+						&& !is_vec<Z>::value
+						&& !is_vec<W>::value>::type>
+  constexpr vec4 (X xx, Y yy, Z zz, W ww)
   : x (xx), y (yy), z (zz), w (ww) { }
 
-  template <typename XYZ, typename W> vec4 (const vec3<XYZ>& xyz, W ww)
+  template <typename XYZ, typename W> constexpr vec4 (const vec3<XYZ>& xyz, W ww)
   : x (xyz.x), y (xyz.y), z (xyz.z), w (ww) { }
 
-  template <typename XY, typename ZW> vec4 (const vec2<XY>& xy, const vec2<ZW>& zw)
+  template <typename XY, typename ZW> constexpr vec4 (const vec2<XY>& xy, const vec2<ZW>& zw)
   : x (xy.x), y (xy.y), z (zw.x), w (zw.y) { }
 
-  template <typename S> explicit vec4 (const vec4<S>& rhs)
+  template <typename S> constexpr explicit vec4 (const vec4<S>& rhs)
   : x (rhs.x), y (rhs.y), z (rhs.z), w (rhs.w) { }
 
-  template <typename S> explicit operator vec4<S> () const
+  template <typename S> constexpr explicit operator vec4<S> () const
   {
     return vec4<S> ((S)x, (S)y, (S)z, (S)w);
   }
 
-  vec2<T> xy (void) const { return vec2<T> (x, y); }
-  vec3<T> xyz (void) const { return vec3<T> (x, y, z); }
-  vec3<T> rgb (void) const { return vec3<T> (r, g, b); }
+  constexpr vec2<T> xy (void) const { return vec2<T> (x, y); }
+  constexpr vec3<T> xyz (void) const { return vec3<T> (x, y, z); }
+  constexpr vec3<T> rgb (void) const { return vec3<T> (r, g, b); }
 
-  friend vec4 operator + (const vec4& a, const vec4& b)
+  constexpr T operator [] (unsigned int i) const { return xyzw[i]; }
+  T& operator [] (unsigned int i) { return xyzw[i]; }
+
+  constexpr friend vec4 operator + (const vec4& a, const vec4& b)
   {
-    return vec4 (a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+    return { a.vec_ext + b.vec_ext };
   }
-  template <typename S> friend vec4 operator + (const vec4& a, S b)
+
+  template <typename S> friend constexpr
+  typename std::enable_if<!is_vec<S>::value, vec4>::type
+  operator + (const vec4& a, S b)
   {
-    return vec4 (a.x + b, a.y + b, a.z + b, a.w + b);
+    return { a.vec_ext + (T)b };
   }
-  template <typename S> friend vec4 operator + (S a, const vec4& b)
+
+  template <typename S> friend constexpr
+  typename std::enable_if<!is_vec<S>::value, vec4>::type
+  operator + (S a, const vec4& b)
   {
     return b + a;
   }
+
   vec4& operator += (const vec4& b)
   {
-    *this = *this + b;
-    return *this;
+    return *this = *this + b;
   }
   template <typename S> vec4& operator += (S b)
   {
-    *this = *this + b;
-    return *this;
+    return *this = *this + b;
   }
 
-  friend vec4 operator - (const vec4& a, const vec4& b)
+  constexpr friend vec4 operator - (const vec4& a, const vec4& b)
   {
-    return vec4 (a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+    return { a.vec_ext - b.vec_ext };
   }
-  template <typename S> friend vec4 operator - (const vec4& a, S b)
+  template <typename S> constexpr friend vec4 operator - (const vec4& a, S b)
   {
-    return vec4 (a.x - b, a.y - b, a.z - b, a.w - b);
+    return { a.vec_ext - (T)b };
   }
-  template <typename S> friend vec4 operator - (S a, const vec4& b)
+  template <typename S> constexpr friend vec4 operator - (S a, const vec4& b)
   {
-    return vec4 (a - b.x, a - b.y, a - b.z, a - b.w);
+    return { (T)a - b.vec_ext };
   }
   vec4& operator -= (const vec4& b)
   {
-    *this = *this - b;
-    return *this;
+    return *this = *this - b;
   }
   template <typename S> vec4& operator -= (S b)
   {
-    *this = *this - b;
-    return *this;
+    return *this = *this - b;
   }
 
-  friend vec4 operator * (const vec4& a, const vec4& b)
+  constexpr friend vec4 operator * (const vec4& a, const vec4& b)
   {
-    return vec4 (a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+    return { a.vec_ext * b.vec_ext };
   }
-  template <typename S> friend vec4 operator * (const vec4& a, S b)
+  template <typename S> constexpr friend vec4 operator * (const vec4& a, S b)
   {
-    return vec4 (a.x * b, a.y * b, a.z * b, a.w * b);
+    return { a.vec_ext * (T)b };
   }
-  template <typename S> friend vec4 operator * (S a, const vec4& b)
+  template <typename S> constexpr friend vec4 operator * (S a, const vec4& b)
   {
     return b * a;
   }
   vec4& operator *= (const vec4& b)
   {
-    *this = *this * b;
-    return *this;
+    return *this = *this * b;
   }
   template <typename S> vec4& operator *= (S b)
   {
-    *this = *this * b;
-    return *this;
+    return *this = *this * b;
   }
 
-  friend vec4 operator / (const vec4& a, const vec4& b)
+  constexpr friend vec4 operator / (const vec4& a, const vec4& b)
   {
-    return vec4 (a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+    return { a.vec_ext / b.vec_ext };
   }
-  template <typename S> friend vec4 operator / (const vec4& a, S b)
+  template <typename S> constexpr friend vec4 operator / (const vec4& a, S b)
   {
-    return vec4 (a.x / b, a.y / b, a.z / b, a.w / b);
+    return { a.vec_ext / (T)b };
   }
-  template <typename S> friend vec4 operator / (S a, const vec4& b)
+  template <typename S> constexpr friend vec4 operator / (S a, const vec4& b)
   {
-    return vec4 (a / b.x, a / b.y, a / b.z, a / b.w);
+    return { (T)a / b };
   }
   vec4& operator /= (const vec4& b)
   {
-    *this = *this / b;
-    return *this;
+    return *this = *this / b;
   }
   template <typename S> vec4& operator /= (S b)
   {
-    *this = *this / b;
+    return *this = *this / b;
+  }
+
+  constexpr vec4 operator - (void) const
+  {
+    return vec4 { 0 - vec_ext };
+  }
+
+  constexpr vec4 operator + (void) const
+  {
     return *this;
   }
 
-  vec4 operator - (void) const
+  constexpr friend vec4 operator << (const vec4& a, unsigned int b)
   {
-    return vec4 (-x, -y, -z, -w);
+    return { a.vec_ext << b };
   }
-
-  vec4 operator + (void) const
-  {
-    return *this;
-  }
-
-  friend vec4 operator << (const vec4& a, unsigned int b)
-  {
-    return { a.x << b, a.y << b, a.z << b, a.w << b };
-  }
-  friend vec4 operator << (unsigned int a, const vec4& b)
+  constexpr friend vec4 operator << (unsigned int a, const vec4& b)
   {
     return { a << b.x, a << b.y, a << b.z, a << b.w };
   }
@@ -576,11 +620,11 @@ template <typename T> struct vec4
     return *this = *this << b;
   }
 
-  friend vec4 operator >> (const vec4& a, unsigned int b)
+  constexpr friend vec4 operator >> (const vec4& a, unsigned int b)
   {
-    return { a.x >> b, a.y >> b, a.z >> b, a.w >> b };
+    return { a.vec_ext >> b };
   }
-  friend vec4 operator >> (unsigned int a, const vec4& b)
+  constexpr friend vec4 operator >> (unsigned int a, const vec4& b)
   {
     return { a >> b.x, a >> b.y, a >> b.z, a >> b.w };
   }
@@ -589,32 +633,67 @@ template <typename T> struct vec4
     return *this = *this >> b;
   }
 
+
+  constexpr friend vec4 operator | (const vec4& a, unsigned int b)
+  {
+    return { a | vec4 (b) };
+  }
+  constexpr friend vec4 operator | (unsigned int a, const vec4& b)
+  {
+    return b | a;
+  }
+  constexpr friend vec4 operator | (const vec4& a, const vec4& b)
+  {
+    return { a.vec_ext | b.vec_ext };
+  }
+  template <typename S> vec4& operator |= (const S& b)
+  {
+    return *this = *this | b;
+  }
+
+
+  constexpr friend vec4 operator & (const vec4& a, unsigned int b)
+  {
+    return { a & vec4 (b) };
+  }
+  constexpr friend vec4 operator & (unsigned int a, const vec4& b)
+  {
+    return b & a;
+  }
+  constexpr friend vec4 operator & (const vec4& a, const vec4& b)
+  {
+    return { a.vec_ext & b.vec_ext };
+  }
+  template <typename S> vec4& operator &= (const S& b)
+  {
+    return *this = *this & b;
+  }
 };
 
-template <typename T> T inline dot (const vec4<T>& a, const vec4<T>& b)
+template <typename T> constexpr inline T dot (const vec4<T>& a, const vec4<T>& b)
 {
   return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
-template <typename T> T inline length (const vec4<T>& a)
+template <typename T> constexpr inline T length (const vec4<T>& a)
 {
   return std::sqrt (dot (a, a));
 }
 
-template <typename T> vec4<T> inline normalize (const vec4<T>& a)
+template <typename T> constexpr inline vec4<T> normalize (const vec4<T>& a)
 {
   return a * (T (1) / length (a));
 }
 
 namespace std
 {
-template <typename T> vec4<T> inline min (const vec4<T>& a, const vec4<T>& b)
+template <typename T> constexpr inline vec4<T> min (const vec4<T>& a, const vec4<T>& b)
 {
   return vec4<T> (std::min (a.x, b.x), std::min (a.y, b.y),
                   std::min (a.z, b.z), std::min (a.w, b.w));
 }
 
-template <typename T> vec4<T> inline max (const vec4<T>& a, const vec4<T>& b)
+template <typename T> constexpr inline vec4<T> max (const vec4<T>& a, const vec4<T>& b)
 {
   return vec4<T> (std::max (a.x, b.x), std::max (a.y, b.y),
                   std::max (a.z, b.z), std::max (a.w, b.w));
