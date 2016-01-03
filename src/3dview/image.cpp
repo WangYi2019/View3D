@@ -66,11 +66,33 @@ template<> struct pixel_format_storage_type<pixel_format::a_8> { typedef uint8_t
 template<> struct pixel_format_storage_type<pixel_format::la_88> { typedef uint16_t type; };
 template<> struct pixel_format_storage_type<pixel_format::rgba_f32> { typedef vec4<float> type; };
 
-template <pixel_format::fmt_t PixelFormat>
-vec4<uint8_t> unpack_pixel (typename pixel_format_storage_type<PixelFormat>::type);
+template<pixel_format::fmt_t F> struct unpacked_format { };
 
-template <pixel_format::fmt_t PixelFormat>
-typename pixel_format_storage_type<PixelFormat>::type pack_pixel (vec4<uint8_t> p);
+template<> struct unpacked_format<pixel_format::rgba_8888> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgba_4444> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgba_5551> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgb_888> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgb_565> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgb_555> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgb_444> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::l_8> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::a_8> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::la_88> { typedef vec4<uint8_t> type; };
+template<> struct unpacked_format<pixel_format::rgba_f32> { typedef vec4<float> type; };
+
+template <typename S, typename D> D convert_unpacked (S);
+
+template<> vec4<uint8_t> convert_unpacked<vec4<uint8_t>, vec4<uint8_t>> (vec4<uint8_t> s) { return s; }
+template<> vec4<float>   convert_unpacked<vec4<uint8_t>, vec4<float>>   (vec4<uint8_t> s) { return u8_to_float (s); }
+template<> vec4<uint8_t> convert_unpacked<vec4<float>,   vec4<uint8_t>> (vec4<float> s) { return float_to_u8 (s); }
+template<> vec4<float>   convert_unpacked<vec4<float>,   vec4<float>>   (vec4<float> s) { return s; }
+
+
+template <pixel_format::fmt_t F>
+typename unpacked_format<F>::type unpack_pixel (typename pixel_format_storage_type<F>::type);
+
+template <pixel_format::fmt_t F>
+typename pixel_format_storage_type<F>::type pack_pixel (typename unpacked_format<F>::type p);
 
 template<> constexpr vec4<uint8_t>
 unpack_pixel<pixel_format::rgba_8888> (uint32_t p)
@@ -264,6 +286,18 @@ pack_pixel<pixel_format::la_88> (vec4<uint8_t> p)
   return rgb_to_luma (p.rgb ()) | (p.a << 8);
 }
 
+template<> constexpr vec4<float>
+unpack_pixel<pixel_format::rgba_f32> (vec4<float> p)
+{
+  return p;
+}
+
+template<> constexpr vec4<float>
+pack_pixel<pixel_format::rgba_f32> (vec4<float> p)
+{
+  return p;
+}
+
 
 // a generic function to convert a line of pixels from one format into another
 // format using the generic vec4<uint8_t> functions.  if this is not good enough,
@@ -275,9 +309,7 @@ template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
 struct convert_line<src_format, dst_format,
 		    typename std::enable_if<
 			  src_format != pixel_format::invalid
-			  && src_format != pixel_format::rgba_f32
 			  && dst_format != pixel_format::invalid
-			  && dst_format != pixel_format::rgba_f32
 			  && src_format != dst_format>::type>
 {
   typedef typename pixel_format_storage_type<src_format>::type src_storage;
@@ -291,8 +323,10 @@ struct convert_line<src_format, dst_format,
 
     for (unsigned int xx = 0; xx < count; ++xx)
     {
-      vec4<uint8_t> p = unpack_pixel<src_format> (*s++);
-      *d++ = pack_pixel<dst_format> (p);
+      auto p = unpack_pixel<src_format> (*s++);
+      auto pp = convert_unpacked<typename unpacked_format<src_format>::type,
+				 typename unpacked_format<dst_format>::type> (p);
+      *d++ = pack_pixel<dst_format> (pp);
     }
   }
 };
@@ -324,51 +358,6 @@ struct convert_line<src_format, dst_format,
       *d++ = *s++;
   }
 };
-
-template <pixel_format::fmt_t src_format>
-struct convert_line<src_format, pixel_format::rgba_f32,
-		    typename std::enable_if<src_format != pixel_format::invalid
-					    && src_format != pixel_format::rgba_f32>::type>
-{
-  typedef typename pixel_format_storage_type<src_format>::type src_storage;
-  typedef typename pixel_format_storage_type<pixel_format::rgba_f32>::type dst_storage;
-
-  static void __attribute__((flatten))
-  func (const char* src, char* dst, unsigned int count)
-  {
-    auto&& s = (const src_storage*)src;
-    auto&& d = (dst_storage*)dst;
-
-    for (unsigned int xx = 0; xx < count; ++xx)
-    {
-      vec4<float> p = u8_to_float (unpack_pixel<src_format> (*s++));
-      *d++ = p;
-    }
-  }
-};
-
-template <pixel_format::fmt_t dst_format>
-struct convert_line<pixel_format::rgba_f32, dst_format,
-		    typename std::enable_if<dst_format != pixel_format::invalid
-					    && dst_format != pixel_format::rgba_f32>::type>
-{
-  typedef typename pixel_format_storage_type<pixel_format::rgba_f32>::type src_storage;
-  typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
-
-  static void __attribute__((flatten))
-  func (const char* src, char* dst, unsigned int count)
-  {
-    auto&& s = (const src_storage*)src;
-    auto&& d = (dst_storage*)dst;
-
-    for (unsigned int xx = 0; xx < count; ++xx)
-    {
-      vec4<float> p = *s++;
-      *d++ = pack_pixel<dst_format> (float_to_u8 (p));
-    }
-  }
-};
-
 
 // a function table for converting pixel formats.
 // FIXME: this relies on the order of the pixel format enum values.
