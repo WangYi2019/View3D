@@ -52,33 +52,73 @@ static inline constexpr float u8_to_float (uint8_t val)
 
 // ---------------------------------------------------------------------------
 
-template<pixel_format::fmt_t F> struct pixel_format_storage_type { };
+template <pixel_format::fmt_t F> struct format_traits { };
 
-template<> struct pixel_format_storage_type<pixel_format::rgba_8888> { typedef uint32_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgba_4444> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgba_5551> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_888> { typedef vec3<uint8_t> type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_565> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_555> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_444> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::l_8> { typedef uint8_t type; };
-template<> struct pixel_format_storage_type<pixel_format::a_8> { typedef uint8_t type; };
-template<> struct pixel_format_storage_type<pixel_format::la_88> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgba_f32> { typedef vec4<float> type; };
+template<> struct format_traits<pixel_format::rgba_8888>
+{
+  typedef uint32_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
 
-template<pixel_format::fmt_t F> struct unpacked_format { };
+template<> struct format_traits<pixel_format::rgba_4444>
+{
+  typedef uint16_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
 
-template<> struct unpacked_format<pixel_format::rgba_8888> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgba_4444> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgba_5551> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgb_888> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgb_565> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgb_555> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgb_444> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::l_8> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::a_8> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::la_88> { typedef vec4<uint8_t> type; };
-template<> struct unpacked_format<pixel_format::rgba_f32> { typedef vec4<float> type; };
+template<> struct format_traits<pixel_format::rgba_5551>
+{
+  typedef uint16_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::rgb_888>
+{
+  typedef vec3<uint8_t> storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::rgb_565>
+{
+  typedef uint16_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::rgb_555>
+{
+  typedef uint16_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::rgb_444>
+{
+  typedef uint16_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::l_8>
+{
+  typedef uint8_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::a_8>
+{
+  typedef uint8_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::la_88>
+{
+  typedef uint16_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+};
+
+template<> struct format_traits<pixel_format::rgba_f32>
+{
+  typedef vec4<float> storage_type;
+  typedef vec4<float> unpacked_type;
+};
 
 template <typename S, typename D> D convert_unpacked (S);
 
@@ -89,10 +129,10 @@ template<> vec4<float>   convert_unpacked<vec4<float>,   vec4<float>>   (vec4<fl
 
 
 template <pixel_format::fmt_t F>
-typename unpacked_format<F>::type unpack_pixel (typename pixel_format_storage_type<F>::type);
+typename format_traits<F>::unpacked_type unpack_pixel (typename format_traits<F>::storage_type);
 
 template <pixel_format::fmt_t F>
-typename pixel_format_storage_type<F>::type pack_pixel (typename unpacked_format<F>::type p);
+typename format_traits<F>::storage_type pack_pixel (typename format_traits<F>::unpacked_type);
 
 template<> constexpr vec4<uint8_t>
 unpack_pixel<pixel_format::rgba_8888> (uint32_t p)
@@ -312,8 +352,8 @@ struct convert_line<src_format, dst_format,
 			  && dst_format != pixel_format::invalid
 			  && src_format != dst_format>::type>
 {
-  typedef typename pixel_format_storage_type<src_format>::type src_storage;
-  typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
+  typedef typename format_traits<src_format>::storage_type src_storage;
+  typedef typename format_traits<dst_format>::storage_type dst_storage;
 
   static void __attribute__((flatten))
   func (const char* src, char* dst, unsigned int count)
@@ -324,8 +364,8 @@ struct convert_line<src_format, dst_format,
     for (unsigned int xx = 0; xx < count; ++xx)
     {
       auto p = unpack_pixel<src_format> (*s++);
-      auto pp = convert_unpacked<typename unpacked_format<src_format>::type,
-				 typename unpacked_format<dst_format>::type> (p);
+      auto pp = convert_unpacked<typename format_traits<src_format>::unpacked_type,
+				 typename format_traits<dst_format>::unpacked_type> (p);
       *d++ = pack_pixel<dst_format> (pp);
     }
   }
@@ -345,8 +385,8 @@ struct convert_line<src_format, dst_format,
 					    && src_format != pixel_format::invalid
 					    && dst_format != pixel_format::invalid>::type>
 {
-  typedef typename pixel_format_storage_type<src_format>::type src_storage;
-  typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
+  typedef typename format_traits<src_format>::storage_type src_storage;
+  typedef typename format_traits<dst_format>::storage_type dst_storage;
 
   static void __attribute__((flatten))
   func (const char* src, char* dst, unsigned int count)
