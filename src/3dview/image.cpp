@@ -11,14 +11,9 @@
 // Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
 static constexpr vec3<float> rgb_to_luma_coeffs = { 0.2126f, 0.7152f, 0.0722f };
 
-static inline constexpr float rgb_to_luma (vec3<float> rgb)
-{
-  return dot (rgb, rgb_to_luma_coeffs);
-}
-
 static inline constexpr float rgb_to_luma (float r, float g, float b)
 {
-  return rgb_to_luma (vec3<float> (r, g, b));
+  return dot (vec3<float> (r, g, b), rgb_to_luma_coeffs);
 }
 
 static inline constexpr uint8_t rgb_to_luma (vec3<uint8_t> rgb)
@@ -29,11 +24,6 @@ static inline constexpr uint8_t rgb_to_luma (vec3<uint8_t> rgb)
 
 //  vec3<uint16_t> c = vec3<uint16_t> (rgb_to_luma_coeffs * 256);
 //  return (rgb.r * c.r + rgb.g * c.g + rgb.b * c.b) >> 8;
-}
-
-static inline constexpr uint8_t rgb_to_luma (uint8_t r, uint8_t g, uint8_t b)
-{
-  return rgb_to_luma (vec3<uint8_t> (r, g, b));
 }
 
 static inline constexpr vec4<uint8_t> float_to_u8 (const vec4<float>& val)
@@ -264,35 +254,99 @@ template<> struct pixel_format_storage_type<pixel_format::l_8> { typedef uint8_t
 template<> struct pixel_format_storage_type<pixel_format::a_8> { typedef uint8_t type; };
 template<> struct pixel_format_storage_type<pixel_format::la_88> { typedef uint16_t type; };
 
-template <pixel_format::fmt_t SrcPixelFormat,
-	  pixel_format::fmt_t DstPixelFormat>
-static inline void __attribute__((flatten))
-convert_line (const char* src, char* dst, unsigned int w)
+// a generic function to convert a line of pixels from one format into another
+// format using the generic vec4<uint8_t> functions.  if this is not good enough,
+// a specialization for a particular combination can be implemented.
+template <pixel_format::fmt_t src_format,
+	  pixel_format::fmt_t dst_format> struct convert_line
 {
-  typedef typename pixel_format_storage_type<SrcPixelFormat>::type SrcStorageType;
-  typedef typename pixel_format_storage_type<DstPixelFormat>::type DstStorageType;
+  typedef typename pixel_format_storage_type<src_format>::type src_storage;
+  typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
 
-  const SrcStorageType* s = (const SrcStorageType*)src;
-  DstStorageType* d = (DstStorageType*)dst;
-
-  for (unsigned int xx = 0; xx < w; ++xx)
+  static void __attribute__((flatten))
+  func (const char* src, char* dst, unsigned int count)
   {
-    vec4<uint8_t> p = unpack_pixel<SrcPixelFormat, SrcStorageType> (*s++);
-    *d++ = pack_pixel<DstPixelFormat, DstStorageType> (p);
-  }
-}
+    auto&& s = (const src_storage*)src;
+    auto&& d = (dst_storage*)dst;
 
-void convert_format (const char* src, unsigned int src_stride,
-		     char* dst, unsigned int dst_stride,
-		     unsigned int w, unsigned int h)
+    for (unsigned int xx = 0; xx < count; ++xx)
+    {
+      vec4<uint8_t> p = unpack_pixel<src_format, src_storage> (*s++);
+      *d++ = pack_pixel<dst_format, dst_storage> (p);
+    }
+  }
+};
+
+template <pixel_format::fmt_t dst_format>
+struct convert_line<pixel_format::invalid, dst_format>
 {
-  for (unsigned int yy = 0; yy < h; ++yy)
-  {
-    convert_line<pixel_format::rgb_888,	pixel_format::l_8> (src, dst, w);
-    src += src_stride;
-    dst += dst_stride;
-  }
-}
+  static void func (const char*, char*, unsigned int) { }
+};
+
+template <pixel_format::fmt_t src_format>
+struct convert_line<src_format, pixel_format::invalid>
+{
+  static void func (const char*, char*, unsigned int) { }
+};
+
+template <> struct convert_line<pixel_format::invalid, pixel_format::invalid>
+{
+  static void func (const char*, char*, unsigned int) { }
+};
+
+// a function table for converting pixel formats.
+// FIXME: this relies on the order of the pixel format enum values.
+//        use compile-time sort.
+static_assert (pixel_format::invalid == 0, "");
+static_assert (pixel_format::rgba_8888 == 1, "");
+static_assert (pixel_format::rgba_4444 == 2, "");
+static_assert (pixel_format::rgba_5551 == 3, "");
+static_assert (pixel_format::rgb_888 == 4, "");
+static_assert (pixel_format::rgb_565 == 5, "");
+static_assert (pixel_format::rgb_555 == 6, "");
+static_assert (pixel_format::rgb_444 == 7, "");
+static_assert (pixel_format::l_8 == 8, "");
+static_assert (pixel_format::a_8 == 9, "");
+static_assert (pixel_format::la_88 == 10, "");
+static_assert (pixel_format::max_count == 11, "");
+
+typedef void (*conv_func_t)(const char* src, char* dst, unsigned int count);
+
+static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::max_count] =
+{
+// 2d array initialization order: {1,2,3} = a[0][0] = 1, a[0][1] = 2, a[0][2] = 3
+
+#define init_table_1(src_fmt, dst_fmt) convert_line<pixel_format::src_fmt, pixel_format::dst_fmt>::func
+
+#define init_table(src_fmt) \
+  init_table_1 (src_fmt, invalid), \
+  init_table_1 (src_fmt, rgba_8888), \
+  init_table_1 (src_fmt, rgba_4444), \
+  init_table_1 (src_fmt, rgba_5551), \
+  init_table_1 (src_fmt, rgb_888), \
+  init_table_1 (src_fmt, rgb_565), \
+  init_table_1 (src_fmt, rgb_555), \
+  init_table_1 (src_fmt, rgb_444), \
+  init_table_1 (src_fmt, l_8), \
+  init_table_1 (src_fmt, a_8), \
+  init_table_1 (src_fmt, la_88),
+
+  init_table (invalid)
+  init_table (rgba_8888)
+  init_table (rgba_4444)
+  init_table (rgba_5551)
+  init_table (rgb_888)
+  init_table (rgb_565)
+  init_table (rgb_555)
+  init_table (rgb_444)
+  init_table (l_8)
+  init_table (a_8)
+  init_table (la_88)
+
+#undef init_table_1
+#undef init_table
+
+};
 
 // ---------------------------------------------------------------------------
 
@@ -537,29 +591,19 @@ void image::copy_to (int src_x, int src_y,
   const unsigned int src_stride = m_bytes_per_line;
   const unsigned int dst_stride = dst.bytes_per_line ();
 
-  uint8_t* src_ptr = (uint8_t*)((uintptr_t)m_data.get () + src_y0 * src_stride
-				+ src_x0 * m_format.bytes_per_pixel ());
-  uint8_t* dst_ptr = (uint8_t*)((uintptr_t)m_data.get () + dst_y0 * dst_stride
-				+ dst_x0 * m_format.bytes_per_pixel ());
+  auto&& src_ptr = (const char*)((uintptr_t)m_data.get () + src_y0 * src_stride
+				 + src_x0 * m_format.bytes_per_pixel ());
+  auto&& dst_ptr = (char*)((uintptr_t)m_data.get () + dst_y0 * dst_stride
+			   + dst_x0 * m_format.bytes_per_pixel ());
 
-  if (m_format == dst.format ())
+  auto&& copy_line = conv_func_table[m_format.value ()][dst.format ().value ()];
+
+  for (unsigned int yy = 0; yy < copy_h; ++yy)
   {
-    // if src and dst pixel format is the same, can do a straight copy.
-    const unsigned int copy_line_bytes = copy_w * m_format.bytes_per_pixel ();
- 
-    for (unsigned int yy = 0; yy < copy_h; ++yy)
-    {
-      for (unsigned int xx = 0; xx < copy_w; ++xx)
-	std::memcpy (dst_ptr, src_ptr, copy_line_bytes);
+    copy_line (src_ptr, dst_ptr, copy_w);
 
-      src_ptr += src_stride;
-      dst_ptr += dst_stride;
-    }
-  }
-  else
-  {
-    // otherwise convert line-wise to vec4<uint8_t> and then to the dst format.
-
+    src_ptr += src_stride;
+    dst_ptr += dst_stride;
   }
 }
 

@@ -22,6 +22,8 @@ public:
     la_88,
   };
 
+  static constexpr unsigned int max_count = la_88 + 1;
+
   constexpr pixel_format (void) : m_fmt (invalid) { }
   constexpr pixel_format (fmt_t f) : m_fmt (f) { }
 
