@@ -23,28 +23,28 @@ public:
     la_88     = 0x0003'0000,
   };
 
-  pixel_format (void) : m_fmt (invalid) { }
-  pixel_format (fmt_t f) : m_fmt (f) { }
+  constexpr pixel_format (void) : m_fmt (invalid) { }
+  constexpr pixel_format (fmt_t f) : m_fmt (f) { }
 
   // parse from string.
   pixel_format (const char* str);
 
-  bool operator == (const pixel_format& rhs) const { return m_fmt == rhs.m_fmt; }
-  bool operator == (fmt_t rhs) const { return m_fmt == rhs; }
-  bool operator != (const pixel_format& rhs) const { return m_fmt != rhs.m_fmt; }
-  bool operator != (fmt_t rhs) const { return m_fmt != rhs; }
+  constexpr bool operator == (const pixel_format& rhs) const { return m_fmt == rhs.m_fmt; }
+  constexpr bool operator == (fmt_t rhs) const { return m_fmt == rhs; }
+  constexpr bool operator != (const pixel_format& rhs) const { return m_fmt != rhs.m_fmt; }
+  constexpr bool operator != (fmt_t rhs) const { return m_fmt != rhs; }
 
-  bool valid (void) const { return m_fmt != invalid; }
-  fmt_t value (void) const { return m_fmt; }
+  constexpr bool valid (void) const { return m_fmt != invalid; }
+  constexpr fmt_t value (void) const { return m_fmt; }
 
-  operator fmt_t () const { return m_fmt; }
+  constexpr operator fmt_t () const { return m_fmt; }
 
-  unsigned int r_bits (void) const { return ((unsigned int)m_fmt >> 12) & 0x0F; }
-  unsigned int g_bits (void) const { return ((unsigned int)m_fmt >>  8) & 0x0F; }
-  unsigned int b_bits (void) const { return ((unsigned int)m_fmt >>  4) & 0x0F; }
-  unsigned int a_bits (void) const { return ((unsigned int)m_fmt >>  0) & 0x0F; }
+  constexpr unsigned int r_bits (void) const { return ((unsigned int)m_fmt >> 12) & 0x0F; }
+  constexpr unsigned int g_bits (void) const { return ((unsigned int)m_fmt >>  8) & 0x0F; }
+  constexpr unsigned int b_bits (void) const { return ((unsigned int)m_fmt >>  4) & 0x0F; }
+  constexpr unsigned int a_bits (void) const { return ((unsigned int)m_fmt >>  0) & 0x0F; }
 
-  unsigned int rgb_bits (void) const { return r_bits () + g_bits () + b_bits (); }
+  constexpr unsigned int rgb_bits (void) const { return r_bits () + g_bits () + b_bits (); }
 
   const char* str (void) const;
 
@@ -73,24 +73,24 @@ public:
     ds_0_0  = 0xFFFF0000
   };
 
-  ds_format (void) : m_fmt (invalid) { }
-  ds_format (fmt_t f) : m_fmt (f) { }
+  constexpr ds_format (void) : m_fmt (invalid) { }
+  constexpr ds_format (fmt_t f) : m_fmt (f) { }
 
   // parse from string.
   ds_format (const char* str);
 
-  bool operator == (const ds_format& rhs) const { return m_fmt == rhs.m_fmt; }
-  bool operator == (fmt_t rhs) const { return m_fmt == rhs; }
-  bool operator != (const ds_format& rhs) const { return m_fmt != rhs.m_fmt; }
-  bool operator != (fmt_t rhs) const { return m_fmt != rhs; }
+  constexpr bool operator == (const ds_format& rhs) const { return m_fmt == rhs.m_fmt; }
+  constexpr bool operator == (fmt_t rhs) const { return m_fmt == rhs; }
+  constexpr bool operator != (const ds_format& rhs) const { return m_fmt != rhs.m_fmt; }
+  constexpr bool operator != (fmt_t rhs) const { return m_fmt != rhs; }
 
-  bool valid (void) const { return (unsigned int)m_fmt >> 16; }
-  fmt_t value (void) const { return m_fmt; }
+  constexpr bool valid (void) const { return (unsigned int)m_fmt >> 16; }
+  constexpr fmt_t value (void) const { return m_fmt; }
 
-  operator fmt_t () const { return m_fmt; }
+  constexpr operator fmt_t () const { return m_fmt; }
 
-  unsigned int d_bits (void) const { return ((unsigned int)m_fmt >> 8) & 0xFF & ((unsigned int)m_fmt >> 16); }
-  unsigned int s_bits (void) const { return ((unsigned int)m_fmt >> 0) & 0xFF & ((unsigned int)m_fmt >> 16); }
+  constexpr unsigned int d_bits (void) const { return ((unsigned int)m_fmt >> 8) & 0xFF & ((unsigned int)m_fmt >> 16); }
+  constexpr unsigned int s_bits (void) const { return ((unsigned int)m_fmt >> 0) & 0xFF & ((unsigned int)m_fmt >> 16); }
 
   const char* str (void) const;
 
