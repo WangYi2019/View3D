@@ -541,19 +541,7 @@ void image::fill (int x, int y,
   {
     vec3<uint8_t> val = float_to_u8 ({ r, g, b, 1 }).rgb ();
 
-    const unsigned int stride = m_bytes_per_line;
-    uint8_t* dst = (uint8_t*)((uintptr_t)m_data.get () + y0 * stride + x0 * 3);
-
-    for (unsigned int yy = 0; yy < h; ++yy)
-    {
-      for (unsigned int xx = 0; xx < w; ++xx)
-      {
-	dst[xx*3 + 0] = val.r;
-	dst[xx*3 + 1] = val.g;
-	dst[xx*3 + 2] = val.b;
-      }
-      dst = (uint8_t*)((uintptr_t)dst + stride);
-    }
+    fill_2d<vec3<uint8_t>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, val);
   }
   else
     assert_unreachable ();
