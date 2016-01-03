@@ -880,6 +880,9 @@ static_assert (std::is_trivial<vec3<int>>::value, "");
 static_assert (std::is_standard_layout<vec3<int>>::value, "");
 static_assert (std::is_pod<vec3<int>>::value, "");
 
+// vec3<uint8_t> must be 3 bytes to be useable with 24 bit RGB images.
+static_assert (sizeof (vec3<uint8_t>) == 3, "");
+
 static_assert (std::is_trivial<vec4<int>>::value, "");
 static_assert (std::is_standard_layout<vec4<int>>::value, "");
 static_assert (std::is_pod<vec4<int>>::value, "");

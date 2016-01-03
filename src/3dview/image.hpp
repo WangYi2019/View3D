@@ -32,7 +32,12 @@ public:
     std::swap (m_data, rhs.m_data);
   }
 
-  bool empty (void) const { return m_bytes_per_line == 0 || m_height == 0; }
+  bool empty (void) const
+  {
+    return m_bytes_per_line == 0 || m_height == 0
+	   || m_format == pixel_format::invalid;
+  }
+
   unsigned int width (void) const { return m_width; }
   unsigned int height (void) const { return m_height; }
   pixel_format format (void) const { return m_format; }
@@ -51,6 +56,7 @@ public:
   }
 
   unsigned int data_line_size_bytes (void) const { return m_bytes_per_line; }
+  unsigned int bytes_per_line (void) const { return m_bytes_per_line; }
 
   // the specified rect is clipped to the actual image size.
   // if the image pixel format is luma instead of rgb, the red value will be used.
@@ -74,8 +80,7 @@ public:
   // converting luma to rgb is done by replicating the luma values.
   void copy_to (int src_x, int src_y,
 		unsigned int src_width, unsigned int src_height,
-		image& dst,
-		int dst_x, int dst_y);
+		image& dst, int dst_x, int dst_y);
 
   enum down_sample_mode_t
   {

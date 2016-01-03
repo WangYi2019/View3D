@@ -23,6 +23,7 @@ add_definitions (
 endif ()
 
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=core2 -mtune=intel")
 
 add_subdirectory (${CMAKE_SOURCE_DIR}/../utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
@@ -32,6 +33,7 @@ add_executable (3dview
   test_scene.cpp
   bmp_loader.cpp
   image.cpp
+  tiled_image.cpp
 )
 
 if (WIN32)
