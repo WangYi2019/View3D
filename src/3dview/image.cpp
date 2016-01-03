@@ -11,9 +11,9 @@
 // Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
 static constexpr vec3<float> rgb_to_luma_coeffs = { 0.2126f, 0.7152f, 0.0722f };
 
-static inline constexpr float rgb_to_luma (float r, float g, float b)
+static inline constexpr float rgb_to_luma (vec3<float> rgb)
 {
-  return dot (vec3<float> (r, g, b), rgb_to_luma_coeffs);
+  return dot (rgb, rgb_to_luma_coeffs);
 }
 
 static inline constexpr uint8_t rgb_to_luma (vec3<uint8_t> rgb)
@@ -35,19 +35,9 @@ static inline constexpr vec4<uint8_t> float_to_u8 (const vec4<float>& val)
   return (vec4<uint8_t>) std::min (std::max (std::min (one, val), zero) * 256, u8max);
 }
 
-static inline constexpr uint8_t float_to_u8 (float val)
-{
-  return (uint8_t) std::min (std::max (std::min (1.0f, val), 0.0f) * 256.0f, 255.0f);
-}
-
 static inline constexpr vec4<float> u8_to_float (const vec4<uint8_t>& val)
 {
   return vec4<float> (val) * 1.0f/255.0f;
-}
-
-static inline constexpr float u8_to_float (uint8_t val)
-{
-  return val * 1.0f/255.0f;
 }
 
 // ---------------------------------------------------------------------------
@@ -285,7 +275,7 @@ unpack_pixel<pixel_format::rgb_565> (uint16_t p)
 template<> constexpr uint16_t
 pack_pixel<pixel_format::rgb_565> (vec4<uint8_t> p)
 {
-  return ((p.r >> 3) << (5+6)) | ((p.g >> 2) << 6) | (p.b >> 3);
+  return ((p.r >> 3) << (5+6)) | ((p.g >> 2) << 5) | (p.b >> 3);
 }
 
 template<> constexpr vec4<uint8_t>
@@ -339,6 +329,17 @@ pack_pixel<pixel_format::rgba_f32> (vec4<float> p)
 }
 
 
+template<pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
+typename format_traits<dst_format>::storage_type
+repack_pixel (typename format_traits<src_format>::storage_type p)
+{
+  return pack_pixel<dst_format> (
+	convert_unpacked<typename format_traits<src_format>::unpacked_type,
+			 typename format_traits<dst_format>::unpacked_type> (
+		unpack_pixel<src_format> (p)));
+}
+
+
 // a generic function to convert a line of pixels from one format into another
 // format using the generic vec4<uint8_t> functions.  if this is not good enough,
 // a specialization for a particular combination can be implemented.
@@ -362,15 +363,11 @@ struct convert_line<src_format, dst_format,
     auto&& d = (dst_storage*)dst;
 
     for (unsigned int xx = 0; xx < count; ++xx)
-    {
-      auto p = unpack_pixel<src_format> (*s++);
-      auto pp = convert_unpacked<typename format_traits<src_format>::unpacked_type,
-				 typename format_traits<dst_format>::unpacked_type> (p);
-      *d++ = pack_pixel<dst_format> (pp);
-    }
+      *d++ = repack_pixel<src_format, dst_format> (*s++);
   }
 };
 
+// invalid formats do nothing.
 template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
 struct convert_line<src_format, dst_format,
  		    typename std::enable_if<src_format == pixel_format::invalid
@@ -379,6 +376,7 @@ struct convert_line<src_format, dst_format,
   static void func (const char*, char*, unsigned int) { }
 };
 
+// converting between the same formats is a simple memcpy.
 template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
 struct convert_line<src_format, dst_format,
 		    typename std::enable_if<src_format == dst_format
@@ -577,49 +575,48 @@ void image::fill (int x, int y,
 
   if (m_format == pixel_format::rgba_8888)
     fill_2d<uint32_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::rgba_8888> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_8888> (fill_val));
 
   else if (m_format == pixel_format::rgba_4444)
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::rgba_4444> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_4444> (fill_val));
 
   else if (m_format == pixel_format::rgb_444)
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::rgb_444> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_444> (fill_val));
 
   else if (m_format == pixel_format::rgba_5551)
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::rgba_5551> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_5551> (fill_val));
 
   else if (m_format == pixel_format::rgb_555)
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::rgb_555> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_555> (fill_val));
 
   else if (m_format == pixel_format::rgb_565)
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::rgb_565> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_565> (fill_val));
 
   else if (m_format == pixel_format::l_8)
     fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		      pack_pixel<pixel_format::l_8> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::l_8> (fill_val));
 
   else if (m_format == pixel_format::a_8)
     fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		      pack_pixel<pixel_format::a_8> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::a_8> (fill_val));
 
   else if (m_format == pixel_format::la_88)
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       pack_pixel<pixel_format::la_88> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::la_88> (fill_val));
 
   else if (m_format == pixel_format::rgb_888)
     fill_2d<vec3<uint8_t>> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-			    pack_pixel<pixel_format::rgb_888> (float_to_u8 (fill_val)));
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_888> (fill_val));
 
   else if (m_format == pixel_format::rgba_f32)
-    fill_2d<vec4<float>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, fill_val);
+    fill_2d<vec4<float>> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
+		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_f32> (fill_val));
 
-  else
-    assert_unreachable ();
 }
 
 void image::copy_to (int src_x, int src_y,
