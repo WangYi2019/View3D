@@ -52,14 +52,28 @@ static inline constexpr float u8_to_float (uint8_t val)
 
 // ---------------------------------------------------------------------------
 
-template <pixel_format::fmt_t PixelFormat, typename StorageType>
-vec4<uint8_t> unpack_pixel (StorageType p);
+template<pixel_format::fmt_t F> struct pixel_format_storage_type { };
 
-template <pixel_format::fmt_t PixelFormat, typename StorageType>
-StorageType pack_pixel (vec4<uint8_t> p);
+template<> struct pixel_format_storage_type<pixel_format::rgba_8888> { typedef uint32_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgba_4444> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgba_5551> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgb_888> { typedef vec3<uint8_t> type; };
+template<> struct pixel_format_storage_type<pixel_format::rgb_565> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgb_555> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgb_444> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::l_8> { typedef uint8_t type; };
+template<> struct pixel_format_storage_type<pixel_format::a_8> { typedef uint8_t type; };
+template<> struct pixel_format_storage_type<pixel_format::la_88> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgba_f32> { typedef vec4<float> type; };
+
+template <pixel_format::fmt_t PixelFormat>
+vec4<uint8_t> unpack_pixel (typename pixel_format_storage_type<PixelFormat>::type);
+
+template <pixel_format::fmt_t PixelFormat>
+typename pixel_format_storage_type<PixelFormat>::type pack_pixel (vec4<uint8_t> p);
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgba_8888, uint32_t> (uint32_t p)
+unpack_pixel<pixel_format::rgba_8888> (uint32_t p)
 {
   #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     return { (p >> 0) & 0xFF, (p >> 8) & 0xFF, (p >> 16) & 0xFF, (p >> 24) & 0xFF };
@@ -70,7 +84,7 @@ unpack_pixel<pixel_format::rgba_8888, uint32_t> (uint32_t p)
   #endif
 }
 template<> constexpr uint32_t
-pack_pixel<pixel_format::rgba_8888, uint32_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgba_8888> (vec4<uint8_t> p)
 {
   #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     return (p.a << 24) | (p.b << 16) | (p.g << 8) | p.r;
@@ -83,7 +97,7 @@ pack_pixel<pixel_format::rgba_8888, uint32_t> (vec4<uint8_t> p)
 
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgba_4444, uint16_t> (uint16_t p)
+unpack_pixel<pixel_format::rgba_4444> (uint16_t p)
 {
   unsigned int r = (p >> 12) & 0xF;
   unsigned int g = (p >> 8) & 0xF;
@@ -109,13 +123,13 @@ unpack_pixel<pixel_format::rgba_4444, uint16_t> (uint16_t p)
 }
 
 template<> constexpr uint16_t
-pack_pixel<pixel_format::rgba_4444, uint16_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgba_4444> (vec4<uint8_t> p)
 {
   return ((p.r >> 4) << 12) | ((p.g >> 4) << 8) | ((p.b >> 4) << 4) | ((p.a >> 4) << 0);
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgb_444, uint16_t> (uint16_t p)
+unpack_pixel<pixel_format::rgb_444> (uint16_t p)
 {
   unsigned int r = (p >> 12) & 0xF;
   unsigned int g = (p >> 8) & 0xF;
@@ -131,13 +145,13 @@ unpack_pixel<pixel_format::rgb_444, uint16_t> (uint16_t p)
 }
 
 template<> constexpr uint16_t
-pack_pixel<pixel_format::rgb_444, uint16_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgb_444> (vec4<uint8_t> p)
 {
   return ((p.r >> 4) << 12) | ((p.g >> 4) << 8) | ((p.b >> 4) << 4) | 0x0F;
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgba_5551, uint16_t> (uint16_t p)
+unpack_pixel<pixel_format::rgba_5551> (uint16_t p)
 {
   unsigned int r = (p >> (1+5+5)) & 31;
   unsigned int g = (p >> (1+5)) & 31;
@@ -153,13 +167,13 @@ unpack_pixel<pixel_format::rgba_5551, uint16_t> (uint16_t p)
 }
 
 template<> constexpr uint16_t
-pack_pixel<pixel_format::rgba_5551, uint16_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgba_5551> (vec4<uint8_t> p)
 {
   return ((p.r >> 3) << (1+5+5)) | ((p.g >> 3) << (1+5)) | ((p.b >> 3) << 1) | ((p.a >> 7) << 0);
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgb_555, uint16_t> (uint16_t p)
+unpack_pixel<pixel_format::rgb_555> (uint16_t p)
 {
   unsigned int r = (p >> (1+5+5)) & 31;
   unsigned int g = (p >> (1+5)) & 31;
@@ -174,25 +188,25 @@ unpack_pixel<pixel_format::rgb_555, uint16_t> (uint16_t p)
 }
 
 template<> constexpr uint16_t
-pack_pixel<pixel_format::rgb_555, uint16_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgb_555> (vec4<uint8_t> p)
 {
   return ((p.r >> 3) << (1+5+5)) | ((p.g >> 3) << (1+5)) | ((p.b >> 3) << 1) | 1;
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgb_888, vec3<uint8_t>> (vec3<uint8_t> p)
+unpack_pixel<pixel_format::rgb_888> (vec3<uint8_t> p)
 {
   return { p.r, p.g, p.b, 255 };
 }
 
 template<> constexpr vec3<uint8_t>
-pack_pixel<pixel_format::rgb_888, vec3<uint8_t>> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgb_888> (vec4<uint8_t> p)
 {
   return { p.r, p.g, p.b };
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::rgb_565, uint16_t> (uint16_t p)
+unpack_pixel<pixel_format::rgb_565> (uint16_t p)
 {
   unsigned int r = (p >> (5+6)) & 31;
   unsigned int g = (p >> 6) & 63;
@@ -207,37 +221,37 @@ unpack_pixel<pixel_format::rgb_565, uint16_t> (uint16_t p)
 }
 
 template<> constexpr uint16_t
-pack_pixel<pixel_format::rgb_565, uint16_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::rgb_565> (vec4<uint8_t> p)
 {
   return ((p.r >> 3) << (5+6)) | ((p.g >> 2) << 6) | (p.b >> 3);
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::l_8, uint8_t> (uint8_t p)
+unpack_pixel<pixel_format::l_8> (uint8_t p)
 {
   return { p, p, p, 255 };
 }
 
 template<> constexpr uint8_t
-pack_pixel<pixel_format::l_8, uint8_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::l_8> (vec4<uint8_t> p)
 {
   return rgb_to_luma (p.rgb ());
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::a_8, uint8_t> (uint8_t p)
+unpack_pixel<pixel_format::a_8> (uint8_t p)
 {
   return { 255, 255, 255, p };
 }
 
 template<> constexpr uint8_t
-pack_pixel<pixel_format::a_8, uint8_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::a_8> (vec4<uint8_t> p)
 {
   return p.a;
 }
 
 template<> constexpr vec4<uint8_t>
-unpack_pixel<pixel_format::la_88, uint16_t> (uint16_t p)
+unpack_pixel<pixel_format::la_88> (uint16_t p)
 {
   unsigned int l = p & 255;
   unsigned int a = (p >> 8) & 255;
@@ -245,24 +259,11 @@ unpack_pixel<pixel_format::la_88, uint16_t> (uint16_t p)
 }
 
 template<> constexpr uint16_t
-pack_pixel<pixel_format::la_88, uint16_t> (vec4<uint8_t> p)
+pack_pixel<pixel_format::la_88> (vec4<uint8_t> p)
 {
   return rgb_to_luma (p.rgb ()) | (p.a << 8);
 }
 
-template<pixel_format::fmt_t F> struct pixel_format_storage_type { };
-
-template<> struct pixel_format_storage_type<pixel_format::rgba_8888> { typedef uint32_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgba_4444> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgba_5551> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_888> { typedef vec3<uint8_t> type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_565> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_555> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgb_444> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::l_8> { typedef uint8_t type; };
-template<> struct pixel_format_storage_type<pixel_format::a_8> { typedef uint8_t type; };
-template<> struct pixel_format_storage_type<pixel_format::la_88> { typedef uint16_t type; };
-template<> struct pixel_format_storage_type<pixel_format::rgba_f32> { typedef vec4<float> type; };
 
 // a generic function to convert a line of pixels from one format into another
 // format using the generic vec4<uint8_t> functions.  if this is not good enough,
@@ -290,8 +291,8 @@ struct convert_line<src_format, dst_format,
 
     for (unsigned int xx = 0; xx < count; ++xx)
     {
-      vec4<uint8_t> p = unpack_pixel<src_format, src_storage> (*s++);
-      *d++ = pack_pixel<dst_format, dst_storage> (p);
+      vec4<uint8_t> p = unpack_pixel<src_format> (*s++);
+      *d++ = pack_pixel<dst_format> (p);
     }
   }
 };
@@ -340,7 +341,7 @@ struct convert_line<src_format, pixel_format::rgba_f32,
 
     for (unsigned int xx = 0; xx < count; ++xx)
     {
-      vec4<float> p = u8_to_float (unpack_pixel<src_format, src_storage> (*s++));
+      vec4<float> p = u8_to_float (unpack_pixel<src_format> (*s++));
       *d++ = p;
     }
   }
@@ -363,7 +364,7 @@ struct convert_line<pixel_format::rgba_f32, dst_format,
     for (unsigned int xx = 0; xx < count; ++xx)
     {
       vec4<float> p = *s++;
-      *d++ = pack_pixel<dst_format, dst_storage> (float_to_u8 (p));
+      *d++ = pack_pixel<dst_format> (float_to_u8 (p));
     }
   }
 };
@@ -542,6 +543,8 @@ void image::fill (int x, int y,
 
   if (w == 0 || h == 0)
     return;
+
+  vec4<float> fill_val (r, g, b, a);
 
   if (m_format == pixel_format::rgba_8888)
   {
