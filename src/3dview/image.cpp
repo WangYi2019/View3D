@@ -547,87 +547,48 @@ void image::fill (int x, int y,
   vec4<float> fill_val (r, g, b, a);
 
   if (m_format == pixel_format::rgba_8888)
-  {
-    vec4<uint8_t> val = float_to_u8 ({r, g, b, a });
+    fill_2d<uint32_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
+		       pack_pixel<pixel_format::rgba_8888> (float_to_u8 (fill_val)));
 
-    #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-      const uint32_t val1 = (val.a << 24) | (val.b << 16) | (val.g << 8) | val.r;
-    #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-      const uint32_t val1 = (val.r << 24) | (val.g << 16) | (val.b << 8) | val.a;
-    #endif
-
-    fill_2d<uint32_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line, val1);
-  }
   else if (m_format == pixel_format::rgba_4444)
-  {
-    vec4<uint8_t> val = float_to_u8 ({ r, g, b, a }) >> 4;
-
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       (val.r << 12) | (val.g << 8) | (val.b << 4) | val.a);
-  }
+		       pack_pixel<pixel_format::rgba_4444> (float_to_u8 (fill_val)));
+
   else if (m_format == pixel_format::rgb_444)
-  {
-    vec4<uint8_t> val = float_to_u8 ({ r, g, b, 1 }) >> 4;
-
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       (val.r << 12) | (val.g << 8) | (val.b << 4) | val.a);
-  }
+		       pack_pixel<pixel_format::rgb_444> (float_to_u8 (fill_val)));
+
   else if (m_format == pixel_format::rgba_5551)
-  {
-    vec4<uint8_t> val = float_to_u8 ({ r, g, b, a }) >> 3;
-    val.a = val.a >> (7-3);
-
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       (val.r << (5+5+1)) | (val.g << (5+1)) | (val.b << 1) | val.a);
-  }
+		       pack_pixel<pixel_format::rgba_5551> (float_to_u8 (fill_val)));
+
   else if (m_format == pixel_format::rgb_555)
-  {
-    vec4<uint8_t> val = float_to_u8 ({ r, g, b, 1 }) >> 3;
-    val.a = val.a >> (7-3);
-
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       (val.r << (5+5+1)) | (val.g << (5+1)) | (val.b << 1) | val.a);
-  }
+		       pack_pixel<pixel_format::rgb_555> (float_to_u8 (fill_val)));
+
   else if (m_format == pixel_format::rgb_565)
-  {
-    vec4<uint8_t> val = float_to_u8 ({ r, g, b, 1 });
-    val.r = val.r >> 3;
-    val.g = val.g >> 2;
-    val.b = val.b >> 3;
-
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       (val.r << (5+6)) | (val.g << 5) | val.b);
-  }
+		       pack_pixel<pixel_format::rgb_565> (float_to_u8 (fill_val)));
+
   else if (m_format == pixel_format::l_8)
-  {
-    uint8_t val = float_to_u8 (rgb_to_luma (r, g, b));
+    fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
+		      pack_pixel<pixel_format::l_8> (float_to_u8 (fill_val)));
 
-    fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line, val);
-  }
   else if (m_format == pixel_format::a_8)
-  {
-    uint8_t val = float_to_u8 (a);
+    fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
+		      pack_pixel<pixel_format::a_8> (float_to_u8 (fill_val)));
 
-    fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line, val);
-  }
   else if (m_format == pixel_format::la_88)
-  {
-    uint8_t val_l = float_to_u8 (rgb_to_luma (r, g, b));
-    uint8_t val_a = float_to_u8 (a);
-
     fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       (val_a << 8) | val_l);
-  }
-  else if (m_format == pixel_format::rgb_888)
-  {
-    vec3<uint8_t> val = float_to_u8 ({ r, g, b, 1 }).rgb ();
+		       pack_pixel<pixel_format::la_88> (float_to_u8 (fill_val)));
 
-    fill_2d<vec3<uint8_t>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, val);
-  }
+  else if (m_format == pixel_format::rgb_888)
+    fill_2d<vec3<uint8_t>> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
+			    pack_pixel<pixel_format::rgb_888> (float_to_u8 (fill_val)));
+
   else if (m_format == pixel_format::rgba_f32)
-  {
-    fill_2d<vec4<float>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, { r, g, b, a });
-  }
+    fill_2d<vec4<float>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, fill_val);
+
   else
     assert_unreachable ();
 }
