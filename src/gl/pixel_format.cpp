@@ -13,8 +13,8 @@ struct pixel_format_desc
   int8_t g_bits;
   int8_t b_bits;
   int8_t a_bits;
-  int8_t rgb_bits;
-  int8_t bpp;
+  uint8_t rgb_bits;
+  uint8_t bpp;
   uint16_t gl_type;
   uint16_t gl_fmt;
   const char* str;
@@ -35,6 +35,7 @@ static const pixel_format_desc pf_table[] =
   { pixel_format::l_8,        0,  0,  0,  0,  0, 8,  GL_UNSIGNED_BYTE,          GL_LUMINANCE, "L_8" },
   { pixel_format::a_8,        0,  0,  0,  8,  0, 8,  GL_UNSIGNED_BYTE,          GL_ALPHA,     "A_8" },
   { pixel_format::la_88,      0,  0,  0,  8,  0, 16, GL_UNSIGNED_BYTE,          GL_LUMINANCE_ALPHA, "LA_88" },
+  { pixel_format::rgba_f32,  32, 32, 32, 32, 32*3, 32*4, GL_FLOAT,              GL_RGBA, "RGBA_32F" },
 };
 
 pixel_format::pixel_format (const char* str)

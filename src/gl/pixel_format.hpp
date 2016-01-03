@@ -20,9 +20,10 @@ public:
     l_8,
     a_8,
     la_88,
+    rgba_f32
   };
 
-  static constexpr unsigned int max_count = la_88 + 1;
+  static constexpr unsigned int max_count = rgba_f32 + 1;
 
   constexpr pixel_format (void) : m_fmt (invalid) { }
   constexpr pixel_format (fmt_t f) : m_fmt (f) { }

@@ -40,6 +40,15 @@ static inline constexpr uint8_t float_to_u8 (float val)
   return (uint8_t) std::min (std::max (std::min (1.0f, val), 0.0f) * 256.0f, 255.0f);
 }
 
+static inline constexpr vec4<float> u8_to_float (const vec4<uint8_t>& val)
+{
+  return vec4<float> (val) * 1.0f/255.0f;
+}
+
+static inline constexpr float u8_to_float (uint8_t val)
+{
+  return val * 1.0f/255.0f;
+}
 
 // ---------------------------------------------------------------------------
 
@@ -253,12 +262,22 @@ template<> struct pixel_format_storage_type<pixel_format::rgb_444> { typedef uin
 template<> struct pixel_format_storage_type<pixel_format::l_8> { typedef uint8_t type; };
 template<> struct pixel_format_storage_type<pixel_format::a_8> { typedef uint8_t type; };
 template<> struct pixel_format_storage_type<pixel_format::la_88> { typedef uint16_t type; };
+template<> struct pixel_format_storage_type<pixel_format::rgba_f32> { typedef vec4<float> type; };
 
 // a generic function to convert a line of pixels from one format into another
 // format using the generic vec4<uint8_t> functions.  if this is not good enough,
 // a specialization for a particular combination can be implemented.
 template <pixel_format::fmt_t src_format,
-	  pixel_format::fmt_t dst_format> struct convert_line
+          pixel_format::fmt_t dst_format, typename Enable = void> struct convert_line;
+
+template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
+struct convert_line<src_format, dst_format,
+		    typename std::enable_if<
+			  src_format != pixel_format::invalid
+			  && src_format != pixel_format::rgba_f32
+			  && dst_format != pixel_format::invalid
+			  && dst_format != pixel_format::rgba_f32
+			  && src_format != dst_format>::type>
 {
   typedef typename pixel_format_storage_type<src_format>::type src_storage;
   typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
@@ -277,22 +296,78 @@ template <pixel_format::fmt_t src_format,
   }
 };
 
-template <pixel_format::fmt_t dst_format>
-struct convert_line<pixel_format::invalid, dst_format>
+template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
+struct convert_line<src_format, dst_format,
+ 		    typename std::enable_if<src_format == pixel_format::invalid
+					    || dst_format == pixel_format::invalid>::type>
 {
   static void func (const char*, char*, unsigned int) { }
+};
+
+template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
+struct convert_line<src_format, dst_format,
+		    typename std::enable_if<src_format == dst_format
+					    && src_format != pixel_format::invalid
+					    && dst_format != pixel_format::invalid>::type>
+{
+  typedef typename pixel_format_storage_type<src_format>::type src_storage;
+  typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
+
+  static void __attribute__((flatten))
+  func (const char* src, char* dst, unsigned int count)
+  {
+    auto&& s = (const src_storage*)src;
+    auto&& d = (dst_storage*)dst;
+
+    for (unsigned int xx = 0; xx < count; ++xx)
+      *d++ = *s++;
+  }
 };
 
 template <pixel_format::fmt_t src_format>
-struct convert_line<src_format, pixel_format::invalid>
+struct convert_line<src_format, pixel_format::rgba_f32,
+		    typename std::enable_if<src_format != pixel_format::invalid
+					    && src_format != pixel_format::rgba_f32>::type>
 {
-  static void func (const char*, char*, unsigned int) { }
+  typedef typename pixel_format_storage_type<src_format>::type src_storage;
+  typedef typename pixel_format_storage_type<pixel_format::rgba_f32>::type dst_storage;
+
+  static void __attribute__((flatten))
+  func (const char* src, char* dst, unsigned int count)
+  {
+    auto&& s = (const src_storage*)src;
+    auto&& d = (dst_storage*)dst;
+
+    for (unsigned int xx = 0; xx < count; ++xx)
+    {
+      vec4<float> p = u8_to_float (unpack_pixel<src_format, src_storage> (*s++));
+      *d++ = p;
+    }
+  }
 };
 
-template <> struct convert_line<pixel_format::invalid, pixel_format::invalid>
+template <pixel_format::fmt_t dst_format>
+struct convert_line<pixel_format::rgba_f32, dst_format,
+		    typename std::enable_if<dst_format != pixel_format::invalid
+					    && dst_format != pixel_format::rgba_f32>::type>
 {
-  static void func (const char*, char*, unsigned int) { }
+  typedef typename pixel_format_storage_type<pixel_format::rgba_f32>::type src_storage;
+  typedef typename pixel_format_storage_type<dst_format>::type dst_storage;
+
+  static void __attribute__((flatten))
+  func (const char* src, char* dst, unsigned int count)
+  {
+    auto&& s = (const src_storage*)src;
+    auto&& d = (dst_storage*)dst;
+
+    for (unsigned int xx = 0; xx < count; ++xx)
+    {
+      vec4<float> p = *s++;
+      *d++ = pack_pixel<dst_format, dst_storage> (float_to_u8 (p));
+    }
+  }
 };
+
 
 // a function table for converting pixel formats.
 // FIXME: this relies on the order of the pixel format enum values.
@@ -308,7 +383,8 @@ static_assert (pixel_format::rgb_444 == 7, "");
 static_assert (pixel_format::l_8 == 8, "");
 static_assert (pixel_format::a_8 == 9, "");
 static_assert (pixel_format::la_88 == 10, "");
-static_assert (pixel_format::max_count == 11, "");
+static_assert (pixel_format::rgba_f32 == 11, "");
+static_assert (pixel_format::max_count == 12, "");
 
 typedef void (*conv_func_t)(const char* src, char* dst, unsigned int count);
 
@@ -329,7 +405,8 @@ static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::
   init_table_1 (src_fmt, rgb_444), \
   init_table_1 (src_fmt, l_8), \
   init_table_1 (src_fmt, a_8), \
-  init_table_1 (src_fmt, la_88),
+  init_table_1 (src_fmt, la_88), \
+  init_table_1 (src_fmt, rgba_f32),
 
   init_table (invalid)
   init_table (rgba_8888)
@@ -342,6 +419,7 @@ static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::
   init_table (l_8)
   init_table (a_8)
   init_table (la_88)
+  init_table (rgba_f32)
 
 #undef init_table_1
 #undef init_table
@@ -542,6 +620,10 @@ void image::fill (int x, int y,
     vec3<uint8_t> val = float_to_u8 ({ r, g, b, 1 }).rgb ();
 
     fill_2d<vec3<uint8_t>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, val);
+  }
+  else if (m_format == pixel_format::rgba_f32)
+  {
+    fill_2d<vec4<float>> (m_data.get (), x0, y0, w, h, m_bytes_per_line, { r, g, b, a });
   }
   else
     assert_unreachable ();
