@@ -119,6 +119,100 @@ unsigned int pixel_format::bits_per_pixel (void) const
   }
 }
 
+unsigned int pixel_format::r_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case rgba_8888: return 8;
+  case rgba_4444: return 4;
+  case rgba_5551: return 5;
+  case rgb_888: return 8;
+  case rgb_565: return 5;
+  case rgb_555: return 5;
+  case rgb_444: return 4;
+  case l_8: return 0;
+  case a_8: return 0;
+  case la_88: return 0;
+  }
+}
+
+unsigned int pixel_format::g_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case rgba_8888: return 8;
+  case rgba_4444: return 4;
+  case rgba_5551: return 5;
+  case rgb_888: return 8;
+  case rgb_565: return 6;
+  case rgb_555: return 5;
+  case rgb_444: return 4;
+  case l_8: return 0;
+  case a_8: return 0;
+  case la_88: return 0;
+  }
+}
+
+unsigned int pixel_format::b_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case rgba_8888: return 8;
+  case rgba_4444: return 4;
+  case rgba_5551: return 5;
+  case rgb_888: return 8;
+  case rgb_565: return 5;
+  case rgb_555: return 5;
+  case rgb_444: return 4;
+  case l_8: return 0;
+  case a_8: return 0;
+  case la_88: return 0;
+  }
+}
+
+unsigned int pixel_format::rgb_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case rgba_8888: return 24;
+  case rgba_4444: return 12;
+  case rgba_5551: return 15;
+  case rgb_888: return 24;
+  case rgb_565: return 16;
+  case rgb_555: return 15;
+  case rgb_444: return 12;
+  case l_8: return 0;
+  case a_8: return 0;
+  case la_88: return 0;
+  }
+}
+
+unsigned int pixel_format::a_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case rgba_8888: return 8;
+  case rgba_4444: return 4;
+  case rgba_5551: return 1;
+  case rgb_888: return 0;
+  case rgb_565: return 0;
+  case rgb_555: return 0;
+  case rgb_444: return 0;
+  case l_8: return 0;
+  case a_8: return 8;
+  case la_88: return 8;
+  }
+}
 
 
 ds_format::ds_format (const char* str)
@@ -158,6 +252,36 @@ const char* ds_format::str (void) const
   case ds_16_0: return "DS_16_0";
   case ds_0_8: return "DS_0_8";
   case ds_0_0: return "DS_0_0";
+  }
+}
+
+unsigned int ds_format::d_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case ds_24_8: return 24;
+  case ds_24_0: return 24;
+  case ds_16_8: return 16;
+  case ds_16_0: return 16;
+  case ds_0_8: return 0;
+  case ds_0_0: return 0;
+  }
+}
+
+unsigned int ds_format::s_bits (void) const
+{
+  switch (m_fmt)
+  {
+  default:
+  case invalid: return 0;
+  case ds_24_8: return 8;
+  case ds_24_0: return 0;
+  case ds_16_8: return 8;
+  case ds_16_0: return 0;
+  case ds_0_8: return 8;
+  case ds_0_0: return 0;
   }
 }
 

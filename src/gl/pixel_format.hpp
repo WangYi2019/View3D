@@ -39,12 +39,12 @@ public:
 
   constexpr operator fmt_t () const { return m_fmt; }
 
-  constexpr unsigned int r_bits (void) const { return ((unsigned int)m_fmt >> 12) & 0x0F; }
-  constexpr unsigned int g_bits (void) const { return ((unsigned int)m_fmt >>  8) & 0x0F; }
-  constexpr unsigned int b_bits (void) const { return ((unsigned int)m_fmt >>  4) & 0x0F; }
-  constexpr unsigned int a_bits (void) const { return ((unsigned int)m_fmt >>  0) & 0x0F; }
+  unsigned int r_bits (void) const;
+  unsigned int g_bits (void) const;
+  unsigned int b_bits (void) const;
+  unsigned int a_bits (void) const;
 
-  constexpr unsigned int rgb_bits (void) const { return r_bits () + g_bits () + b_bits (); }
+  unsigned int rgb_bits (void) const;
 
   const char* str (void) const;
 
@@ -89,8 +89,8 @@ public:
 
   constexpr operator fmt_t () const { return m_fmt; }
 
-  constexpr unsigned int d_bits (void) const { return ((unsigned int)m_fmt >> 8) & 0xFF & ((unsigned int)m_fmt >> 16); }
-  constexpr unsigned int s_bits (void) const { return ((unsigned int)m_fmt >> 0) & 0xFF & ((unsigned int)m_fmt >> 16); }
+  unsigned int d_bits (void) const;
+  unsigned int s_bits (void) const;
 
   const char* str (void) const;
 
