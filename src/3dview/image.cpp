@@ -581,7 +581,7 @@ void image::copy_to (int src_x, int src_y,
 
   auto&& src_ptr = (const char*)((uintptr_t)m_data.get () + src_y0 * src_stride
 				 + src_x0 * m_format.bytes_per_pixel ());
-  auto&& dst_ptr = (char*)((uintptr_t)m_data.get () + dst_y0 * dst_stride
+  auto&& dst_ptr = (char*)((uintptr_t)dst.data () + dst_y0 * dst_stride
 			   + dst_x0 * m_format.bytes_per_pixel ());
 
   auto&& copy_line = conv_func_table[m_format.value ()][dst.format ().value ()];
