@@ -26,7 +26,7 @@ static inline constexpr uint8_t rgb_to_luma (vec3<uint8_t> rgb)
 //  return (rgb.r * c.r + rgb.g * c.g + rgb.b * c.b) >> 8;
 }
 
-static inline constexpr vec4<uint8_t> float_to_u8 (const vec4<float>& val)
+static inline vec4<uint8_t> float_to_u8 (const vec4<float>& val)
 {
   vec4<float> one (1);
   vec4<float> zero (0);
@@ -148,7 +148,7 @@ pack_pixel<pixel_format::rgba_8888> (vec4<uint8_t> p)
 }
 
 
-template<> constexpr vec4<uint8_t>
+template<> vec4<uint8_t>
 unpack_pixel<pixel_format::rgba_4444> (uint16_t p)
 {
   unsigned int r = (p >> 12) & 0xF;
@@ -180,7 +180,7 @@ pack_pixel<pixel_format::rgba_4444> (vec4<uint8_t> p)
   return ((p.r >> 4) << 12) | ((p.g >> 4) << 8) | ((p.b >> 4) << 4) | ((p.a >> 4) << 0);
 }
 
-template<> constexpr vec4<uint8_t>
+template<> vec4<uint8_t>
 unpack_pixel<pixel_format::rgb_444> (uint16_t p)
 {
   unsigned int r = (p >> 12) & 0xF;
@@ -202,7 +202,7 @@ pack_pixel<pixel_format::rgb_444> (vec4<uint8_t> p)
   return ((p.r >> 4) << 12) | ((p.g >> 4) << 8) | ((p.b >> 4) << 4) | 0x0F;
 }
 
-template<> constexpr vec4<uint8_t>
+template<> vec4<uint8_t>
 unpack_pixel<pixel_format::rgba_5551> (uint16_t p)
 {
   unsigned int r = (p >> (1+5+5)) & 31;
@@ -224,7 +224,7 @@ pack_pixel<pixel_format::rgba_5551> (vec4<uint8_t> p)
   return ((p.r >> 3) << (1+5+5)) | ((p.g >> 3) << (1+5)) | ((p.b >> 3) << 1) | ((p.a >> 7) << 0);
 }
 
-template<> constexpr vec4<uint8_t>
+template<> vec4<uint8_t>
 unpack_pixel<pixel_format::rgb_555> (uint16_t p)
 {
   unsigned int r = (p >> (1+5+5)) & 31;
@@ -257,7 +257,7 @@ pack_pixel<pixel_format::rgb_888> (vec4<uint8_t> p)
   return { p.r, p.g, p.b };
 }
 
-template<> constexpr vec4<uint8_t>
+template<> vec4<uint8_t>
 unpack_pixel<pixel_format::rgb_565> (uint16_t p)
 {
   unsigned int r = (p >> (5+6)) & 31;
@@ -302,7 +302,7 @@ pack_pixel<pixel_format::a_8> (vec4<uint8_t> p)
   return p.a;
 }
 
-template<> constexpr vec4<uint8_t>
+template<> vec4<uint8_t>
 unpack_pixel<pixel_format::la_88> (uint16_t p)
 {
   unsigned int l = p & 255;

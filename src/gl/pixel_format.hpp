@@ -23,7 +23,7 @@ public:
     rgba_f32
   };
 
-  static constexpr unsigned int max_count = rgba_f32 + 1;
+  static constexpr unsigned int max_count = (unsigned int)rgba_f32 + 1;
 
   constexpr pixel_format (void) : m_fmt (invalid) { }
   constexpr pixel_format (fmt_t f) : m_fmt (f) { }
