@@ -46,16 +46,18 @@ public:
     fill (0, 0, size ().x, size ().y, r, g, b, z);
   }
 
-  void update (int32_t x, int32_t y, uint32_t width, uint32_t height,
+  void update (int32_t x, int32_t y,
 	       const char* rgb_bmp_file,
 	       const char* height_bmp_file,
 	       unsigned int src_x, unsigned int src_y,
 	       unsigned int src_width, unsigned int src_height);
 
+/*
+for this need support for shared image buffers
   void update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 	       const void* rgb_data, uint32_t rgb_data_stride_bytes,
 	       const void* height_data, uint32_t height_data_stride_bytes);
-
+*/
 private:
   struct vertex;
   struct shader;
@@ -81,6 +83,10 @@ private:
   //std::vector<std::unique_ptr<tile>> m_tiles;
   std::vector<tile> m_tiles;
 
+  static void
+  update_mipmaps (std::array<image, max_lod_level>& img,
+		  const vec2<unsigned int>& top_level_xy,
+		  const vec2<unsigned int>& top_level_size);
 
   void generate_mipmaps (void);
 };

@@ -130,7 +130,7 @@ image load_bmp_image (const char* filename)
       return { };
     }
 
-    image img (pf, bih.biWidth, bih.biHeight);
+    image img (pf, { bih.biWidth, bih.biHeight });
 
     in.seekg (bfh.bfOffBits, std::ios_base::beg);
 

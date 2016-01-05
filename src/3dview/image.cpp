@@ -510,39 +510,35 @@ static const fill_func_t fill_func_table[pixel_format::max_count] =
 
 // ---------------------------------------------------------------------------
 
-image::image (pixel_format pf, unsigned int width, unsigned int height)
+image::image (pixel_format pf, const vec2<unsigned int>& size)
 {
-  m_width = width;
-  m_height = height;
-  m_bytes_per_line = width * pf.bytes_per_pixel ();
+  m_size = size;
+  m_bytes_per_line = size.x * pf.bytes_per_pixel ();
   m_format = pf;
-  m_data = std::make_unique<char[]> (m_bytes_per_line * height);
+  m_data = std::make_unique<char[]> (m_bytes_per_line * size.y);
 }
 
 image::image (const image& rhs)
 {
-  m_width = rhs.m_width;
-  m_height = rhs.m_height;
+  m_size = rhs.m_size;
   m_bytes_per_line = rhs.m_bytes_per_line;
   m_format = rhs.m_format;
 
   if (!rhs.empty ())
   {
-    m_data = std::make_unique<char[]> (m_bytes_per_line * m_height);
-    std::memcpy (m_data.get (), rhs.data (), m_bytes_per_line * m_height);
+    m_data = std::make_unique<char[]> (m_bytes_per_line * m_size.y);
+    std::memcpy (m_data.get (), rhs.data (), m_bytes_per_line * m_size.y);
   }
 }
 
 image::image (image&& rhs)
 {
-  m_width = rhs.m_width;
-  m_height = rhs.m_height;
+  m_size = rhs.m_size;
   m_bytes_per_line = rhs.m_bytes_per_line;
   m_format = rhs.m_format;
   m_data = std::move (rhs.m_data);
 
-  rhs.m_width = 0;
-  rhs.m_height = 0;
+  rhs.m_size = { 0, 0 };
   rhs.m_bytes_per_line = 0;
   rhs.m_format = 0;
 }
@@ -552,16 +548,15 @@ image& image::operator = (const image& rhs)
   if (this == &rhs)
     return *this;
 
-  m_width = rhs.m_width;
-  m_height = rhs.m_height;
+  m_size = rhs.m_size;
   m_bytes_per_line = rhs.m_bytes_per_line;
   m_format = rhs.m_format;
   m_data = nullptr;
 
   if (!rhs.empty ())
   {
-    m_data = std::make_unique<char[]> (m_bytes_per_line * m_height);
-    std::memcpy (m_data.get (), rhs.data (), m_bytes_per_line * m_height);
+    m_data = std::make_unique<char[]> (m_bytes_per_line * m_size.y);
+    std::memcpy (m_data.get (), rhs.data (), m_bytes_per_line * m_size.y);
   }
 
   return *this;
@@ -572,14 +567,12 @@ image& image::operator = (image&& rhs)
   if (this == &rhs)
     return *this;
 
-  m_width = rhs.m_width;
-  m_height = rhs.m_height;
+  m_size = rhs.m_size;
   m_bytes_per_line = rhs.m_bytes_per_line;
   m_format = rhs.m_format;
   m_data = std::move (rhs.m_data);
 
-  rhs.m_width = 0;
-  rhs.m_height = 0;
+  rhs.m_size = { 0, 0 };
   rhs.m_bytes_per_line = 0;
   rhs.m_format = 0;
 
@@ -598,8 +591,8 @@ void image::fill (int x, int y, unsigned int width, unsigned int height,
 
   const unsigned int x0 = std::max (0, x);
   const unsigned int y0 = std::max (0, y);
-  const unsigned int x1 = std::min (x + (int)width, (int)m_width);
-  const unsigned int y1 = std::min (y + (int)height, (int)m_height);
+  const unsigned int x1 = std::min (x + (int)width, (int)m_size.x);
+  const unsigned int y1 = std::min (y + (int)height, (int)m_size.y);
 
   const unsigned int w = x1 - x0;
   const unsigned int h = y1 - y0;
@@ -657,9 +650,7 @@ image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
 
 image image::pyr_down (down_sample_mode_t mode) const
 {
-  image i (m_format,
-	   std::max ((unsigned int)1, m_width / 2),
-	   std::max ((unsigned int)1, m_height / 2));
+  image i (m_format, std::max (vec2<unsigned int> (1), m_size / 2));
 
   
 

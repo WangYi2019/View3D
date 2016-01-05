@@ -34,6 +34,7 @@ use max texture size: 4096 x 4096
 #include <algorithm>
 
 #include "tiled_image.hpp"
+#include "bmp_loader.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -59,7 +60,7 @@ public:
     vtx.reserve (size.x * size.y);
 
     for (unsigned int y = 0; y < size.y; ++y)
-      for (unsigned int x = 0; x < size.y; ++x)
+      for (unsigned int x = 0; x < size.x; ++x)
 	vtx.emplace_back ( (vec2<float> (x, y) * (1.0f / vec2<float> (size - 1))) * 2 - 1 );
 
     // make sure that the top edge y is -1
@@ -350,8 +351,8 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
   m_shader = g_shader;
 
   // setup full image mipmaps.
-  m_rgb_image[0] = image (pixel_format::rgba_8888, size.x, size.y);
-  m_height_image[0] = image (pixel_format::l_8, size.x, size.y);
+  m_rgb_image[0] = image (pixel_format::rgba_8888, size);
+  m_height_image[0] = image (pixel_format::l_8, size);
 
   generate_mipmaps ();
 
@@ -408,5 +409,103 @@ void tiled_image::fill (int32_t x, int32_t y, uint32_t width, uint32_t height,
 			unsigned int z)
 {
 
+}
+
+void
+tiled_image::update (int32_t x, int32_t y,
+		     const char* rgb_bmp_file,
+		     const char* height_bmp_file,
+		     unsigned int src_x, unsigned int src_y,
+		     unsigned int src_width, unsigned int src_height)
+{
+  image rgb_img;
+  image height_img;
+
+  try
+  {
+    rgb_img = load_bmp_image (rgb_bmp_file);
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "exception when loading image " << rgb_bmp_file << ": " << e.what () << std::endl;
+  }
+
+  try
+  {
+    height_img = load_bmp_image (height_bmp_file);
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "exception when loading image " << height_bmp_file << ": " << e.what () << std::endl;
+  }
+
+  // copy the new data to the top-level mipmap level and then selectively
+  // update the mipmap pyramid.
+
+/*
+alternatively:
+   rgb_area = rgb_img.subimg ({src_x, src_y}, {src_width, src_height})
+			.copy_to (m_rgb_image[0], { x, y });
+*/
+
+  auto rgb_area = rgb_img.copy_to ({ src_x, src_y }, { src_width, src_height },
+				   m_rgb_image[0], { x, y });
+
+  update_mipmaps (m_rgb_image, rgb_area.dst_top_left, rgb_area.size);
+
+  auto height_area = height_img.copy_to ({ src_x, src_y }, { src_width, src_height },
+					 m_height_image[0], { x, y });
+
+  update_mipmaps (m_height_image, rgb_area.dst_top_left, rgb_area.size);
+}
+
+void
+tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
+			     const vec2<unsigned int>& top_level_xy,
+			     const vec2<unsigned int>& top_level_size)
+{
+  auto xy = top_level_xy;
+  auto size = top_level_size;
+
+  for (unsigned int i = 0; i < img.size () - 1; ++i)
+  {
+    const image& src_level = img[i];
+    image& dst_level = img[i + 1];
+
+    // source and destination area coordinates for simple 2x2 averaging.
+    auto dst_xy = xy / 2;
+    auto dst_size = size / 2;
+
+    auto src_xy = dst_xy * 2;
+    auto src_size = dst_size / 2;
+
+    // if the source region is outside the image, stop here.
+    if (src_xy.x >= src_level.size ().x || src_xy.y >= src_level.size ().y
+	|| src_size.x > src_level.size ().x || src_size.y > src_level.size ().y
+	|| dst_size.x == 0 || dst_size.y == 0)
+    {
+      std::cout << "update_mipmaps terminating"
+		<< " src_xy = (" << src_xy.x << "," << src_xy.y << ")"
+		<< " src_size = (" << src_size.x << "," << src_size.y << ")"
+		<< " src image size = (" << src_level.size ().x << "," << src_level.size ().y << ")"
+		<< std::endl;
+      break;
+    }
+
+    std::cout << "update_mipmaps"
+	      << " src_xy = (" << src_xy.x << "," << src_xy.y << ")"
+	      << " src_size = (" << src_size.x << "," << src_size.y << ")"
+	      << " dst_xy = (" << dst_xy.x << "," << dst_xy.y << ")"
+	      << " dst_size = (" << dst_size.x << "," << dst_size.y << ")"
+	      << std::endl;
+/*
+    image srcimg = src_level.subimg (src_xy, src_size);
+    image dstimg = srcimg.pyr_down ();
+
+    dstimg.copy_to (dst_level, dst_xy);
+
+//    src_level.subimg (src_xy, src_size).pyr_down (dst_level.subimg (dst_xy, dst_size));
+*/
+  }
 }
 

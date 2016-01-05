@@ -10,11 +10,11 @@ class image
 {
 public:
   image (void)
-  : m_width (0), m_height (0), m_bytes_per_line (0), m_format (pixel_format::invalid)
+  : m_size (0, 0), m_bytes_per_line (0), m_format (pixel_format::invalid)
   {
   }
 
-  image (pixel_format pf, unsigned int width, unsigned int height);
+  image (pixel_format pf, const vec2<unsigned int>& size);
 
   image (const image& rhs);
   image (image&& rhs);
@@ -26,8 +26,7 @@ public:
 
   void swap (image& rhs)
   {
-    std::swap (m_width, rhs.m_width);
-    std::swap (m_height, rhs.m_height);
+    std::swap (m_size, rhs.m_size);
     std::swap (m_bytes_per_line, rhs.m_bytes_per_line);
     std::swap (m_format, rhs.m_format);
     std::swap (m_data, rhs.m_data);
@@ -35,14 +34,14 @@ public:
 
   bool empty (void) const
   {
-    return m_bytes_per_line == 0 || m_height == 0
+    return m_bytes_per_line == 0 || m_size.y == 0
 	   || m_format == pixel_format::invalid;
   }
 
-  vec2<unsigned int> size (void) const { return { m_width, m_height }; }
+  const vec2<unsigned int>& size (void) const { return m_size; }
 
-  unsigned int width (void) const { return m_width; }
-  unsigned int height (void) const { return m_height; }
+  unsigned int width (void) const { return m_size.x; }
+  unsigned int height (void) const { return m_size.y; }
   pixel_format format (void) const { return m_format; }
 
   const void* data (void) const { return m_data.get (); }
@@ -123,8 +122,7 @@ public:
   image subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const;
 
 private:
-  unsigned int m_width;
-  unsigned int m_height;
+  vec2<unsigned int> m_size;
   unsigned int m_bytes_per_line;
   pixel_format m_format;
   std::unique_ptr<char[]> m_data;

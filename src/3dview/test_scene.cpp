@@ -76,20 +76,36 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
 {
   lod = std::max (lod, (unsigned int)1);
 
-  image color_img = load_bmp_image (rgb_img_file);
-  image height_img = load_bmp_image (height_img_file);
+  image color_img;
+  image height_img;
+
+
+  color_img = load_bmp_image (rgb_img_file);
+  height_img = load_bmp_image (height_img_file);
+
 
   if (color_img.empty ())
   {
-    color_img = image (pixel_format::rgba_8888, 32, 32);
-    color_img.fill (0, 0, 0, 0);
+    color_img = image (pixel_format::rgba_f32, { 32, 32 });
+    color_img.fill (1, 0, 0, 0);
   }
 
   if (height_img.empty ())
   {
-    height_img = image (pixel_format::l_8, 32, 32);
+    height_img = image (pixel_format::l_8, { 32, 32 });
     height_img.fill (0, 0, 0, 0);
+   // height_img.fill (0.125f, 0.5, 0.25f, 1);
   }
+
+/*
+  {
+    image tmp (pixel_format::l_8, { 32, 32 });
+    tmp.fill (0.125f, 0.5, 0.25f, 1);
+
+    tmp.copy_to ({0, 0}, {16, 8}, color_img);
+    //color_img.fill (0, 0, 16, 8, 0.0f, 0.5f, 0.0f, 0);
+  }
+*/
 
   m_color_texture = gl::texture (color_img.format (), color_img.width (), color_img.height (),
 				 color_img.data ());
@@ -229,7 +245,7 @@ void test_scene::render (unsigned int width, unsigned int height,
 #if 1
   mat4<float> cam_trv = mat4<float>::identity ()
 //      * mat4<float>::translate (0, 0, -0.5f - std::abs (std::sin (frame_number * 0.0025f)) * 5)
-      * mat4<float>::translate (0, 0, -2.0f)
+      * mat4<float>::translate (0, 0, -4.0f)
       * mat4<float>::rotate_x (M_PI * 0.4f)
       * mat4<float>::rotate_z (m_rotate_angle)
       * mat4<float>::identity ();
