@@ -11,7 +11,8 @@
 
 template <typename T> struct vec2
 {
-  enum { ELEMENT_COUNT = 2 };
+  static constexpr unsigned int element_count = 2;
+  typedef T element_type;
 
   union
   {
@@ -19,7 +20,7 @@ template <typename T> struct vec2
     {
       T x, y;
     };
-    T xy[ELEMENT_COUNT];
+    T xy[element_count];
   };
 
   constexpr vec2 (void) = default;
@@ -239,7 +240,8 @@ template <typename T> vec2<T> inline constexpr max (const vec2<T>& a, const vec2
 
 template <typename T> struct vec3
 {
-  enum { ELEMENT_COUNT = 3 };
+  static constexpr unsigned int element_count = 3;
+  typedef T element_type;
 
   union
   {
@@ -251,8 +253,8 @@ template <typename T> struct vec3
     {
       T r, g, b;
     };
-    T xyz[ELEMENT_COUNT];
-    T rgb[ELEMENT_COUNT];
+    T xyz[element_count];
+    T rgb[element_count];
   };
 
   constexpr vec3 (void) = default;
@@ -466,8 +468,9 @@ template <typename T> constexpr inline vec3<T> max (const vec3<T>& a, const vec3
 
 template <typename T> struct vec4
 {
-  enum { ELEMENT_COUNT = 4 };
-  typedef T vec_ext_type __attribute__ ((vector_size (sizeof (T) * 4)));
+  static constexpr unsigned int element_count = 4;
+  typedef T element_type;
+  typedef T vec_ext_type __attribute__ ((vector_size (sizeof (T) * element_count)));
 
   template <typename X> struct is_vec : std::integral_constant<bool, false> { };
   template <typename TT> struct is_vec<vec4<TT>> : std::integral_constant<bool, true> { };
@@ -482,8 +485,8 @@ template <typename T> struct vec4
     {
       T r, g, b, a;
     };
-    T xyzw[ELEMENT_COUNT];
-    T rgba[ELEMENT_COUNT];
+    T xyzw[element_count];
+    T rgba[element_count];
     vec_ext_type vec_ext;
   };
 
@@ -722,7 +725,8 @@ template <typename T> constexpr inline vec4<T> max (const vec4<T>& a, const vec4
 
 template <typename T> struct mat4
 {
-  enum { ELEMENT_COUNT = 4 * 4 };
+  static constexpr unsigned int element_count = 4 * 4;
+  typedef T element_type;
 
   union
   {
@@ -733,7 +737,7 @@ template <typename T> struct mat4
       T m02, m12, m22, m32;
       T m03, m13, m23, m33;
     };
-    T m[ELEMENT_COUNT];
+    T m[element_count];
   };
 
   friend mat4 operator * (const mat4& a, const mat4& b)
