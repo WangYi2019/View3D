@@ -126,6 +126,8 @@ public:
     down_sample_avg,
   };
 
+  // FIXME: add overload to specifiy the destination image
+  //        (which could be a shared-buffer subimg).
   image pyr_down (down_sample_mode_t mode = down_sample_avg) const;
 
   // FIXME: return a shared image buffer instead of a copy.

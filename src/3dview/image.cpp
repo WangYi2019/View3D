@@ -48,66 +48,77 @@ template<> struct format_traits<pixel_format::rgba_8888>
 {
   typedef uint32_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgba_4444>
 {
   typedef uint16_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgba_5551>
 {
   typedef uint16_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgb_888>
 {
   typedef vec3<uint8_t> storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgb_565>
 {
   typedef uint16_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgb_555>
 {
   typedef uint16_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgb_444>
 {
   typedef uint16_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::l_8>
 {
   typedef uint8_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::a_8>
 {
   typedef uint8_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::la_88>
 {
   typedef uint16_t storage_type;
   typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
 };
 
 template<> struct format_traits<pixel_format::rgba_f32>
 {
   typedef vec4<float> storage_type;
   typedef vec4<float> unpacked_type;
+  typedef vec4<float> unpacked_widened_type;
 };
 
 template <typename S, typename D> D convert_unpacked (S);
@@ -339,6 +350,7 @@ repack_pixel (typename format_traits<src_format>::storage_type p)
 		unpack_pixel<src_format> (p)));
 }
 
+// ---------------------------------------------------------------------------
 
 // a generic function to convert a line of pixels from one format into another
 // format using the generic vec4<uint8_t> functions.  if this is not good enough,
@@ -397,6 +409,8 @@ struct convert_line<src_format, dst_format,
   }
 };
 
+// ---------------------------------------------------------------------------
+
 // generic 2D fill function
 template <pixel_format::fmt_t PixelFormat> void
 fill_2d (void* d, unsigned int x0, unsigned int y0,
@@ -424,7 +438,71 @@ fill_2d<pixel_format::invalid> (void*, unsigned int, unsigned int,
 {
 }
 
+// ---------------------------------------------------------------------------
 
+// generic function to pyr-down a line of pixels (one destination line,
+// two source lines).
+
+template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format,
+	  typename Enable = void> struct pyr_down_line;
+
+template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
+struct pyr_down_line<src_format, dst_format,
+		     typename std::enable_if<
+			src_format != pixel_format::invalid
+			&& dst_format != pixel_format::invalid>::type>
+{
+  typedef typename format_traits<src_format>::storage_type src_storage;
+  typedef typename format_traits<dst_format>::storage_type dst_storage;
+  typedef typename format_traits<src_format>::unpacked_widened_type src_widened;
+  typedef typename format_traits<dst_format>::unpacked_type dst_unpacked;
+
+  static void __attribute__((flatten))
+  func (const char* src0, const char* src1, char* dst, unsigned int dst_count)
+  {
+    auto&& s0 = (const src_storage*)src0;
+    auto&& s1 = (const src_storage*)src1;
+    auto&& d = (dst_storage*)dst;
+
+    for (unsigned int xx = 0; xx < dst_count; ++xx)
+    {
+      auto p0 = unpack_pixel<src_format> (*s0++);
+      auto p1 = unpack_pixel<src_format> (*s0++);
+      auto p2 = unpack_pixel<src_format> (*s1++);
+      auto p3 = unpack_pixel<src_format> (*s1++);
+
+      // determine the promoted type of the calculation, which is needed
+      // to avoid overflow.  for integer types could also do the calculation
+      // with the narrow type, by first shifting right, summing up and adding
+      // a rounding term of the lower bits that have been shifted out.  but
+      // that's more complicated than simply using the wider type.
+      //
+      // could do this like that:
+      //   typedef typename decltype (p0)::element_type narrow_type;
+      //   typedef decltype (narrow_type (1) + narrow_type (1)) widened_type;
+      // but then uint8_t gets promoted to int and that is too wide.
+      // we want uint8_t -> uint16_t widening in this case.
+
+      decltype (p0) p_avg ((src_widened (p0) + src_widened (p1) + src_widened (p2)
+			   + src_widened (p3)) / 4);
+
+      *d++ = pack_pixel<dst_format> (
+	convert_unpacked<decltype (p_avg), dst_unpacked> (p_avg));
+    }
+  }
+};
+
+template <pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
+struct pyr_down_line<src_format, dst_format,
+		     typename std::enable_if<
+			src_format == pixel_format::invalid
+			|| dst_format == pixel_format::invalid>::type>
+{
+  static void func (const char*, const char*, char*, unsigned int) { }
+};
+
+
+// ---------------------------------------------------------------------------
 
 // a function table for converting pixel formats.
 // FIXME: this relies on the order of the pixel format enum values.
@@ -483,7 +561,7 @@ static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::
 
 };
 
-// a function table for 2D filling a constant color value.
+// fill 2D function table
 typedef void (*fill_func_t)(void* d, unsigned int x0, unsigned int y0,
 			    unsigned int w, unsigned int h, unsigned int stride,
 			    const vec4<float>& fill_val);
@@ -507,6 +585,47 @@ static const fill_func_t fill_func_table[pixel_format::max_count] =
 
 #undef init_table
 };
+
+
+// pyr down function table
+typedef void (*pyr_down_func_t)(const char*, const char*, char*, unsigned int);
+
+static const pyr_down_func_t pyr_down_func_table[pixel_format::max_count][pixel_format::max_count] =
+{
+#define init_table_1(src_fmt, dst_fmt) pyr_down_line<pixel_format::src_fmt, pixel_format::dst_fmt>::func
+
+#define init_table(src_fmt) \
+  init_table_1 (src_fmt, invalid), \
+  init_table_1 (src_fmt, rgba_8888), \
+  init_table_1 (src_fmt, rgba_4444), \
+  init_table_1 (src_fmt, rgba_5551), \
+  init_table_1 (src_fmt, rgb_888), \
+  init_table_1 (src_fmt, rgb_565), \
+  init_table_1 (src_fmt, rgb_555), \
+  init_table_1 (src_fmt, rgb_444), \
+  init_table_1 (src_fmt, l_8), \
+  init_table_1 (src_fmt, a_8), \
+  init_table_1 (src_fmt, la_88), \
+  init_table_1 (src_fmt, rgba_f32),
+
+  init_table (invalid)
+  init_table (rgba_8888)
+  init_table (rgba_4444)
+  init_table (rgba_5551)
+  init_table (rgb_888)
+  init_table (rgb_565)
+  init_table (rgb_555)
+  init_table (rgb_444)
+  init_table (l_8)
+  init_table (a_8)
+  init_table (la_88)
+  init_table (rgba_f32)
+
+#undef init_table_1
+#undef init_table
+
+};
+
 
 // ---------------------------------------------------------------------------
 
@@ -645,11 +764,25 @@ image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
 
 image image::pyr_down (down_sample_mode_t mode) const
 {
-  image i (m_format, std::max (vec2<unsigned int> (1), m_size / 2));
+  image dst (m_format, std::max (vec2<unsigned int> (1), m_size / 2));
 
-  
+  const unsigned int src_stride = m_bytes_per_line;
+  const unsigned int dst_stride = dst.bytes_per_line ();
 
-  return std::move (i);
+  auto&& src_ptr = (const char*)this->data ();
+  auto&& dst_ptr = (char*)dst.data ();
+
+  auto&& pyr_down_line = pyr_down_func_table[m_format.value ()][dst.format ().value ()];
+
+  for (unsigned int yy = 0; yy < dst.height (); ++yy)
+  {
+    pyr_down_line (src_ptr, src_ptr + src_stride, dst_ptr, dst.width ());
+
+    src_ptr += src_stride * 2;
+    dst_ptr += dst_stride;
+  }
+
+  return std::move (dst);
 }
 
 image image::subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const
