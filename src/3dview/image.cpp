@@ -654,3 +654,19 @@ image image::pyr_down (down_sample_mode_t mode) const
   return std::move (i);
 }
 
+image image::subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const
+{
+  const vec2<unsigned int> src_tl (std::max (vec2<int> (0), xy));
+  const vec2<unsigned int> src_br (std::min (xy + (vec2<int>)sz, (vec2<int>)size ()));
+
+  const auto copy_sz = src_br - src_tl;
+
+  if (copy_sz.x == 0 || copy_sz.y == 0)
+    return { };
+
+  image res (m_format, copy_sz);
+
+  copy_to (xy, sz, res);
+
+  return std::move (res);
+}
