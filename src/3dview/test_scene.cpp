@@ -80,32 +80,32 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
   image height_img;
 
 
-  color_img = load_bmp_image (rgb_img_file);
-  height_img = load_bmp_image (height_img_file);
+//  color_img = load_bmp_image (rgb_img_file);
+//  height_img = load_bmp_image (height_img_file);
 
 
   if (color_img.empty ())
   {
     color_img = image (pixel_format::rgba_f32, { 32, 32 });
-    color_img.fill (1, 0, 0, 0);
+    color_img.fill ({ 1, 0, 0, 0 });
   }
 
   if (height_img.empty ())
   {
     height_img = image (pixel_format::l_8, { 32, 32 });
-    height_img.fill (0, 0, 0, 0);
+    height_img.fill ({ 0, 0, 0, 0 });
    // height_img.fill (0.125f, 0.5, 0.25f, 1);
   }
 
-/*
+
   {
     image tmp (pixel_format::l_8, { 32, 32 });
-    tmp.fill (0.125f, 0.5, 0.25f, 1);
+    tmp.fill ({ 0.125f, 0.5, 0.25f, 1 });
 
     tmp.copy_to ({0, 0}, {16, 8}, color_img);
     //color_img.fill (0, 0, 16, 8, 0.0f, 0.5f, 0.0f, 0);
   }
-*/
+
 
   m_color_texture = gl::texture (color_img.format (), color_img.width (), color_img.height (),
 				 color_img.data ());
@@ -119,8 +119,8 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
   m_height_texture.set_mag_filter (gl::texture::linear);
   m_height_texture.generate_mipmaps ();
 
-  const unsigned int gridsize = std::max (height_img.width (),
-					  height_img.height ()) / lod;
+  const unsigned int gridsize = std::max (2u, std::max (height_img.width (),
+						       height_img.height ()) / lod);
   typedef uint32_t index_type;
 
   std::vector<vertex> vtx;

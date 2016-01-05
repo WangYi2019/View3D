@@ -65,13 +65,12 @@ public:
   // the component float values are clamped and scaled to match the pixel format.
   // for unsigned pixel formats the normalized value range is [0,+1].
   // for signed pixel formats the normalized value range is [-1,+1].
-  void fill (int x, int y,
-	     unsigned int width, unsigned int height,
-	     float r, float g, float b, float a);
+  void fill (const vec2<int>& xy, const vec2<unsigned int>& size,
+	     const vec4<float>& rgba_value);
 
-  void fill (float r, float g, float b, float a)
+  void fill (const vec4<float>& rgba_value)
   {
-    fill (0, 0, width (), height (), r, g, b, a);
+    fill ({ 0, 0 }, size (), rgba_value);
   }
 
   // copy the source area from this image to an area in another image.

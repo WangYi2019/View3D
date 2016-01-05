@@ -583,25 +583,22 @@ image::~image (void)
 {
 }
 
-void image::fill (int x, int y, unsigned int width, unsigned int height,
-		  float r, float g, float b, float a)
+void image::fill (const vec2<int>& xy, const vec2<unsigned int>& size,
+		  const vec4<float>& rgba_value)
 {
   if (empty ())
     return;
 
-  const unsigned int x0 = std::max (0, x);
-  const unsigned int y0 = std::max (0, y);
-  const unsigned int x1 = std::min (x + (int)width, (int)m_size.x);
-  const unsigned int y1 = std::min (y + (int)height, (int)m_size.y);
+  const vec2<unsigned int> tl (std::max (vec2<int> (0), xy));
+  const vec2<unsigned int> br (std::min (xy + (vec2<int>)size, (vec2<int>)m_size));
+  const vec2<unsigned int> copy_size = br - tl;
 
-  const unsigned int w = x1 - x0;
-  const unsigned int h = y1 - y0;
-
-  if (w == 0 || h == 0)
+  if (copy_size.x == 0 || copy_size.y == 0)
     return;
 
-  fill_func_table[m_format.value ()] (m_data.get (), x0, y0, w, h,
-				      m_bytes_per_line, { r, g, b, a });
+  fill_func_table[m_format.value ()] (m_data.get (), tl.x, tl.y,
+				      copy_size.x, copy_size.y,
+				      m_bytes_per_line, rgba_value);
 }
 
 image::copy_to_result
