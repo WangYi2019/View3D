@@ -397,6 +397,35 @@ struct convert_line<src_format, dst_format,
   }
 };
 
+// generic 2D fill function
+template <pixel_format::fmt_t PixelFormat> void
+fill_2d (void* d, unsigned int x0, unsigned int y0,
+	 unsigned int w, unsigned int h, unsigned int stride,
+	 const vec4<float>& fill_val)
+{
+  typedef typename format_traits<PixelFormat>::storage_type packed_pixel;
+
+  auto&& dst = (packed_pixel*)((uintptr_t)d + y0 * stride + x0 * sizeof (packed_pixel));
+  auto val = repack_pixel<pixel_format::rgba_f32, PixelFormat> (fill_val);
+
+  for (unsigned int yy = 0; yy < h; ++yy)
+  {
+    for (unsigned int xx = 0; xx < w; ++xx)
+      dst[xx] = val;
+
+    dst = (packed_pixel*)((uintptr_t)dst + stride);
+  }
+}
+
+template<> void
+fill_2d<pixel_format::invalid> (void*, unsigned int, unsigned int,
+				unsigned int, unsigned int, unsigned int,
+				const vec4<float>&)
+{
+}
+
+
+
 // a function table for converting pixel formats.
 // FIXME: this relies on the order of the pixel format enum values.
 //        use compile-time sort.
@@ -452,6 +481,31 @@ static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::
 #undef init_table_1
 #undef init_table
 
+};
+
+// a function table for 2D filling a constant color value.
+typedef void (*fill_func_t)(void* d, unsigned int x0, unsigned int y0,
+			    unsigned int w, unsigned int h, unsigned int stride,
+			    const vec4<float>& fill_val);
+
+static const fill_func_t fill_func_table[pixel_format::max_count] =
+{
+#define init_table(fmt) fill_2d<pixel_format :: fmt>,
+
+  init_table (invalid)
+  init_table (rgba_8888)
+  init_table (rgba_4444)
+  init_table (rgba_5551)
+  init_table (rgb_888)
+  init_table (rgb_565)
+  init_table (rgb_555)
+  init_table (rgb_444)
+  init_table (l_8)
+  init_table (a_8)
+  init_table (la_88)
+  init_table (rgba_f32)
+
+#undef init_table
 };
 
 // ---------------------------------------------------------------------------
@@ -536,25 +590,7 @@ image::~image (void)
 {
 }
 
-
-template <typename T> static void
-fill_2d (void* d, unsigned int x0, unsigned int y0,
-	 unsigned int w, unsigned int h, unsigned int stride,
-	 T val1)
-{
-  T* dst = (T*)((uintptr_t)d + y0 * stride + x0 * sizeof (T));
-
-  for (unsigned int yy = 0; yy < h; ++yy)
-  {
-    for (unsigned int xx = 0; xx < w; ++xx)
-      dst[xx] = val1;
-
-    dst = (T*)((uintptr_t)dst + stride);
-  }
-}
-
-void image::fill (int x, int y,
-		  unsigned int width, unsigned int height,
+void image::fill (int x, int y, unsigned int width, unsigned int height,
 		  float r, float g, float b, float a)
 {
   if (empty ())
@@ -571,52 +607,8 @@ void image::fill (int x, int y,
   if (w == 0 || h == 0)
     return;
 
-  vec4<float> fill_val (r, g, b, a);
-
-  if (m_format == pixel_format::rgba_8888)
-    fill_2d<uint32_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_8888> (fill_val));
-
-  else if (m_format == pixel_format::rgba_4444)
-    fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_4444> (fill_val));
-
-  else if (m_format == pixel_format::rgb_444)
-    fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_444> (fill_val));
-
-  else if (m_format == pixel_format::rgba_5551)
-    fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_5551> (fill_val));
-
-  else if (m_format == pixel_format::rgb_555)
-    fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_555> (fill_val));
-
-  else if (m_format == pixel_format::rgb_565)
-    fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_565> (fill_val));
-
-  else if (m_format == pixel_format::l_8)
-    fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::l_8> (fill_val));
-
-  else if (m_format == pixel_format::a_8)
-    fill_2d<uint8_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::a_8> (fill_val));
-
-  else if (m_format == pixel_format::la_88)
-    fill_2d<uint16_t> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::la_88> (fill_val));
-
-  else if (m_format == pixel_format::rgb_888)
-    fill_2d<vec3<uint8_t>> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgb_888> (fill_val));
-
-  else if (m_format == pixel_format::rgba_f32)
-    fill_2d<vec4<float>> (m_data.get (), x0, y0, w, h, m_bytes_per_line,
-		       repack_pixel<pixel_format::rgba_f32, pixel_format::rgba_f32> (fill_val));
-
+  fill_func_table[m_format.value ()] (m_data.get (), x0, y0, w, h,
+				      m_bytes_per_line, { r, g, b, a });
 }
 
 void image::copy_to (int src_x, int src_y,
