@@ -611,52 +611,48 @@ void image::fill (int x, int y, unsigned int width, unsigned int height,
 				      m_bytes_per_line, { r, g, b, a });
 }
 
-void image::copy_to (int src_x, int src_y,
-		     unsigned int src_width, unsigned int src_height,
-		     image& dst, int dst_x, int dst_y)
+image::copy_to_result
+image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
+		image& dst, const vec2<int>& dst_xy) const
 {
   if (empty () || dst.empty ())
-    return;
+    return { };
 
-  const unsigned int src_x0 = std::max (0, src_x);
-  const unsigned int src_y0 = std::max (0, src_y);
-  const unsigned int src_x1 = std::min (src_x + (int)src_width, (int)m_width);
-  const unsigned int src_y1 = std::min (src_y + (int)src_height, (int)m_height);
+  // tl = top-left coordinate, br = bottom-right coordinate
 
-  const unsigned int src_w = src_x1 - src_x0;
-  const unsigned int src_h = src_y1 - src_y0;
+  const vec2<unsigned int> src_tl (std::max (vec2<int> (0), src_xy));
+  const vec2<unsigned int> src_br (std::min (src_xy + (vec2<int>)src_size, (vec2<int>)size ()));
 
-  const unsigned int dst_x0 = std::max (0, dst_x);
-  const unsigned int dst_y0 = std::max (0, dst_y);
-  const unsigned int dst_x1 = std::min (dst_x + (int)src_width, (int)dst.width ());
-  const unsigned int dst_y1 = std::min (dst_y + (int)src_height, (int)dst.height ());
+  const vec2<unsigned int> dst_tl (std::max (vec2<int> (0), dst_xy));
+  const vec2<unsigned int> dst_br (std::min (dst_xy + (vec2<int>)src_size, (vec2<int>)dst.size ()));
 
-  const unsigned int dst_w = dst_x1 - dst_x0;
-  const unsigned int dst_h = dst_y1 - dst_y0;
+  const auto src_copy_sz = src_br - src_tl;
+  const auto dst_copy_sz = dst_br - dst_tl;
 
-  const unsigned int copy_w = std::min (src_w, dst_w);
-  const unsigned int copy_h = std::min (src_h, dst_h);
+  const auto copy_sz = std::min (src_copy_sz, dst_copy_sz);
 
-  if (copy_w == 0 || copy_h == 0)
-    return;
+  if (copy_sz.x == 0 || copy_sz.y == 0)
+    return { };
 
   const unsigned int src_stride = m_bytes_per_line;
   const unsigned int dst_stride = dst.bytes_per_line ();
 
-  auto&& src_ptr = (const char*)((uintptr_t)m_data.get () + src_y0 * src_stride
-				 + src_x0 * m_format.bytes_per_pixel ());
-  auto&& dst_ptr = (char*)((uintptr_t)dst.data () + dst_y0 * dst_stride
-			   + dst_x0 * m_format.bytes_per_pixel ());
+  auto&& src_ptr = (const char*)((uintptr_t)m_data.get () + src_tl.y * src_stride
+				 + src_tl.x * m_format.bytes_per_pixel ());
+  auto&& dst_ptr = (char*)((uintptr_t)dst.data () + dst_tl.y * dst_stride
+			   + dst_tl.x * m_format.bytes_per_pixel ());
 
   auto&& copy_line = conv_func_table[m_format.value ()][dst.format ().value ()];
 
-  for (unsigned int yy = 0; yy < copy_h; ++yy)
+  for (unsigned int yy = 0; yy < copy_sz.y; ++yy)
   {
-    copy_line (src_ptr, dst_ptr, copy_w);
+    copy_line (src_ptr, dst_ptr, copy_sz.x);
 
     src_ptr += src_stride;
     dst_ptr += dst_stride;
   }
+
+  return { src_tl, dst_tl, copy_sz };
 }
 
 image image::pyr_down (down_sample_mode_t mode) const
