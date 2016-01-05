@@ -627,10 +627,8 @@ image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
   const unsigned int src_stride = m_bytes_per_line;
   const unsigned int dst_stride = dst.bytes_per_line ();
 
-  auto&& src_ptr = (const char*)((uintptr_t)m_data.get () + src_tl.y * src_stride
-				 + src_tl.x * m_format.bytes_per_pixel ());
-  auto&& dst_ptr = (char*)((uintptr_t)dst.data () + dst_tl.y * dst_stride
-			   + dst_tl.x * m_format.bytes_per_pixel ());
+  auto&& src_ptr = (const char*)this->data_at (src_tl);
+  auto&& dst_ptr = (char*)dst.data_at (dst_tl);
 
   auto&& copy_line = conv_func_table[m_format.value ()][dst.format ().value ()];
 

@@ -57,6 +57,16 @@ public:
     return &m_data[y * m_bytes_per_line];
   }
 
+  const void* data_at (const vec2<unsigned int>& xy) const
+  {
+    return &m_data[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
+  }
+
+  void* data_at (const vec2<unsigned int>& xy)
+  {
+    return &m_data[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
+  }
+
   unsigned int data_line_size_bytes (void) const { return m_bytes_per_line; }
   unsigned int bytes_per_line (void) const { return m_bytes_per_line; }
 
