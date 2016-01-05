@@ -182,6 +182,23 @@ template <typename T> struct vec2
   {
     return *this = *this | b;
   }
+
+  friend vec2 operator & (const vec2& a, unsigned int b)
+  {
+    return { a.x & b, a.y & b };
+  }
+  friend vec2 operator & (unsigned int a, const vec2& b)
+  {
+    return b & a;
+  }
+  friend vec2 operator & (const vec2& a, const vec2& b)
+  {
+    return { a.x & b.x, a.y & b.y };
+  }
+  template <typename S> vec2& operator &= (const S& b)
+  {
+    return *this = *this & b;
+  }
 };
 
 template <typename T> T inline constexpr dot (const vec2<T>& a, const vec2<T>& b)
