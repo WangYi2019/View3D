@@ -2,6 +2,7 @@
 #include <type_traits>
 #include <vector>
 #include <iostream>
+#include <string>
 
 #include "test_scene1.hpp"
 #include "tiled_image.hpp"
@@ -12,9 +13,53 @@
 
 test_scene1::test_scene1 (void)
 {
-  m_image = std::make_unique<tiled_image> (vec2<unsigned int> (4096, 4096));
+  m_image = std::make_unique<tiled_image> (vec2<unsigned int> (8469, 10192));
 
-  m_image->update (0, 0, "outputRGB.bmp", "output.bmp");
+//  m_image->update (0, 0, "outputRGB.bmp", "output.bmp");
+
+  std::string base_path = "/home/oleg/20151130133409/";
+
+  static const struct
+  {
+    const char* rgb_img;
+    const char* height_img;
+    unsigned int x, y;
+  } images[] =
+  {
+    { "1/20151130133409view1.bmp", "1/20151130133409view1-3d3-13.bmp", 6348, 8152 },
+    { "2/20151130133409view2.bmp", "2/20151130133409view2-3d3-13.bmp", 4416, 8152 },
+//    { "3/20151130133409view3.bmp", "3/20151130133409view3-3d3-13.bmp", 2483, 8152 },
+//    { "4/20151130133409view4.bmp", "4/20151130133409view4-3d3-13.bmp",  549, 8152 },
+
+    { "5/20151130133409view5.bmp", "5/20151130133409view5-3d3-13.bmp", 6348, 6248 },
+    { "6/20151130133409view6.bmp", "6/20151130133409view6-3d3-13.bmp", 4416, 6248 },
+//    { "7/20151130133409view7.bmp", "7/20151130133409view7-3d3-13.bmp", 2483, 6248 },
+//    { "8/20151130133409view8.bmp", "8/20151130133409view8-3d3-13.bmp",  549, 6248 },
+
+/*
+    {  "9/20151130133409view9.bmp",   "9/20151130133409view9-3d3-13.bmp",  6348, 4344 },
+    { "10/20151130133409view10.bmp", "10/20151130133409view10-3d3-13.bmp", 4416, 4344 },
+    { "11/20151130133409view11.bmp", "11/20151130133409view11-3d3-13.bmp", 2483, 4344 },
+    { "12/20151130133409view12.bmp", "12/20151130133409view12-3d3-13.bmp",  549, 4344 },
+
+    { "13/20151130133409view13.bmp", "13/20151130133409view13-3d3-13.bmp", 6348, 2440 },
+    { "14/20151130133409view14.bmp", "14/20151130133409view14-3d3-13.bmp", 4416, 2440 },
+    { "15/20151130133409view15.bmp", "15/20151130133409view15-3d3-13.bmp", 2483, 2440 },
+    { "16/20151130133409view16.bmp", "16/20151130133409view16-3d3-13.bmp",  549, 2440 },
+
+    { "17/20151130133409view17.bmp", "17/20151130133409view17-3d3-13.bmp", 6348, 536 },
+    { "18/20151130133409view18.bmp", "18/20151130133409view18-3d3-13.bmp", 4416, 536 },
+    { "19/20151130133409view19.bmp", "19/20151130133409view19-3d3-13.bmp", 2483, 536 },
+    { "20/20151130133409view20.bmp", "20/20151130133409view20-3d3-13.bmp",  549, 536 },
+*/
+  };
+
+
+  for (auto&& i : images)
+    m_image->update (i.x, i.y,
+		     (base_path + i.rgb_img).c_str (),
+		     (base_path + i.height_img).c_str ());
+
 }
 
 test_scene1::~test_scene1 (void)

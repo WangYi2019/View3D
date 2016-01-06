@@ -91,6 +91,7 @@ int main (int argc, const char* argv[])
 
 
   test_scene1 scene;
+//  test_scene scene (rgb_img, height_img, lod);
 
   auto prev_time = std::chrono::high_resolution_clock::now ();
 
