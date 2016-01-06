@@ -32,10 +32,11 @@ static const pixel_format_desc pf_table[] =
   { pixel_format::rgb_565,    5,  6,  5,  0, 16, 16, GL_UNSIGNED_SHORT_5_6_5,   GL_RGB,  "RGB_565" },
   { pixel_format::rgb_555,    5,  5,  5,  0, 15, 16, GL_UNSIGNED_SHORT_5_5_5_1, GL_RGBA, "RGB_555" },
   { pixel_format::rgb_444,    4,  4,  4,  0, 12, 16, GL_UNSIGNED_SHORT_4_4_4_4, GL_RGBA, "RGB_444" },
-  { pixel_format::l_8,        0,  0,  0,  0,  0, 8,  GL_UNSIGNED_BYTE,          GL_LUMINANCE, "L_8" },
-  { pixel_format::a_8,        0,  0,  0,  8,  0, 8,  GL_UNSIGNED_BYTE,          GL_ALPHA,     "A_8" },
+  { pixel_format::l_8,        0,  0,  0,  0,  0,  8, GL_UNSIGNED_BYTE,          GL_LUMINANCE, "L_8" },
+  { pixel_format::a_8,        0,  0,  0,  8,  0,  8, GL_UNSIGNED_BYTE,          GL_ALPHA,     "A_8" },
   { pixel_format::la_88,      0,  0,  0,  8,  0, 16, GL_UNSIGNED_BYTE,          GL_LUMINANCE_ALPHA, "LA_88" },
   { pixel_format::rgba_f32,  32, 32, 32, 32, 32*3, 32*4, GL_FLOAT,              GL_RGBA, "RGBA_32F" },
+  { pixel_format::rgb_332,    3,  3,  2,  0,  8,  8, GL_UNSIGNED_BYTE_3_3_2,    GL_RGB, "RGB_332" },
 };
 
 pixel_format::pixel_format (const char* str)

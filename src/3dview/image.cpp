@@ -123,6 +123,13 @@ template<> struct format_traits<pixel_format::rgba_f32>
   typedef vec4<float> unpacked_widened_type;
 };
 
+template<> struct format_traits<pixel_format::rgb_332>
+{
+  typedef uint8_t storage_type;
+  typedef vec4<uint8_t> unpacked_type;
+  typedef vec4<uint16_t> unpacked_widened_type;
+};
+
 template <typename S, typename D> D convert_unpacked (S);
 
 template<> vec4<uint8_t> convert_unpacked<vec4<uint8_t>, vec4<uint8_t>> (vec4<uint8_t> s) { return s; }
@@ -341,6 +348,27 @@ pack_pixel<pixel_format::rgba_f32> (vec4<float> p)
   return p;
 }
 
+template<> vec4<uint8_t>
+unpack_pixel<pixel_format::rgb_332> (uint8_t p)
+{
+  unsigned int r = (p >> (3+2)) & 7;
+  unsigned int g = (p >> 2) & 7;
+  unsigned int b = p & 3;
+  unsigned int a = 255;
+
+  r = (r << 5) | (r << 2) | (r >> 1);
+  g = (g << 5) | (g << 2) | (g >> 1);
+  b = (b << 2) | (b << 4) | (b << 6) | b;
+
+  return { r, g, b, a };
+}
+
+template<> uint8_t
+pack_pixel<pixel_format::rgb_332> (vec4<uint8_t> p)
+{
+  return ((p.r >> 5) << (3+2)) | ((p.g >> 5) << 2) | (p.b >> 6);
+}
+
 
 template<pixel_format::fmt_t src_format, pixel_format::fmt_t dst_format>
 typename format_traits<dst_format>::storage_type
@@ -521,7 +549,8 @@ static_assert (pixel_format::l_8 == 8, "");
 static_assert (pixel_format::a_8 == 9, "");
 static_assert (pixel_format::la_88 == 10, "");
 static_assert (pixel_format::rgba_f32 == 11, "");
-static_assert (pixel_format::max_count == 12, "");
+static_assert (pixel_format::rgb_332 == 12, "");
+static_assert (pixel_format::max_count == 13, "");
 
 #define all_pixel_formats \
   invalid, \
@@ -535,7 +564,8 @@ static_assert (pixel_format::max_count == 12, "");
   l_8, \
   a_8, \
   la_88, \
-  rgba_f32
+  rgba_f32, \
+  rgb_332
 
 typedef void (*conv_func_t)(const char* src, char* dst, unsigned int count);
 
