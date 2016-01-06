@@ -414,6 +414,16 @@ void tiled_image::fill (int32_t x, int32_t y, uint32_t width, uint32_t height,
 void
 tiled_image::update (int32_t x, int32_t y,
 		     const char* rgb_bmp_file,
+		     const char* height_bmp_file)
+{
+  update (x, y, rgb_bmp_file, height_bmp_file, 0, 0,
+	  std::numeric_limits<unsigned int>::max (),
+	  std::numeric_limits<unsigned int>::max ());
+}
+
+void
+tiled_image::update (int32_t x, int32_t y,
+		     const char* rgb_bmp_file,
 		     const char* height_bmp_file,
 		     unsigned int src_x, unsigned int src_y,
 		     unsigned int src_width, unsigned int src_height)
@@ -453,7 +463,7 @@ alternatively:
 
   update_mipmaps (m_rgb_image, rgb_area.dst_top_left, rgb_area.size);
 
-  auto height_area = height_img.copy_to ({ src_x, src_y }, { src_width, src_height },
+  auto height_area = height_img.copy_to ({ src_x, src_y },  { src_width, src_height },
 					 m_height_image[0], { x, y });
 
   update_mipmaps (m_height_image, rgb_area.dst_top_left, rgb_area.size);
@@ -509,5 +519,12 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
     xy = dst_xy;
     size = dst_size;
   }
+}
+
+
+void tiled_image::render (const mat4<float>& mvp)
+{
+
+
 }
 

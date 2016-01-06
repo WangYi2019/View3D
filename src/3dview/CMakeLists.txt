@@ -34,6 +34,7 @@ SET_SOURCE_FILES_PROPERTIES (image.cpp PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLA
 add_executable (3dview
   main.cpp
   test_scene.cpp
+  test_scene1.cpp
   bmp_loader.cpp
   image.cpp
   tiled_image.cpp

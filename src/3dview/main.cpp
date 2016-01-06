@@ -12,6 +12,7 @@
 #include "gl/pixel_format.hpp"
 
 #include "test_scene.hpp"
+#include "test_scene1.hpp"
 
 #include "bmp_loader.hpp"
 
@@ -89,7 +90,7 @@ int main (int argc, const char* argv[])
   dev->init_extensions ();
 
 
-  test_scene scene (rgb_img, height_img, lod);
+  test_scene1 scene;
 
   auto prev_time = std::chrono::high_resolution_clock::now ();
 

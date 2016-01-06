@@ -52,12 +52,19 @@ public:
 	       unsigned int src_x, unsigned int src_y,
 	       unsigned int src_width, unsigned int src_height);
 
+  void update (int32_t x, int32_t y,
+	       const char* rgb_bmp_file,
+	       const char* height_bmp_file);
+
 /*
 for this need support for shared image buffers
   void update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 	       const void* rgb_data, uint32_t rgb_data_stride_bytes,
 	       const void* height_data, uint32_t height_data_stride_bytes);
 */
+
+  void render (const mat4<float>& mvp);
+
 private:
   struct vertex;
   struct shader;
