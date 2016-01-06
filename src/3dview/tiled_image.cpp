@@ -107,23 +107,49 @@ public:
     }
   };
 
+  void render_textured (void)
+  {
+    gl::draw_indexed (gl::triangles, sizeof (vertex),
+		      m_index_buffer, m_index_buffer_type, m_index_buffer_count);
+  }
+
+  void render_wireframe (void)
+  {
+    gl::draw_indexed (gl::lines, sizeof (vertex),
+		      m_wireframe_index_buffer, m_index_buffer_type,
+		      m_wireframe_index_buffer_count);
+  }
+
+  void render_outline (void)
+  {
+    gl::draw_indexed (gl::lines, sizeof (vertex),
+		      m_outline_index_buffer, m_index_buffer_type,
+		      m_outline_index_buffer_count);
+  }
+
 private:
   vec2<uint32_t> m_size;
 
   gl::buffer m_vertex_buffer;
   unsigned int m_vertex_buffer_count;
 
-  gl::buffer m_index_buffer;
+  // the index buffer type is the same for all index buffers.
   gl::index_type m_index_buffer_type;
+
+  gl::buffer m_index_buffer;
   unsigned int m_index_buffer_count;
 
   gl::buffer m_wireframe_index_buffer;
-  gl::index_type m_wireframe_index_buffer_type;
   unsigned int m_wireframe_index_buffer_count;
+
+  gl::buffer m_outline_index_buffer;
+  unsigned int m_outline_index_buffer_count;
 
   template <typename IndexType>
   void build_index_buffers (const vec2<uint32_t>& size)
   {
+    m_index_buffer_type = gl::make_index_type<IndexType> ();
+
     // every cell in the grid consists of 2 triangles.
     std::vector<IndexType> idx;
     idx.reserve ((size.x - 1) * (size.y - 1) * 6);
@@ -141,7 +167,6 @@ private:
       }
 
     m_index_buffer = gl::buffer (gl::buffer::index, idx);
-    m_index_buffer_type = gl::make_index_type<IndexType> ();
     m_index_buffer_count = idx.size ();
 
     // wireframe index buffer (quad edges only)
@@ -171,8 +196,26 @@ private:
     }
 
     m_wireframe_index_buffer = gl::buffer (gl::buffer::index, idx);
-    m_wireframe_index_buffer_type = gl::make_index_type<IndexType> ();
     m_wireframe_index_buffer_count = idx.size ();
+
+    // outline index buffer
+    idx.reserve (4*2);
+    idx.clear ();
+
+    idx.push_back (0 + 0 * size.x);
+    idx.push_back ((size.x - 1) + 0 * size.x);
+
+    idx.push_back ((size.x - 1) + 0 * size.x);
+    idx.push_back ((size.x - 1) + (size.y - 1) * size.x);
+
+    idx.push_back ((size.x - 1) + (size.y - 1) * size.x);
+    idx.push_back (0 + (size.y - 1) * size.x);
+
+    idx.push_back (0 + (size.y - 1) * size.x);
+    idx.push_back (0 + 0 * size.x);
+
+    m_outline_index_buffer = gl::buffer (gl::buffer::index, idx);
+    m_outline_index_buffer_count = idx.size ();
   }
 
 };
