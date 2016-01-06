@@ -238,7 +238,7 @@ public:
 	      << physical_size.y << std::endl;
 
     auto i = std::find_if (g_grid_meshes.begin (), g_grid_meshes.end (),
-			   grid_mesh::size_equals (size));
+			   grid_mesh::size_equals (physical_size));
 
     if (i == g_grid_meshes.end ())
     {
@@ -298,6 +298,10 @@ public:
 
   // size of the tile in pixels (original image coordinates).
   const vec2<uint32_t>& size (void) const { return m_size; }
+
+  // size of the tile in actual pixels (stored image coordinates).
+  vec2<uint32_t> physical_size (void) const { return m_size >> m_lod; }
+
 
   // level-of-detail number.  0 = highest level, which is a 1:1
   // mapping of the original data and the coverage of this tile.
@@ -399,12 +403,13 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
        ++i, sz /= 2)
   {
     std::cout << "tiled_image new mipmap level " << sz.x << " x " << sz.y << std::endl;
-
+/*
     // for lower levels, use lower color resolution images.
     m_rgb_image[i] = image (sz.x <= 512 || sz.y <= 512
 			    ? pixel_format::rgb_555
 			    : pixel_format::rgba_8888, sz);
-
+*/
+    m_rgb_image[i] = image (pixel_format::rgba_8888, sz);
     m_rgb_image[i].fill ({ 0 });
 
     m_height_image[i] = image (pixel_format::l_8, sz);

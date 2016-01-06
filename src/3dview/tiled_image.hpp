@@ -14,12 +14,38 @@
 class tiled_image
 {
 public:
+  // how many LED levels we have
   static constexpr unsigned int max_lod_level = 5;
-  static constexpr unsigned int tile_grid_size = 128;
   static constexpr unsigned int max_lod_scale_factor = 1 << max_lod_level;
-  static constexpr unsigned int texture_tile_size = max_lod_scale_factor * tile_grid_size;
 
-  // larger textures are not safe it seems.
+  // the grid size of one geometry tile.  the grid size is constant for each
+  // detail level, but the tile is rendered bigger.
+  // the grid size defines the subdivision of the top detail level.  bigger
+  // grid size means fewer top-level tiles and more geometry per frame.
+  static constexpr unsigned int tile_grid_size = 128;
+
+  // the size of one texture tile (color or height texture).
+  // texture tiles are independent of the grid size.  e.g. at lower detail
+  // levels one texture tile might cover the whole image, while at the highest
+  // level, multiple texture tiles might be needed to cover the whole image.
+  // it's OK to have multiple geometry tiles per texture tile.  it's not OK
+  // to have multiple texture tiles per geometry tile.
+
+  // if the mipmapping of the gpu is used, the lowest mipmap level geometry
+  // tiles must not cross a texture border.
+  // static constexpr unsigned int texture_tile_size = max_lod_scale_factor * tile_grid_size;
+
+  // if texture tiles are managed and selected manually for each mipmap level
+  // and automatic gpu mipmapping is not used, we have more freedom on the
+  // texture tile size.
+  static constexpr unsigned int texture_tile_size = 128;
+
+  // for now texture tiles are the same as geometry tiles.
+  static_assert (texture_tile_size == tile_grid_size, "");
+
+  static_assert (texture_tile_size >= tile_grid_size, "");
+
+  // textures > 4096 can be problematic it seems.
   static_assert (texture_tile_size <= 4096, "");
 
   tiled_image (void);
