@@ -80,7 +80,7 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
   image height_img;
 
 
-//  color_img = load_bmp_image (rgb_img_file);
+  color_img = load_bmp_image (rgb_img_file);
 //  height_img = load_bmp_image (height_img_file);
 
 
@@ -97,7 +97,7 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
    // height_img.fill (0.125f, 0.5, 0.25f, 1);
   }
 
-
+/*
   {
     image tmp (pixel_format::l_8, { 32, 32 });
     tmp.fill ({ 0.125f, 0.5, 0.25f, 1 });
@@ -105,16 +105,33 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
     tmp.copy_to ({0, 0}, {16, 8}, color_img);
     //color_img.fill (0, 0, 16, 8, 0.0f, 0.5f, 0.0f, 0);
   }
+*/
+/*
+  {
+    image tmp (pixel_format::rgba_8888,
+	       { ceil_pow2 (color_img.width ()), ceil_pow2 (color_img.height ()) });
 
+    color_img.copy_to (tmp);
 
-  m_color_texture = gl::texture (color_img.format (), color_img.width (), color_img.height (),
-				 color_img.data ());
+    tmp = tmp.pyr_down ();
+    tmp = tmp.pyr_down ();
+    tmp = tmp.pyr_down ();
+    tmp = tmp.pyr_down ();
+
+    color_img = std::move (tmp);
+
+std::cout << "color_img = " << color_img.width () << " x " << color_img.height () << std::endl;
+  }
+*/
+
+  m_color_texture = gl::texture (color_img.format (), color_img.size (),
+				 color_img.data (), color_img.bytes_per_line ());
   m_color_texture.set_min_filter (gl::texture::linear_mipmap_linear);
   m_color_texture.set_mag_filter (gl::texture::linear);
   m_color_texture.generate_mipmaps ();
 
-  m_height_texture = gl::texture (height_img.format (), height_img.width (), height_img.height (),
-				  height_img.data ());
+  m_height_texture = gl::texture (height_img.format (), height_img.size (),
+				  height_img.data (), height_img.bytes_per_line ());
   m_height_texture.set_min_filter (gl::texture::linear_mipmap_linear);
   m_height_texture.set_mag_filter (gl::texture::linear);
   m_height_texture.generate_mipmaps ();
@@ -245,8 +262,8 @@ void test_scene::render (unsigned int width, unsigned int height,
 #if 1
   mat4<float> cam_trv = mat4<float>::identity ()
 //      * mat4<float>::translate (0, 0, -0.5f - std::abs (std::sin (frame_number * 0.0025f)) * 5)
-      * mat4<float>::translate (0, 0, -4.0f)
-      * mat4<float>::rotate_x (M_PI * 0.4f)
+      * mat4<float>::translate (0, 0, -2.0f)
+      * mat4<float>::rotate_x (M_PI * 0.24f)
       * mat4<float>::rotate_z (m_rotate_angle)
       * mat4<float>::identity ();
 #else
