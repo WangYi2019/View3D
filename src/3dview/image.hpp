@@ -44,27 +44,27 @@ public:
   unsigned int height (void) const { return m_size.y; }
   pixel_format format (void) const { return m_format; }
 
-  const void* data (void) const { return m_data.get (); }
-  void* data (void) { return m_data.get (); }
+  const void* data (void) const { return &m_data.ptr[0]; }
+  void* data (void) { return &m_data.ptr[0]; }
 
   void* data_line (unsigned int y)
   {
-    return &m_data[y * m_bytes_per_line];
+    return &m_data.ptr[y * m_bytes_per_line];
   }
 
   const void* data_line (unsigned int y) const
   {
-    return &m_data[y * m_bytes_per_line];
+    return &m_data.ptr[y * m_bytes_per_line];
   }
 
   const void* data_at (const vec2<unsigned int>& xy) const
   {
-    return &m_data[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
+    return &m_data.ptr[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
   }
 
   void* data_at (const vec2<unsigned int>& xy)
   {
-    return &m_data[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
+    return &m_data.ptr[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
   }
 
   unsigned int data_line_size_bytes (void) const { return m_bytes_per_line; }
@@ -149,7 +149,45 @@ private:
   vec2<unsigned int> m_size;
   unsigned int m_bytes_per_line;
   pixel_format m_format;
-  std::unique_ptr<char[]> m_data;
+
+  struct data_buffer
+  {
+    char* ptr;
+    std::unique_ptr<char[]> allocated;
+
+    data_buffer (void) : ptr (nullptr) { }
+    data_buffer (const data_buffer&) = delete;
+
+    data_buffer (data_buffer&& rhs)
+    : ptr (std::move (rhs.ptr)), allocated (std::move (rhs.allocated))
+    {
+      rhs.ptr = nullptr;
+    }
+
+    data_buffer (size_t sz_bytes)
+    {
+      allocated = std::make_unique<char[]> (sz_bytes + 128);
+      ptr = (char*)(((uintptr_t)allocated.get () + 127) & ~127);
+    }
+
+    data_buffer& operator = (const data_buffer&) = delete;
+    data_buffer& operator = (data_buffer&& rhs)
+    {
+      ptr = std::move (rhs.ptr);
+      allocated = std::move (rhs.allocated);
+      rhs.ptr = nullptr;
+      return *this;
+    }
+
+    data_buffer& operator = (std::nullptr_t)
+    {
+      ptr = nullptr;
+      allocated = nullptr;
+      return *this;
+    }
+  };
+
+  data_buffer m_data;
 };
 
 namespace std

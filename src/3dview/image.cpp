@@ -622,7 +622,7 @@ image::image (pixel_format pf, const vec2<unsigned int>& size)
   m_size = size;
   m_bytes_per_line = size.x * pf.bytes_per_pixel ();
   m_format = pf;
-  m_data = std::make_unique<char[]> (m_bytes_per_line * size.y);
+  m_data = data_buffer (m_bytes_per_line * size.y);
 }
 
 image::image (const image& rhs)
@@ -633,8 +633,8 @@ image::image (const image& rhs)
 
   if (!rhs.empty ())
   {
-    m_data = std::make_unique<char[]> (m_bytes_per_line * m_size.y);
-    std::memcpy (m_data.get (), rhs.data (), m_bytes_per_line * m_size.y);
+    m_data = data_buffer (m_bytes_per_line * m_size.y);
+    std::memcpy (m_data.ptr, rhs.data (), m_bytes_per_line * m_size.y);
   }
 }
 
@@ -662,8 +662,8 @@ image& image::operator = (const image& rhs)
 
   if (!rhs.empty ())
   {
-    m_data = std::make_unique<char[]> (m_bytes_per_line * m_size.y);
-    std::memcpy (m_data.get (), rhs.data (), m_bytes_per_line * m_size.y);
+    m_data = data_buffer (m_bytes_per_line * m_size.y);
+    std::memcpy (m_data.ptr, rhs.data (), m_bytes_per_line * m_size.y);
   }
 
   return *this;
@@ -704,7 +704,7 @@ image::fill (const vec2<int>& xy, const vec2<unsigned int>& size,
   if (fill_size.x == 0 || fill_size.y == 0)
     return { };
 
-  fill_func_table[m_format.value ()] (m_data.get (), tl.x, tl.y,
+  fill_func_table[m_format.value ()] (m_data.ptr, tl.x, tl.y,
 				      fill_size.x, fill_size.y,
 				      m_bytes_per_line, rgba_value);
 
