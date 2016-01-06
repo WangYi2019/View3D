@@ -77,6 +77,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
   glEnable (GL_CULL_FACE);
+  glFrontFace (GL_CW);
   glEnable (GL_DEPTH_TEST);
   glEnable (GL_TEXTURE_2D);
 //  glDepthFunc (GL_LEQUAL);
@@ -86,7 +87,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
   glDisable (GL_BLEND);
 
   mat4<float> proj_trv =
-    mat4<float>::proj_perspective (M_PI/3, (float)width / (float)height,
+    mat4<float>::proj_perspective (M_PI/3, (float)width / -(float)height,
                                    0.1f, 10000.0f);
 
   m_rotate_angle += delta_time.count () * 0.0000001f;
@@ -97,7 +98,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
   mat4<float> cam_trv = mat4<float>::identity ()
 //      * mat4<float>::translate (0, 0, -0.5f - std::abs (std::sin (frame_number * 0.0025f)) * 5)
       * mat4<float>::translate (0, 0, -2.0f)
-      * mat4<float>::rotate_x (M_PI * 0.24f)
+      * mat4<float>::rotate_x (M_PI * -0.24f)
       * mat4<float>::rotate_z (m_rotate_angle)
       * mat4<float>::identity ();
 #else
