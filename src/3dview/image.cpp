@@ -690,22 +690,25 @@ image::~image (void)
 {
 }
 
-void image::fill (const vec2<int>& xy, const vec2<unsigned int>& size,
-		  const vec4<float>& rgba_value)
+image::fill_result
+image::fill (const vec2<int>& xy, const vec2<unsigned int>& size,
+	     const vec4<float>& rgba_value)
 {
   if (empty ())
-    return;
+    return { };
 
   const vec2<unsigned int> tl (std::max (vec2<int> (0), xy));
   const vec2<unsigned int> br (std::min (xy + (vec2<int>)size, (vec2<int>)m_size));
-  const vec2<unsigned int> copy_size = br - tl;
+  const vec2<unsigned int> fill_size = br - tl;
 
-  if (copy_size.x == 0 || copy_size.y == 0)
-    return;
+  if (fill_size.x == 0 || fill_size.y == 0)
+    return { };
 
   fill_func_table[m_format.value ()] (m_data.get (), tl.x, tl.y,
-				      copy_size.x, copy_size.y,
+				      fill_size.x, fill_size.y,
 				      m_bytes_per_line, rgba_value);
+
+  return { tl, fill_size };
 }
 
 image::copy_to_result

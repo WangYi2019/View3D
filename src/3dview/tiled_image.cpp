@@ -362,10 +362,10 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 			    ? pixel_format::rgb_555
 			    : pixel_format::rgba_8888, sz);
 
-    m_rgb_image[i].fill ({ 0, 0, 0, 0});
+    m_rgb_image[i].fill ({ 0 });
 
     m_height_image[i] = image (pixel_format::l_8, sz);
-    m_height_image[i].fill ({ 0, 0, 0, 0});
+    m_height_image[i].fill ({ 0 });
   }
 }
 
@@ -376,7 +376,7 @@ tiled_image::tiled_image (tiled_image&& rhs)
   m_shader (std::move (rhs.m_shader)),
   m_tiles (std::move (rhs.m_tiles))
 {
-  rhs.m_size = { 0, 0 };
+  rhs.m_size = { 0 };
 }
 
 tiled_image& tiled_image::operator = (tiled_image&& rhs)
@@ -392,7 +392,7 @@ tiled_image& tiled_image::operator = (tiled_image&& rhs)
     if (g_shader != nullptr && g_shader.use_count () == 1)
       g_shader = nullptr;
 
-    rhs.m_size = { 0, 0 };
+    rhs.m_size = { 0 };
   }
   return *this;
 }
@@ -405,10 +405,13 @@ tiled_image::~tiled_image (void)
 
 
 void tiled_image::fill (int32_t x, int32_t y, uint32_t width, uint32_t height,
-			unsigned int r, unsigned int g, unsigned int b,
-			unsigned int z)
+			float r, float g, float b, float z)
 {
+  auto rgb_area = m_rgb_image[0].fill ({ x, y }, { width, height }, { r, g, b, 1 });
+  auto z_area = m_height_image[0].fill ({ x, y }, { width, height }, { z, z, z, 1 });
 
+  update_mipmaps (m_rgb_image, rgb_area.top_left, rgb_area.size);
+  update_mipmaps (m_height_image, z_area.top_left, z_area.size);
 }
 
 void

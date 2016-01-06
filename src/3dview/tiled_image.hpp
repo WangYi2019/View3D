@@ -37,11 +37,9 @@ public:
   bool empty (void) const { return m_size.x == 0 || m_size.y == 0; }
 
   void fill (int32_t x, int32_t y, uint32_t width, uint32_t height,
-	     unsigned int r, unsigned int g, unsigned int b,
-	     unsigned int z);
+	     float r, float g, float b, float z);
 
-  void fill (unsigned int r, unsigned int g, unsigned int b,
-	     unsigned int z)
+  void fill (float r, float g, float b, float z)
   {
     fill (0, 0, size ().x, size ().y, r, g, b, z);
   }

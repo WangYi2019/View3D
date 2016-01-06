@@ -75,12 +75,23 @@ public:
   // the component float values are clamped and scaled to match the pixel format.
   // for unsigned pixel formats the normalized value range is [0,+1].
   // for signed pixel formats the normalized value range is [-1,+1].
-  void fill (const vec2<int>& xy, const vec2<unsigned int>& size,
-	     const vec4<float>& rgba_value);
-
-  void fill (const vec4<float>& rgba_value)
+  struct fill_result
   {
-    fill ({ 0, 0 }, size (), rgba_value);
+    fill_result (void) { }
+    fill_result (const vec2<unsigned int>& tl, const vec2<unsigned int>& sz)
+    : top_left (tl), size (sz) { }
+
+    vec2<unsigned int> top_left = { 0 };
+    vec2<unsigned int> size = { 0 };
+  };
+
+  fill_result
+  fill (const vec2<int>& xy, const vec2<unsigned int>& size,
+	const vec4<float>& rgba_value);
+
+  fill_result fill (const vec4<float>& rgba_value)
+  {
+    return fill ({ 0, 0 }, size (), rgba_value);
   }
 
   // copy the source area from this image to an area in another image.
@@ -98,10 +109,10 @@ public:
 		    const vec2<unsigned int>& sz)
     : src_top_left (src_tl), dst_top_left (dst_tl), size (sz) { }
 
-    vec2<unsigned int> src_top_left = { 0, 0 };
-    vec2<unsigned int> dst_top_left = { 0, 0 };
+    vec2<unsigned int> src_top_left = { 0 };
+    vec2<unsigned int> dst_top_left = { 0 };
 
-    vec2<unsigned int> size = { 0, 0 };
+    vec2<unsigned int> size = { 0 };
   };
 
   copy_to_result
