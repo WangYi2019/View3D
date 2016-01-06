@@ -563,50 +563,33 @@ public:
       return;
 
     bind ();
+    set_upload_stride (stride_bytes);
 
-    if (stride_bytes != 0)
-    {
-      // GL_UNPACK_ALIGNMENT is the byte alignment (1,2,4,8) of each image line.
-      // GL_UNPACK_ROW_LENGTH is the image stride in pixels.
-
-      // 24 bpp = 3 bytes / pixel
-      // image width = 61 pixels = 183 bytes
-      // image stride = 1024
-      // unpack alignment = 8
-      // unpack row length = 1024 / 3 = 341
-
-      unsigned int stride_bytes_1 = 1;
-      if ((stride_bytes & 1) == 0)
-	stride_bytes_1 = 2;
-      if ((stride_bytes & 3) == 0)
-	stride_bytes_1 = 4;
-      if ((stride_bytes & 7) == 0)
-	stride_bytes_1 = 8;
-
-      // try to avoid the division...
-      uint8_t bpp = m_format.bytes_per_pixel ();
-      unsigned int stride_pixels;
-      if (bpp == 1)
-	stride_pixels = stride_bytes;
-      else if (bpp == 2)
-	stride_pixels = stride_bytes / 2;
-      else if (bpp == 4)
-	stride_pixels = stride_bytes / 4;
-      else if (bpp == 8)
-	stride_pixels = stride_bytes / 8;
-      else
-	stride_pixels = stride_bytes / bpp;
-
-      glPixelStorei (GL_UNPACK_ALIGNMENT, stride_bytes_1);
-      glPixelStorei (GL_UNPACK_ROW_LENGTH, std::max (m_size.x, stride_pixels));
-    }
-    else
-    {
-      glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-      glPixelStorei (GL_UNPACK_ROW_LENGTH, 0);
-    }
     glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_fmt (), m_size.x, m_size.y, 0,
 		  m_format.gl_fmt (), m_format.gl_type (), data);
+  }
+
+  void upload (const void* data,
+	       const vec2<int>& dst_xy, const vec2<unsigned int>& size,
+	       unsigned int stride_bytes = 0)
+  {
+    if (empty ())
+      return;
+
+    bind ();
+    set_upload_stride (stride_bytes);
+
+    if (dst_xy.x == 0 && dst_xy.y == 0
+	&& size.x == m_size.x && size.y == m_size.y)
+      glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_fmt (), m_size.x, m_size.y, 0,
+		    m_format.gl_fmt (), m_format.gl_type (), data);
+    else
+    {
+      // GL textures have y = 0 = bottom ... but we want y = 0 = top,
+      // so have to mirror the y offset coordinate.
+      glTexSubImage2D (GL_TEXTURE_2D, 0, dst_xy.x, m_size.y - size.y - dst_xy.y,
+		       size.x, size.y, m_format.gl_fmt (), m_format.gl_type (), data);
+    }
   }
 
   void set_address_mode_u (address_mode u)
@@ -674,6 +657,51 @@ private:
   vec2<unsigned int> m_size;
   pixel_format m_format;
   unsigned int m_obj;
+
+  void set_upload_stride (unsigned int stride_bytes)
+  {
+    if (stride_bytes == 0)
+    {
+      glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+      glPixelStorei (GL_UNPACK_ROW_LENGTH, 0);
+    }
+    else
+    {
+      // GL_UNPACK_ALIGNMENT is the byte alignment (1,2,4,8) of each image line.
+      // GL_UNPACK_ROW_LENGTH is the image stride in pixels.
+
+      // 24 bpp = 3 bytes / pixel
+      // image width = 61 pixels = 183 bytes
+      // image stride = 1024
+      // unpack alignment = 8
+      // unpack row length = 1024 / 3 = 341
+
+      unsigned int stride_bytes_1 = 1;
+      if ((stride_bytes & 1) == 0)
+	stride_bytes_1 = 2;
+      if ((stride_bytes & 3) == 0)
+	stride_bytes_1 = 4;
+      if ((stride_bytes & 7) == 0)
+	stride_bytes_1 = 8;
+
+      // try to avoid the division...
+      uint8_t bpp = m_format.bytes_per_pixel ();
+      unsigned int stride_pixels;
+      if (bpp == 1)
+	stride_pixels = stride_bytes;
+      else if (bpp == 2)
+	stride_pixels = stride_bytes / 2;
+      else if (bpp == 4)
+	stride_pixels = stride_bytes / 4;
+      else if (bpp == 8)
+	stride_pixels = stride_bytes / 8;
+      else
+	stride_pixels = stride_bytes / bpp;
+
+      glPixelStorei (GL_UNPACK_ALIGNMENT, stride_bytes_1);
+      glPixelStorei (GL_UNPACK_ROW_LENGTH, stride_pixels);
+    }
+  }
 };
 
 } // namespace gl

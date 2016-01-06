@@ -124,8 +124,18 @@ std::cout << "color_img = " << color_img.width () << " x " << color_img.height (
   }
 */
 
+/*
+  m_color_texture = gl::texture (color_img.format (), { 2048*2, 2048*2 });
+
+  m_color_texture.upload (color_img.data (), { 1024, 1024*2 },
+			  color_img.size (), color_img.bytes_per_line ());
+*/
+
+
   m_color_texture = gl::texture (color_img.format (), color_img.size (),
 				 color_img.data (), color_img.bytes_per_line ());
+
+
   m_color_texture.set_min_filter (gl::texture::linear_mipmap_linear);
   m_color_texture.set_mag_filter (gl::texture::linear);
   m_color_texture.generate_mipmaps ();
@@ -262,9 +272,9 @@ void test_scene::render (unsigned int width, unsigned int height,
 #if 1
   mat4<float> cam_trv = mat4<float>::identity ()
 //      * mat4<float>::translate (0, 0, -0.5f - std::abs (std::sin (frame_number * 0.0025f)) * 5)
-      * mat4<float>::translate (0, 0, -2.0f)
+      * mat4<float>::translate (0, 0, -4.0f)
       * mat4<float>::rotate_x (M_PI * 0.24f)
-      * mat4<float>::rotate_z (m_rotate_angle)
+      * mat4<float>::rotate_z (m_rotate_angle * 0)
       * mat4<float>::identity ();
 #else
   mat4<float> cam_trv = mat4<float>::identity ()
