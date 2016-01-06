@@ -7,6 +7,8 @@
 #include "utils/vec_mat.hpp"
 #include "utils/utils.hpp"
 
+#include "utils/pp_for_each.hpp"
+
 // https://en.wikipedia.org/wiki/Grayscale
 // Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
 static constexpr vec3<float> rgb_to_luma_coeffs = { 0.2126f, 0.7152f, 0.0722f };
@@ -521,6 +523,20 @@ static_assert (pixel_format::la_88 == 10, "");
 static_assert (pixel_format::rgba_f32 == 11, "");
 static_assert (pixel_format::max_count == 12, "");
 
+#define all_pixel_formats \
+  invalid, \
+  rgba_8888, \
+  rgba_4444, \
+  rgba_5551, \
+  rgb_888, \
+  rgb_565, \
+  rgb_555, \
+  rgb_444, \
+  l_8, \
+  a_8, \
+  la_88, \
+  rgba_f32
+
 typedef void (*conv_func_t)(const char* src, char* dst, unsigned int count);
 
 static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::max_count] =
@@ -543,18 +559,7 @@ static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::
   init_table_1 (src_fmt, la_88), \
   init_table_1 (src_fmt, rgba_f32),
 
-  init_table (invalid)
-  init_table (rgba_8888)
-  init_table (rgba_4444)
-  init_table (rgba_5551)
-  init_table (rgb_888)
-  init_table (rgb_565)
-  init_table (rgb_555)
-  init_table (rgb_444)
-  init_table (l_8)
-  init_table (a_8)
-  init_table (la_88)
-  init_table (rgba_f32)
+  pp_for_each (init_table, all_pixel_formats)
 
 #undef init_table_1
 #undef init_table
@@ -570,18 +575,7 @@ static const fill_func_t fill_func_table[pixel_format::max_count] =
 {
 #define init_table(fmt) fill_2d<pixel_format :: fmt>,
 
-  init_table (invalid)
-  init_table (rgba_8888)
-  init_table (rgba_4444)
-  init_table (rgba_5551)
-  init_table (rgb_888)
-  init_table (rgb_565)
-  init_table (rgb_555)
-  init_table (rgb_444)
-  init_table (l_8)
-  init_table (a_8)
-  init_table (la_88)
-  init_table (rgba_f32)
+  pp_for_each (init_table, all_pixel_formats)
 
 #undef init_table
 };
@@ -608,18 +602,7 @@ static const pyr_down_func_t pyr_down_func_table[pixel_format::max_count][pixel_
   init_table_1 (src_fmt, la_88), \
   init_table_1 (src_fmt, rgba_f32),
 
-  init_table (invalid)
-  init_table (rgba_8888)
-  init_table (rgba_4444)
-  init_table (rgba_5551)
-  init_table (rgb_888)
-  init_table (rgb_565)
-  init_table (rgb_555)
-  init_table (rgb_444)
-  init_table (l_8)
-  init_table (a_8)
-  init_table (la_88)
-  init_table (rgba_f32)
+  pp_for_each (init_table, all_pixel_formats)
 
 #undef init_table_1
 #undef init_table

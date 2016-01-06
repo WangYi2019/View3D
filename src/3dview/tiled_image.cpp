@@ -477,7 +477,7 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
     auto dst_size = size / 2;
 
     auto src_xy = dst_xy * 2;
-    auto src_size = dst_size / 2;
+    auto src_size = dst_size * 2;
 
     // if the source region is outside the image, stop here.
     if (src_xy.x >= src_level.size ().x || src_xy.y >= src_level.size ().y
