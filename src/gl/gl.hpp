@@ -497,23 +497,22 @@ public:
   };
 
   texture (void)
-  : m_width (0), m_height (0), m_format (pixel_format::invalid),
+  : m_size (0), m_format (pixel_format::invalid),
     m_obj (0) { }
 
-  texture (pixel_format pf, unsigned int width, unsigned int height,
-	   const void* data = nullptr)
-  : m_width (width), m_height (height), m_format (pf), m_obj (0)
+  texture (pixel_format pf, const vec2<unsigned int>& size,
+	   const void* data = nullptr, unsigned int stride_bytes = 0)
+  : m_size (size), m_format (pf), m_obj (0)
   {
-    if (m_width > 0 && m_height > 0 && pf != pixel_format::invalid)
+    if (size.x > 0 && size.y > 0 && pf != pixel_format::invalid)
     {
       glGenTextures (1, &m_obj);
-      glBindTexture (GL_TEXTURE_2D, m_obj);
 
     // this is a trap.  by default mipmaps are enabled.
 //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexImage2D (GL_TEXTURE_2D, 0, pf.gl_fmt (), width, height, 0,
-		    pf.gl_fmt (), pf.gl_type (), data);
+
+      upload (data, stride_bytes);
     }
   }
 
@@ -521,11 +520,10 @@ public:
   texture& operator = (const texture&) = delete;
 
   texture (texture&& rhs)
-  : m_width (rhs.m_width), m_height (rhs.m_height), m_format (rhs.m_format),
+  : m_size (rhs.m_size), m_format (rhs.m_format),
     m_obj (rhs.m_obj)
   {
-    rhs.m_width = 0;
-    rhs.m_height = 0;
+    rhs.m_size = { 0 };
     rhs.m_format = pixel_format::invalid;
     rhs.m_obj = 0;
   }
@@ -538,13 +536,11 @@ public:
     if (m_obj != 0)
       glDeleteTextures (1, &m_obj);
 
-    m_width = rhs.m_width;
-    m_height = rhs.m_height;
+    m_size = rhs.m_size;
     m_format = rhs.m_format;
     m_obj = rhs.m_obj;
 
-    rhs.m_width = 0;
-    rhs.m_height = 0;
+    rhs.m_size = { 0 };
     rhs.m_format = pixel_format::invalid;
     rhs.m_obj = 0;
 
@@ -557,18 +553,59 @@ public:
       glDeleteTextures (1, &m_obj);
   }
 
-  bool empty (void) const { return m_width == 0 || m_height == 0 || m_obj == 0; }
-  unsigned int width (void) const { return m_width; }
-  unsigned int height (void) const { return m_height; }
+  bool empty (void) const { return m_size.x == 0 || m_size.y == 0 || m_obj == 0; }
+  const vec2<unsigned int>& size (void) const { return m_size; }
   pixel_format format (void) const { return m_format; }
 
-  void upload (const void* data)
+  void upload (const void* data, unsigned int stride_bytes = 0)
   {
     if (empty ())
       return;
 
     bind ();
-    glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_fmt (), m_width, m_height, 0,
+
+    if (stride_bytes != 0)
+    {
+      // GL_UNPACK_ALIGNMENT is the byte alignment (1,2,4,8) of each image line.
+      // GL_UNPACK_ROW_LENGTH is the image stride in pixels.
+
+      // 24 bpp = 3 bytes / pixel
+      // image width = 61 pixels = 183 bytes
+      // image stride = 1024
+      // unpack alignment = 8
+      // unpack row length = 1024 / 3 = 341
+
+      unsigned int stride_bytes_1 = 1;
+      if ((stride_bytes & 1) == 0)
+	stride_bytes_1 = 2;
+      if ((stride_bytes & 3) == 0)
+	stride_bytes_1 = 4;
+      if ((stride_bytes & 7) == 0)
+	stride_bytes_1 = 8;
+
+      // try to avoid the division...
+      uint8_t bpp = m_format.bytes_per_pixel ();
+      unsigned int stride_pixels;
+      if (bpp == 1)
+	stride_pixels = stride_bytes;
+      else if (bpp == 2)
+	stride_pixels = stride_bytes / 2;
+      else if (bpp == 4)
+	stride_pixels = stride_bytes / 4;
+      else if (bpp == 8)
+	stride_pixels = stride_bytes / 8;
+      else
+	stride_pixels = stride_bytes / bpp;
+
+      glPixelStorei (GL_UNPACK_ALIGNMENT, stride_bytes_1);
+      glPixelStorei (GL_UNPACK_ROW_LENGTH, std::max (m_size.x, stride_pixels));
+    }
+    else
+    {
+      glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+      glPixelStorei (GL_UNPACK_ROW_LENGTH, 0);
+    }
+    glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_fmt (), m_size.x, m_size.y, 0,
 		  m_format.gl_fmt (), m_format.gl_type (), data);
   }
 
@@ -621,8 +658,7 @@ public:
 
   void swap (texture& rhs)
   {
-    std::swap (m_width, rhs.m_width);
-    std::swap (m_height, rhs.m_height);
+    std::swap (m_size, rhs.m_size);
     std::swap (m_format, rhs.m_format);
     std::swap (m_obj, rhs.m_obj);
   }
@@ -635,9 +671,7 @@ private:
   // after invoking functions on the texture, like upload.
   // -1 = invalid / not bound to a texunit.
   // int m_cur_texunit;
-
-  unsigned int m_width;
-  unsigned int m_height;
+  vec2<unsigned int> m_size;
   pixel_format m_format;
   unsigned int m_obj;
 };
