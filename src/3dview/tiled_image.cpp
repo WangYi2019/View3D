@@ -498,14 +498,16 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
 	      << " dst_xy = (" << dst_xy.x << "," << dst_xy.y << ")"
 	      << " dst_size = (" << dst_size.x << "," << dst_size.y << ")"
 	      << std::endl;
-/*
-    image srcimg = src_level.subimg (src_xy, src_size);
-    image dstimg = srcimg.pyr_down ();
 
-    dstimg.copy_to (dst_level, dst_xy);
+    // FIXME: reduce temporaries
+    // e.g.
+    // src_level.subimg (src_xy, src_size).pyr_down_to (dst_level, dst_xy);
 
-//    src_level.subimg (src_xy, src_size).pyr_down (dst_level.subimg (dst_xy, dst_size));
-*/
+    src_level.subimg (vec2<int> (src_xy), src_size)
+		.pyr_down ().copy_to (dst_level, vec2<int> (dst_xy));
+
+    xy = dst_xy;
+    size = dst_size;
   }
 }
 
