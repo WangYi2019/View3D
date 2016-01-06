@@ -716,12 +716,15 @@ image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
     return { };
 
   // tl = top-left coordinate, br = bottom-right coordinate
+  // if the size is numeric_limits::max, the calculations will wrap around and
+  // go bad.  catch this by limiting the size early.
+  const auto use_src_size = std::min (src_size, size ());
 
   const vec2<unsigned int> src_tl (std::max (vec2<int> (0), src_xy));
-  const vec2<unsigned int> src_br (std::min (src_xy + (vec2<int>)src_size, (vec2<int>)size ()));
+  const vec2<unsigned int> src_br (std::min (src_xy + (vec2<int>)use_src_size, (vec2<int>)size ()));
 
   const vec2<unsigned int> dst_tl (std::max (vec2<int> (0), dst_xy));
-  const vec2<unsigned int> dst_br (std::min (dst_xy + (vec2<int>)src_size, (vec2<int>)dst.size ()));
+  const vec2<unsigned int> dst_br (std::min (dst_xy + (vec2<int>)use_src_size, (vec2<int>)dst.size ()));
 
   const auto src_copy_sz = src_br - src_tl;
   const auto dst_copy_sz = dst_br - dst_tl;
