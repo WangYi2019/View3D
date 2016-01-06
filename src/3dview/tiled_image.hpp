@@ -87,8 +87,6 @@ private:
   update_mipmaps (std::array<image, max_lod_level>& img,
 		  const vec2<unsigned int>& top_level_xy,
 		  const vec2<unsigned int>& top_level_size);
-
-  void generate_mipmaps (void);
 };
 
 #endif // includeguard_tiled_image_hpp_includeguard

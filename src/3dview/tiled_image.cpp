@@ -350,14 +350,23 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 
   m_shader = g_shader;
 
-  // setup full image mipmaps.
-  m_rgb_image[0] = image (pixel_format::rgba_8888, size);
-  m_height_image[0] = image (pixel_format::l_8, size);
+  // setup mipmaps for the whole image.
+  vec2<unsigned int> sz (size);
+  for (unsigned int i = 0; i < max_lod_level && sz.x > 0 && sz.y > 0;
+       ++i, sz /= 2)
+  {
+    std::cout << "tiled_image new mipmap level " << sz.x << " x " << sz.y << std::endl;
 
-  generate_mipmaps ();
+    // for lower levels, use lower color resolution images.
+    m_rgb_image[i] = image (sz.x <= 512 || sz.y <= 512
+			    ? pixel_format::rgb_555
+			    : pixel_format::rgba_8888, sz);
 
+    m_rgb_image[i].fill ({ 0, 0, 0, 0});
 
-  // build tile map
+    m_height_image[i] = image (pixel_format::l_8, sz);
+    m_height_image[i].fill ({ 0, 0, 0, 0});
+  }
 }
 
 tiled_image::tiled_image (tiled_image&& rhs)
@@ -394,15 +403,6 @@ tiled_image::~tiled_image (void)
     g_shader = nullptr;
 }
 
-
-void tiled_image::generate_mipmaps (void)
-{
-  for (unsigned int i = 1; i < max_lod_level; ++i)
-  {
-    m_rgb_image[i] = m_rgb_image[i - 1].pyr_down ();
-    m_height_image[i] = m_height_image[i - 1].pyr_down ();
-  }
-}
 
 void tiled_image::fill (int32_t x, int32_t y, uint32_t width, uint32_t height,
 			unsigned int r, unsigned int g, unsigned int b,
