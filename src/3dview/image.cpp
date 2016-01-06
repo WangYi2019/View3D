@@ -543,21 +543,9 @@ static const conv_func_t conv_func_table[pixel_format::max_count][pixel_format::
 {
 // 2d array initialization order: {1,2,3} = a[0][0] = 1, a[0][1] = 2, a[0][2] = 3
 
-#define init_table_1(src_fmt, dst_fmt) convert_line<pixel_format::src_fmt, pixel_format::dst_fmt>::func
-
-#define init_table(src_fmt) \
-  init_table_1 (src_fmt, invalid), \
-  init_table_1 (src_fmt, rgba_8888), \
-  init_table_1 (src_fmt, rgba_4444), \
-  init_table_1 (src_fmt, rgba_5551), \
-  init_table_1 (src_fmt, rgb_888), \
-  init_table_1 (src_fmt, rgb_565), \
-  init_table_1 (src_fmt, rgb_555), \
-  init_table_1 (src_fmt, rgb_444), \
-  init_table_1 (src_fmt, l_8), \
-  init_table_1 (src_fmt, a_8), \
-  init_table_1 (src_fmt, la_88), \
-  init_table_1 (src_fmt, rgba_f32),
+// generate a cartesian product for all pixel formats with the order { src fmt, dst fmt }
+#define init_table_1(src_fmt, dst_fmt) convert_line<pixel_format::src_fmt, pixel_format::dst_fmt>::func,
+#define init_table(src_fmt) pp_for_each_i (init_table_1, src_fmt, all_pixel_formats)
 
   pp_for_each (init_table, all_pixel_formats)
 
@@ -586,21 +574,8 @@ typedef void (*pyr_down_func_t)(const char*, const char*, char*, unsigned int);
 
 static const pyr_down_func_t pyr_down_func_table[pixel_format::max_count][pixel_format::max_count] =
 {
-#define init_table_1(src_fmt, dst_fmt) pyr_down_line<pixel_format::src_fmt, pixel_format::dst_fmt>::func
-
-#define init_table(src_fmt) \
-  init_table_1 (src_fmt, invalid), \
-  init_table_1 (src_fmt, rgba_8888), \
-  init_table_1 (src_fmt, rgba_4444), \
-  init_table_1 (src_fmt, rgba_5551), \
-  init_table_1 (src_fmt, rgb_888), \
-  init_table_1 (src_fmt, rgb_565), \
-  init_table_1 (src_fmt, rgb_555), \
-  init_table_1 (src_fmt, rgb_444), \
-  init_table_1 (src_fmt, l_8), \
-  init_table_1 (src_fmt, a_8), \
-  init_table_1 (src_fmt, la_88), \
-  init_table_1 (src_fmt, rgba_f32),
+#define init_table_1(src_fmt, dst_fmt) pyr_down_line<pixel_format::src_fmt, pixel_format::dst_fmt>::func,
+#define init_table(src_fmt) pp_for_each_i (init_table_1, src_fmt, all_pixel_formats)
 
   pp_for_each (init_table, all_pixel_formats)
 
