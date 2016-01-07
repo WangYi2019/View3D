@@ -32,6 +32,7 @@ use max texture size: 4096 x 4096
 #include <limits>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 
 #include "tiled_image.hpp"
 #include "bmp_loader.hpp"
@@ -479,6 +480,8 @@ tiled_image::update (int32_t x, int32_t y,
 		     unsigned int src_x, unsigned int src_y,
 		     unsigned int src_width, unsigned int src_height)
 {
+  auto t0 = std::chrono::high_resolution_clock::now ();
+
   image rgb_img;
   image height_img;
 
@@ -509,6 +512,8 @@ alternatively:
 			.copy_to (m_rgb_image[0], { x, y });
 */
 
+  auto t1 = std::chrono::high_resolution_clock::now ();
+
   auto rgb_area = rgb_img.copy_to ({ src_x, src_y }, { src_width, src_height },
 				   m_rgb_image[0], { x, y });
 
@@ -518,6 +523,14 @@ alternatively:
 					 m_height_image[0], { x, y });
 
   update_mipmaps (m_height_image, rgb_area.dst_top_left, rgb_area.size);
+
+  auto t2 = std::chrono::high_resolution_clock::now ();
+
+  std::cout << "tiled_image update "
+	    << " t1-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count ()
+	    << " t2-t1 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count ()
+	    << " t2-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t0).count ()
+	    << std::endl;
 }
 
 void

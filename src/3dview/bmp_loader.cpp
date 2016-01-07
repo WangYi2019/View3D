@@ -130,26 +130,54 @@ image load_bmp_image (const char* filename)
       return { };
     }
 
-    image img (pf, { bih.biWidth, bih.biHeight });
-
     in.seekg (bfh.bfOffBits, std::ios_base::beg);
 
-    const unsigned int line_size_bytes = (((bih.biBitCount * bih.biWidth) / 8) + 3) & ~3;
-    auto line_readbuf = std::make_unique<char[]> (line_size_bytes);
-
+    const unsigned int line_size_bytes = ((bih.biBitCount * bih.biWidth + 31) / 32) * 4;
     const unsigned int line_count = std::abs (bih.biHeight);
 
+    struct tmp_image : public image
+    {
+      tmp_image (pixel_format pf, unsigned int w, unsigned int h,
+		 unsigned int stride)
+      {
+	m_size = { w, h };
+	m_bytes_per_line = stride;
+	m_format = pf;
+	m_data = data_buffer (stride * h);
+      }
+    };
+
+    tmp_image img (pf, bih.biWidth, bih.biHeight, line_size_bytes);
+
+#if 0
     for (unsigned int y = 0; y < line_count; ++y)
     {
-      in.read (line_readbuf.get (), line_size_bytes);
-
       auto ydst = bih.biHeight < 0
 		  ? y
 		  : line_count - y - 1;
 
-      std::memcpy (img.data_line (ydst), line_readbuf.get (),
-		   img.data_line_size_bytes ());
+      in.read ((char*)img.data_line (ydst), line_size_bytes);
     }
+
+#else
+    // read the whole image, then swap lines if necessary.
+    // this is a bit faster because of batched IO.
+    in.read ((char*)img.data (), line_count * line_size_bytes);
+
+    // if necessary, swap lines.
+    if (bih.biHeight >= 0)
+    {
+      auto&& alloc_linebuf = std::make_unique<char[]> (line_size_bytes + 128);
+      auto&& linebuf = (void*)(((uintptr_t)alloc_linebuf.get () + 127) & ~uintptr_t (127));
+
+      for (unsigned int y = 0; y < line_count / 2; ++y)
+      {
+	std::memcpy (linebuf, img.data_line (y), line_size_bytes);
+	std::memcpy (img.data_line (y), img.data_line (line_count - y - 1), line_size_bytes);
+	std::memcpy (img.data_line (line_count - y - 1), linebuf, line_size_bytes);
+      }
+    }
+#endif
 
     return std::move (img);
   }
