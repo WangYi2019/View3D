@@ -484,28 +484,7 @@ tiled_image::update (int32_t x, int32_t y,
 {
   auto t0 = std::chrono::high_resolution_clock::now ();
 
-  image rgb_img;
-  image height_img;
-
-  try
-  {
-    rgb_img = load_bmp_image (rgb_bmp_file);
-  }
-  catch (const std::exception& e)
-  {
-    std::cerr << "exception when loading image " << rgb_bmp_file << ": " << e.what () << std::endl;
-  }
-
-  try
-  {
-    height_img = load_bmp_image (height_bmp_file);
-  }
-  catch (const std::exception& e)
-  {
-    std::cerr << "exception when loading image " << height_bmp_file << ": " << e.what () << std::endl;
-  }
-
-  // copy the new data to the top-level mipmap level and then selectively
+  // load and copy the new data to the top-level mipmap level and then selectively
   // update the mipmap pyramid.
 
   auto t1 = std::chrono::high_resolution_clock::now ();
@@ -513,23 +492,41 @@ tiled_image::update (int32_t x, int32_t y,
   auto u0 = std::async (std::launch::deferred,
     [&] (void)
     {
-      auto area = rgb_img.copy_to ({ src_x, src_y }, { src_width, src_height },
-				   m_rgb_image[0], { x, y });
+      try
+      {
+	image img = load_bmp_image (rgb_bmp_file);
 
-      update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+	auto area = img.copy_to ({ src_x, src_y }, { src_width, src_height },
+				 m_rgb_image[0], { x, y });
+
+	update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+      }
+      catch (const std::exception& e)
+      {
+	std::cerr << "exception when loading image " << rgb_bmp_file << ": " << e.what () << std::endl;
+      }
     });
 
   auto u1 = std::async (std::launch::async,
     [&] (void)
     {
-      auto area = height_img.copy_to ({ src_x, src_y },  { src_width, src_height },
-				      m_height_image[0], { x, y });
+      try
+      {
+	image img = load_bmp_image (height_bmp_file);
 
-      update_mipmaps (m_height_image, area.dst_top_left, area.size);
+	auto area = img.copy_to ({ src_x, src_y },  { src_width, src_height },
+				 m_height_image[0], { x, y });
+
+	update_mipmaps (m_height_image, area.dst_top_left, area.size);
+      }
+      catch (const std::exception& e)
+      {
+	std::cerr << "exception when loading image " << height_bmp_file << ": " << e.what () << std::endl;
+      }
     });
 
-  u0.wait ();
-  u1.wait ();
+  u0.get ();
+  u1.get ();
 
   auto t2 = std::chrono::high_resolution_clock::now ();
 
