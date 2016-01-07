@@ -145,11 +145,7 @@ public:
   //        add parameter to subimg to make a real copy.
   image subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const;
 
-private:
-  vec2<unsigned int> m_size;
-  unsigned int m_bytes_per_line;
-  pixel_format m_format;
-
+protected:
   struct data_buffer
   {
     char* ptr;
@@ -164,10 +160,10 @@ private:
       rhs.ptr = nullptr;
     }
 
-    data_buffer (size_t sz_bytes)
+    data_buffer (size_t sz_bytes, uintptr_t align = 128)
     {
-      allocated = std::make_unique<char[]> (sz_bytes + 128);
-      ptr = (char*)(((uintptr_t)allocated.get () + 127) & ~127);
+      allocated = std::make_unique<char[]> (sz_bytes + align);
+      ptr = (char*)(((uintptr_t)allocated.get () + (align-1)) & ~(align-1));
     }
 
     data_buffer& operator = (const data_buffer&) = delete;
@@ -187,7 +183,17 @@ private:
     }
   };
 
+  static constexpr uintptr_t
+  align_stride (uintptr_t length_bytes, uintptr_t align = 32)
+  {
+    return (length_bytes + (align-1)) & ~(align-1);
+  }
+
+  vec2<unsigned int> m_size;
+  unsigned int m_bytes_per_line;
+  pixel_format m_format;
   data_buffer m_data;
+
 };
 
 namespace std

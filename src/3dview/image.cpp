@@ -638,11 +638,6 @@ static const pyr_down_func_t pyr_down_func_table[pixel_format::max_count][pixel_
 
 // ---------------------------------------------------------------------------
 
-unsigned int align_stride (unsigned int length_bytes)
-{
-  return (length_bytes + 31u) & ~((unsigned int)31u);
-}
-
 image::image (pixel_format pf, const vec2<unsigned int>& size)
 {
   m_size = size;
