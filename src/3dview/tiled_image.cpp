@@ -33,6 +33,7 @@ use max texture size: 4096 x 4096
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <future>
 
 #include "tiled_image.hpp"
 #include "bmp_loader.hpp"
@@ -507,36 +508,35 @@ tiled_image::update (int32_t x, int32_t y,
   // copy the new data to the top-level mipmap level and then selectively
   // update the mipmap pyramid.
 
-/*
-alternatively:
-   rgb_area = rgb_img.subimg ({src_x, src_y}, {src_width, src_height})
-			.copy_to (m_rgb_image[0], { x, y });
-*/
-
   auto t1 = std::chrono::high_resolution_clock::now ();
 
-  auto rgb_area = rgb_img.copy_to ({ src_x, src_y }, { src_width, src_height },
+  auto u0 = std::async (std::launch::deferred,
+    [&] (void)
+    {
+      auto area = rgb_img.copy_to ({ src_x, src_y }, { src_width, src_height },
 				   m_rgb_image[0], { x, y });
 
-  auto height_area = height_img.copy_to ({ src_x, src_y },  { src_width, src_height },
-					 m_height_image[0], { x, y });
+      update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+    });
+
+  auto u1 = std::async (std::launch::async,
+    [&] (void)
+    {
+      auto area = height_img.copy_to ({ src_x, src_y },  { src_width, src_height },
+				      m_height_image[0], { x, y });
+
+      update_mipmaps (m_height_image, area.dst_top_left, area.size);
+    });
+
+  u0.wait ();
+  u1.wait ();
 
   auto t2 = std::chrono::high_resolution_clock::now ();
-
-  update_mipmaps (m_rgb_image, rgb_area.dst_top_left, rgb_area.size);
-
-  auto t3 = std::chrono::high_resolution_clock::now ();
-
-  update_mipmaps (m_height_image, rgb_area.dst_top_left, height_area.size);
-
-  auto t4 = std::chrono::high_resolution_clock::now ();
 
   std::cout << "tiled_image update "
 	    << " t1-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count ()
 	    << " t2-t1 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count ()
-	    << " t3-t2 = " << std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count ()
-	    << " t4-t3 = " << std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count ()
-	    << " t4-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t4 - t0).count ()
+	    << " t2-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t0).count ()
 	    << std::endl;
 }
 
