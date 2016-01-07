@@ -45,25 +45,25 @@ view3d_disable_render (void);
 
 // resize the current image.  initially the image is empty (width = height = 0).
 // when the image size is changed, the image is cleared and old image data
-// is discarded.
+// is discarded.  the pixel values (rgb and z) are initialized to 0.
 extern "C" void DLLEXPORT
 resize_image (unsigned int width_pixels, unsigned int height_pixels);
 
 // fill the whole image with the specified constant value.
+// the value range of the fill values is clamped to [0..1].
 extern "C" void DLLEXPORT
-fill_image (unsigned int r, unsigned int g, unsigned int b,
-	    unsigned int z);
+fill_image (float r, float g, float b, float z);
 
 // fill the specified image region with the specified constant value.
 extern "C" void DLLEXPORT
 fill_image_area (unsigned int x, unsigned int y,
 		 unsigned int width, unsigned int height,
-		 unsigned int r, unsigned int g, unsigned int b,
-		 unsigned int z);
+		 float r, float g, float b, float z);
 
 // update the image area at the specified region.  because the specified
 // region in the image is overwritten, there is no problem with overlapping
-// region updates.
+// region updates.  update functions can be used while the image view is
+// being displayed.
 
 // this overload loads the image data from the files.
 // after loading the file, it is cropped to the specified sub-region.
@@ -80,6 +80,9 @@ update_image_area_1 (unsigned int x, unsigned int y,
 		     unsigned int src_width, unsigned int src_height);
 
 // this overload copies the image data from the specified memory.
+// the expected RGB data is unsigned 8 bit per component, 24 bit per pixel,
+// ordered as R,G,B.
+// the expected height data is unsigned 8 bit.
 extern "C" void DLLEXPORT
 update_image_area_2 (unsigned int x, unsigned int y,
 		     unsigned int width, unsigned int height,

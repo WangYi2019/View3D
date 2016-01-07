@@ -15,8 +15,8 @@ public:
     rgba_5551,
     rgb_888,
     rgb_565,
-    rgb_555,
-    rgb_444,
+    rgb_555,  // this is actually rgbx (vs. xrgb)
+    rgb_444,  // this is actually rgbx (vs. xrgb)
     l_8,
     a_8,
     la_88,
