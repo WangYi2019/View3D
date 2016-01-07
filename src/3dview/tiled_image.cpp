@@ -527,7 +527,7 @@ alternatively:
 
   auto t3 = std::chrono::high_resolution_clock::now ();
 
-  update_mipmaps (m_height_image, rgb_area.dst_top_left, rgb_area.size);
+  update_mipmaps (m_height_image, rgb_area.dst_top_left, height_area.size);
 
   auto t4 = std::chrono::high_resolution_clock::now ();
 
@@ -557,6 +557,7 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
     auto dst_xy = xy / 2;
     auto dst_size = size / 2;
 
+    // notice that this "rounds" the source coordinates
     auto src_xy = dst_xy * 2;
     auto src_size = dst_size * 2;
 
@@ -580,12 +581,8 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
 	      << " dst_size = (" << dst_size.x << "," << dst_size.y << ")"
 	      << std::endl;
 
-    // FIXME: reduce temporaries
-    // e.g.
-    // src_level.subimg (src_xy, src_size).pyr_down_to (dst_level, dst_xy);
-
     src_level.subimg (vec2<int> (src_xy), src_size)
-		.pyr_down ().copy_to (dst_level, vec2<int> (dst_xy));
+		.pyr_down_to (dst_level.subimg (vec2<int> (dst_xy), dst_size));
 
     xy = dst_xy;
     size = dst_size;

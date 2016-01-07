@@ -777,9 +777,26 @@ image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
   return { src_tl, dst_tl, copy_sz };
 }
 
-image image::pyr_down (down_sample_mode_t mode) const
+image image::pyr_down (void) const
 {
   image dst (m_format, std::max (vec2<unsigned int> (1), m_size / 2));
+
+  pyr_down_to (dst);
+
+  return std::move (dst);
+}
+
+void image::pyr_down_to (image&& dst) const
+{
+  pyr_down_to ((image&)dst);
+}
+
+void image::pyr_down_to (image& dst) const
+{
+  const auto required_dst_size = std::max (vec2<unsigned int> (1), m_size / 2);
+
+  if (dst.size ().x < required_dst_size.x || dst.size ().y < required_dst_size.y)
+    return;
 
   const unsigned int src_stride = m_bytes_per_line;
   const unsigned int dst_stride = dst.bytes_per_line ();
@@ -796,8 +813,6 @@ image image::pyr_down (down_sample_mode_t mode) const
     src_ptr += src_stride * 2;
     dst_ptr += dst_stride;
   }
-
-  return std::move (dst);
 }
 
 image image::subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const

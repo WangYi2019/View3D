@@ -84,7 +84,6 @@ image load_bmp_image (const char* filename)
 
     std::cout << "load_bmp_image filesize = " << bfh.bfSize
 	      << " offbits = " << bfh.bfOffBits
-	      << "  sizeof (uint32_t) = " << sizeof (uint32_t)
 	      << std::endl;
 
     BITMAPINFOHEADER bih;

@@ -29,7 +29,7 @@ public:
     std::swap (m_size, rhs.m_size);
     std::swap (m_bytes_per_line, rhs.m_bytes_per_line);
     std::swap (m_format, rhs.m_format);
-    std::swap (m_data, rhs.m_data);
+    m_data.swap (rhs.m_data);
   }
 
   bool empty (void) const
@@ -132,14 +132,9 @@ public:
     return copy_to ({0, 0}, size (), dst, dst_xy);
   }
 
-  enum down_sample_mode_t
-  {
-    down_sample_avg,
-  };
-
-  // FIXME: add overload to specifiy the destination image
-  //        (which could be a shared-buffer subimg).
-  image pyr_down (down_sample_mode_t mode = down_sample_avg) const;
+  image pyr_down (void) const;
+  void pyr_down_to (image& dst) const;
+  void pyr_down_to (image&& dst) const;  // for rhs result of subimg
 
   // returns a shallow copy of a sub-region.  the data buffer ownership
   // is not transferred to the resulting image.  however, when the resulting
@@ -183,10 +178,16 @@ protected:
       allocated = nullptr;
       return *this;
     }
+
+    void swap (data_buffer& rhs)
+    {
+      std::swap (ptr, rhs.ptr);
+      std::swap (allocated, rhs.allocated);
+    }
   };
 
   static constexpr uintptr_t
-  align_stride (uintptr_t length_bytes, uintptr_t align = 32)
+  align_stride (uintptr_t length_bytes, uintptr_t align = 16)
   {
     return (length_bytes + (align-1)) & ~(align-1);
   }
@@ -195,7 +196,6 @@ protected:
   unsigned int m_bytes_per_line;
   pixel_format m_format;
   data_buffer m_data;
-
 };
 
 namespace std
