@@ -810,9 +810,11 @@ image image::subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const
   if (copy_sz.x == 0 || copy_sz.y == 0)
     return { };
 
-  image res (m_format, copy_sz);
-
-  copy_to (xy, sz, res);
+  image res;
+  res.m_size = copy_sz;
+  res.m_bytes_per_line = m_bytes_per_line;
+  res.m_format = m_format;
+  res.m_data.ptr = (char*)data_at (src_tl);
 
   return std::move (res);
 }

@@ -141,8 +141,10 @@ public:
   //        (which could be a shared-buffer subimg).
   image pyr_down (down_sample_mode_t mode = down_sample_avg) const;
 
-  // FIXME: return a shared image buffer instead of a copy.
-  //        add parameter to subimg to make a real copy.
+  // returns a shallow copy of a sub-region.  the data buffer ownership
+  // is not transferred to the resulting image.  however, when the resulting
+  // image is assigned (copy constructor, copy assignment operator), a new
+  // buffer will be created and the data will be copied.
   image subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const;
 
 protected:
