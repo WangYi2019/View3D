@@ -1495,7 +1495,7 @@ inline void draw (primitive_type_t t, unsigned int vtxsize,
 }
 
 inline void draw_indexed (primitive_type_t t, unsigned int vtxsize,
-                          buffer& idxbuffer,
+                          const buffer& idxbuffer,
                           const index_type& it,
                           unsigned int count, unsigned int offset = 0)
 {

@@ -87,7 +87,7 @@ for this need support for shared image buffers
 	       const void* height_data, uint32_t height_data_stride_bytes);
 */
 
-  void render (const mat4<float>& mvp);
+  void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv);
 
 private:
   struct vertex;
@@ -112,7 +112,7 @@ private:
 
   // all tiles in the image.
   //std::vector<std::unique_ptr<tile>> m_tiles;
-  std::vector<tile> m_tiles;
+  std::array<std::vector<tile>, max_lod_level> m_tiles;
 
   static void
   update_mipmaps (std::array<image, max_lod_level>& img,

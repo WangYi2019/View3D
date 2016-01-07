@@ -58,27 +58,29 @@ public:
   {
     std::cout << "grid_mesh " << size.x << " x " << size.y << std::endl;
 
+    m_size = size;
+
     std::vector<vertex> vtx;
     vtx.reserve (size.x * size.y);
 
     for (unsigned int y = 0; y < size.y; ++y)
       for (unsigned int x = 0; x < size.x; ++x)
-	vtx.emplace_back ( (vec2<float> (x, y) * (1.0f / vec2<float> (size - 1))) * 2 - 1 );
+	vtx.emplace_back (vec2<float> (x, y) * (1.0f / vec2<float> (size - 1)));
 
-    // make sure that the top edge y is -1
-    // make sure that the bottom edge y is +1
+    // make sure that the top edge y is 0
+    // make sure that the bottom edge y is 1
     for (unsigned int x = 0; x < size.x; ++x)
     {
-      vtx[x].pos.y = -1;
-      vtx[(size.y-1) * size.x].pos.y = +1;
+      vtx[x].pos.y = 0;
+      vtx[(size.y-1) * size.x].pos.y = 1;
     }
 
-    // make sure that the left edge x is -1
-    // make sure that the right edge x is +1
+    // make sure that the left edge x is 0
+    // make sure that the right edge x is 1
     for (unsigned int y = 0; y < size.y; ++y)
     {
-      vtx[y * size.x + 0].pos.x = -1;
-      vtx[y * size.x + size.x-1].pos.x = +1;
+      vtx[y * size.x + 0].pos.x = 0;
+      vtx[y * size.x + size.x-1].pos.x = 1;
     }
 
     m_vertex_buffer = gl::buffer (gl::buffer::vertex, vtx);
@@ -109,25 +111,27 @@ public:
     }
   };
 
-  void render_textured (void)
+  void render_textured (void) const
   {
     gl::draw_indexed (gl::triangles, sizeof (vertex),
 		      m_index_buffer, m_index_buffer_type, m_index_buffer_count);
   }
 
-  void render_wireframe (void)
+  void render_wireframe (void) const
   {
     gl::draw_indexed (gl::lines, sizeof (vertex),
 		      m_wireframe_index_buffer, m_index_buffer_type,
 		      m_wireframe_index_buffer_count);
   }
 
-  void render_outline (void)
+  void render_outline (void) const
   {
     gl::draw_indexed (gl::lines, sizeof (vertex),
 		      m_outline_index_buffer, m_index_buffer_type,
 		      m_outline_index_buffer_count);
   }
+
+  const gl::buffer& vertex_buffer (void) const { return m_vertex_buffer; }
 
 private:
   vec2<uint32_t> m_size;
@@ -235,10 +239,13 @@ public:
   : m_pos (pos), m_size (size), m_lod (lod)
   {
     vec2<uint32_t> physical_size = std::max (size >> lod, { 1, 1 });
-
-    std::cout << "tile physical size = " << physical_size.x << " x "
-	      << physical_size.y << std::endl;
-
+/*
+    std::cout << "tile pos = (" << pos.x << "," << pos.y << ")"
+	      << " size = (" << size.x << "," << size.y << ")"
+	      << " lod = " << lod
+	      << " phys.size = (" << physical_size.x << "," << physical_size.y << ")"
+	      << std::endl;
+*/
     auto i = std::find_if (g_grid_meshes.begin (), g_grid_meshes.end (),
 			   grid_mesh::size_equals (physical_size));
 
@@ -247,6 +254,8 @@ public:
       m_grid_mesh = std::make_shared<grid_mesh> (physical_size);
       g_grid_meshes.push_back (m_grid_mesh);
     }
+    else
+      m_grid_mesh = *i;
   }
 
   tile (const tile&) = delete;
@@ -313,6 +322,11 @@ public:
 
   unsigned int scale_factor (void) const { return 1 << m_lod; }
 
+  const grid_mesh& mesh (void) const
+  {
+    assert (m_grid_mesh != nullptr);
+    return *m_grid_mesh;
+  }
 
 private:
   vec2<uint32_t> m_pos;
@@ -417,6 +431,28 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 
     m_height_image[i] = image (pixel_format::l_8, sz);
     m_height_image[i].fill ({ 0 });
+  }
+
+  // setup tiles
+  sz = vec2<unsigned int> (size);
+  for (unsigned int i = 0; i < max_lod_level; ++i)
+  {
+    const auto physical_tile_size = tile_grid_size << i;
+
+    auto num_tiles_tile = (size + (physical_tile_size-1)) / physical_tile_size;
+    m_tiles[i].reserve (num_tiles_tile.x * num_tiles_tile.y);
+
+    std::cout << "lod " << i
+	      << " num_tiles_tile = " << num_tiles_tile.x << " x " << num_tiles_tile.y << std::endl;
+
+    for (unsigned int y = 0; y < size.y; y += physical_tile_size)
+      for (unsigned int x = 0; x < size.x; x += physical_tile_size)
+      {
+	vec2<uint32_t> tile_tl (x, y);
+	vec2<uint32_t> tile_br = std::min (tile_tl + physical_tile_size, size);
+
+	m_tiles[i].emplace_back (tile_tl, tile_br - tile_tl, i);
+      }
   }
 }
 
@@ -587,9 +623,47 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
 }
 
 
-void tiled_image::render (const mat4<float>& mvp)
+void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv)
 {
+  m_shader->activate ();
+  m_shader->color_texture = 0;
+  m_shader->height_texture = 0;
 
+  glLineWidth (0.5f);
 
+  glDisable (GL_TEXTURE_2D);
+  glDisable (GL_DEPTH_TEST);
+
+  static const std::array<vec4<float>, max_lod_level> lod_colors =
+  {
+    vec4<float> (1, 1, 1, 1),
+    vec4<float> (1, 0, 0, 0),
+    vec4<float> (0, 1, 0, 0),
+    vec4<float> (0, 0, 1, 0),
+    vec4<float> (1, 1, 0, 1),
+  };
+
+  for (unsigned int i = 0; i < max_lod_level; ++i)
+  {
+    if (lod_colors[i].a == 0)
+      continue;
+
+    m_shader->zbias = 0.00001f * (i + 1) * 1;
+    m_shader->offset_color = lod_colors[i];
+
+    for (const auto& t : m_tiles[i])
+    {
+      auto tile_trv =
+	mat4<double>::translate (vec3<double> (t.pos (), 0))
+	* mat4<double>::scale (vec3<double> (t.size (), 1));
+
+      auto mvp = proj_trv * cam_trv * tile_trv;
+
+      m_shader->mvp = (mat4<float>)mvp;
+
+      m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
+      t.mesh ().render_outline ();
+    }
+  }
 }
 

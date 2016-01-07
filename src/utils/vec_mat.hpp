@@ -740,6 +740,16 @@ template <typename T> struct mat4
     T m[element_count];
   };
 
+  template<typename S>
+  operator mat4<S> (void) const
+  {
+    mat4<S> r;
+    for (unsigned int i = 0; i < element_count; ++i)
+      r.m[i] = (S)m[i];
+
+    return std::move (r);
+  }
+
   friend mat4 operator * (const mat4& a, const mat4& b)
   {
     mat4 result;

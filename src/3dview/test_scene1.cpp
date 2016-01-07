@@ -28,15 +28,15 @@ test_scene1::test_scene1 (void)
   {
     { "1/20151130133409view1.bmp", "1/20151130133409view1-3d3-13.bmp", 6348, 8152 },
     { "2/20151130133409view2.bmp", "2/20151130133409view2-3d3-13.bmp", 4416, 8152 },
-//    { "3/20151130133409view3.bmp", "3/20151130133409view3-3d3-13.bmp", 2483, 8152 },
-//    { "4/20151130133409view4.bmp", "4/20151130133409view4-3d3-13.bmp",  549, 8152 },
+    { "3/20151130133409view3.bmp", "3/20151130133409view3-3d3-13.bmp", 2483, 8152 },
+    { "4/20151130133409view4.bmp", "4/20151130133409view4-3d3-13.bmp",  549, 8152 },
 
     { "5/20151130133409view5.bmp", "5/20151130133409view5-3d3-13.bmp", 6348, 6248 },
     { "6/20151130133409view6.bmp", "6/20151130133409view6-3d3-13.bmp", 4416, 6248 },
-//    { "7/20151130133409view7.bmp", "7/20151130133409view7-3d3-13.bmp", 2483, 6248 },
-//    { "8/20151130133409view8.bmp", "8/20151130133409view8-3d3-13.bmp",  549, 6248 },
+    { "7/20151130133409view7.bmp", "7/20151130133409view7-3d3-13.bmp", 2483, 6248 },
+    { "8/20151130133409view8.bmp", "8/20151130133409view8-3d3-13.bmp",  549, 6248 },
 
-/*
+
     {  "9/20151130133409view9.bmp",   "9/20151130133409view9-3d3-13.bmp",  6348, 4344 },
     { "10/20151130133409view10.bmp", "10/20151130133409view10-3d3-13.bmp", 4416, 4344 },
     { "11/20151130133409view11.bmp", "11/20151130133409view11-3d3-13.bmp", 2483, 4344 },
@@ -51,15 +51,14 @@ test_scene1::test_scene1 (void)
     { "18/20151130133409view18.bmp", "18/20151130133409view18-3d3-13.bmp", 4416, 536 },
     { "19/20151130133409view19.bmp", "19/20151130133409view19-3d3-13.bmp", 2483, 536 },
     { "20/20151130133409view20.bmp", "20/20151130133409view20-3d3-13.bmp",  549, 536 },
-*/
+
   };
-
-
+/*
   for (auto&& i : images)
     m_image->update (i.x, i.y,
 		     (base_path + i.rgb_img).c_str (),
 		     (base_path + i.height_img).c_str ());
-
+*/
 }
 
 test_scene1::~test_scene1 (void)
@@ -80,38 +79,39 @@ void test_scene1::render (unsigned int width, unsigned int height,
   glFrontFace (GL_CW);
   glEnable (GL_DEPTH_TEST);
   glEnable (GL_TEXTURE_2D);
-//  glDepthFunc (GL_LEQUAL);
-  glDepthFunc (GL_LESS);
+  glDepthFunc (GL_LEQUAL);
 
   glDisable (GL_STENCIL_TEST);
   glDisable (GL_BLEND);
 
-  mat4<float> proj_trv =
-    mat4<float>::proj_perspective (M_PI/3, (float)width / -(float)height,
-                                   0.1f, 10000.0f);
+
+  auto proj_trv =
+    mat4<double>::proj_perspective (M_PI/3, (float)width / -(float)height,
+                                    0.1f, 10000.0f);
 
   m_rotate_angle += delta_time.count () * 0.0000001f;
   if (m_rotate_angle > 2*M_PI)
     m_rotate_angle -= 2*M_PI;
 
-#if 1
-  mat4<float> cam_trv = mat4<float>::identity ()
-//      * mat4<float>::translate (0, 0, -0.5f - std::abs (std::sin (frame_number * 0.0025f)) * 5)
-      * mat4<float>::translate (0, 0, -2.0f)
-      * mat4<float>::rotate_x (M_PI * -0.24f)
-      * mat4<float>::rotate_z (m_rotate_angle)
-      * mat4<float>::identity ();
-#else
-  mat4<float> cam_trv = mat4<float>::identity ()
-      * mat4<float>::translate (0, 0, -0.5)
-      * mat4<float>::rotate_x (0)
-      * mat4<float>::rotate_z (0)
-      * mat4<float>::identity ();
-#endif
+  auto cam_trv = mat4<double>::identity ()
 
-  auto mvp = proj_trv * cam_trv;
+      // move camera away a bit
+      * mat4<double>::translate (0, 0, -1.5)
 
-  m_image->render (mvp);
+      // rotate around (0,0) center
+//      * mat4<double>::rotate_x (m_rotate_angle)
+      * mat4<double>::rotate_x (M_PI * -0.24f)
+      * mat4<double>::rotate_z (m_rotate_angle)
+
+      // scale to -1,+1 range (based on max (width, height))
+      * mat4<double>::scale (vec3<double> ( (2 / vec2<double> (std::max (m_image->size ().x, m_image->size ().y))) * 0.5, 1))
+
+      // move image to (0,0) center
+      * mat4<double>::translate (vec3<double> (vec2<double> (m_image->size ()) * -0.5, 0))
+
+      * mat4<double>::identity ();
+
+  m_image->render (cam_trv, proj_trv);
 
   gl_check_log_error ();
 }
