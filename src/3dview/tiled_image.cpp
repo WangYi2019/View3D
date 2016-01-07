@@ -411,6 +411,7 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 			    : pixel_format::rgba_8888, sz);
 */
     m_rgb_image[i] = image (pixel_format::rgba_8888, sz);
+//    m_rgb_image[i] = image (pixel_format::bgr_888, sz);
     m_rgb_image[i].fill ({ 0 });
 
     m_height_image[i] = image (pixel_format::l_8, sz);
@@ -517,19 +518,25 @@ alternatively:
   auto rgb_area = rgb_img.copy_to ({ src_x, src_y }, { src_width, src_height },
 				   m_rgb_image[0], { x, y });
 
-  update_mipmaps (m_rgb_image, rgb_area.dst_top_left, rgb_area.size);
-
   auto height_area = height_img.copy_to ({ src_x, src_y },  { src_width, src_height },
 					 m_height_image[0], { x, y });
 
+  auto t2 = std::chrono::high_resolution_clock::now ();
+
+  update_mipmaps (m_rgb_image, rgb_area.dst_top_left, rgb_area.size);
+
+  auto t3 = std::chrono::high_resolution_clock::now ();
+
   update_mipmaps (m_height_image, rgb_area.dst_top_left, rgb_area.size);
 
-  auto t2 = std::chrono::high_resolution_clock::now ();
+  auto t4 = std::chrono::high_resolution_clock::now ();
 
   std::cout << "tiled_image update "
 	    << " t1-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count ()
 	    << " t2-t1 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count ()
-	    << " t2-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t0).count ()
+	    << " t3-t2 = " << std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count ()
+	    << " t4-t3 = " << std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count ()
+	    << " t4-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t4 - t0).count ()
 	    << std::endl;
 }
 
