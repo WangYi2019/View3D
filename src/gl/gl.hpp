@@ -565,7 +565,7 @@ public:
     bind ();
     set_upload_stride (stride_bytes);
 
-    glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_fmt (), m_size.x, m_size.y, 0,
+    glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_internal_fmt (), m_size.x, m_size.y, 0,
 		  m_format.gl_fmt (), m_format.gl_type (), data);
   }
 
@@ -581,7 +581,7 @@ public:
 
     if (dst_xy.x == 0 && dst_xy.y == 0
 	&& size.x == m_size.x && size.y == m_size.y)
-      glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_fmt (), m_size.x, m_size.y, 0,
+      glTexImage2D (GL_TEXTURE_2D, 0, m_format.gl_internal_fmt (), m_size.x, m_size.y, 0,
 		    m_format.gl_fmt (), m_format.gl_type (), data);
     else
     {

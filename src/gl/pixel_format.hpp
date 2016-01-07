@@ -22,9 +22,10 @@ public:
     la_88,
     rgba_f32,
     rgb_332,
+    bgr_888
   };
 
-  static constexpr unsigned int max_count = (unsigned int)rgb_332 + 1;
+  static constexpr unsigned int max_count = (unsigned int)bgr_888 + 1;
 
   constexpr pixel_format (void) : m_fmt (invalid) { }
   constexpr pixel_format (fmt_t f) : m_fmt (f) { }
@@ -52,6 +53,7 @@ public:
   const char* str (void) const;
 
   unsigned int gl_fmt (void) const;
+  unsigned int gl_internal_fmt (void) const;
   unsigned int gl_type (void) const;
 
   unsigned int bits_per_pixel (void) const;

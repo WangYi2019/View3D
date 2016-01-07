@@ -119,7 +119,7 @@ image load_bmp_image (const char* filename)
     if (bih.biBitCount == 8)
       pf = pixel_format::l_8;
     else if (bih.biBitCount == 24)
-      pf = pixel_format::rgb_888;
+      pf = pixel_format::bgr_888;
     else if (bih.biBitCount == 32)
       pf = pixel_format::rgba_8888;
 
@@ -149,17 +149,6 @@ image load_bmp_image (const char* filename)
 
       std::memcpy (img.data_line (ydst), line_readbuf.get (),
 		   img.data_line_size_bytes ());
-
-      if (pf == pixel_format::rgb_888)
-      {
-	// swap R and B
-	uint8_t* p = (uint8_t*)img.data_line (ydst);
-	for (unsigned int x = 0; x < img.width (); ++x)
-	{
-	  std::swap (p[0], p[2]);
-	  p += 3;
-	}
-      }
     }
 
     return std::move (img);
