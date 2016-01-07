@@ -15,7 +15,7 @@ class tiled_image
 {
 public:
   // how many LED levels we have
-  static constexpr unsigned int max_lod_level = 5;
+  static constexpr unsigned int max_lod_level = 6;
   static constexpr unsigned int max_lod_scale_factor = 1 << max_lod_level;
 
   // the grid size of one geometry tile.  the grid size is constant for each

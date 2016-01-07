@@ -347,6 +347,7 @@ struct tiled_image::shader : public gl::shader
 {
   uniform< mat4<float>, highp > mvp;
   uniform< vec4<float>, lowp > offset_color;
+  uniform< vec2<float>, highp > tile_scale;
 
   uniform< sampler2D, mediump > color_texture;
   uniform< sampler2D, mediump > height_texture;
@@ -360,6 +361,7 @@ struct tiled_image::shader : public gl::shader
     named_parameter (mvp);
     named_parameter (pos);
     named_parameter (offset_color);
+    named_parameter (tile_scale);
     named_parameter (color_texture);
     named_parameter (height_texture);
     named_parameter (zbias);
@@ -371,14 +373,12 @@ struct tiled_image::shader : public gl::shader
 
     void main (void)
     {
-      // the vertex positions are in the range -1 ... +1
-      // the texture coordinates are in the range 0...1
-      vec2 uv = (pos + 1.0) * 0.5;
+      vec2 uv = pos;
 
       vec4 height = texture2D (height_texture, uv);
 
       color_uv = uv;
-      gl_Position = mvp * vec4 (pos, height.r * 0.1 + zbias, 1.0);
+      gl_Position = mvp * vec4 (pos * tile_scale, height.r * 0.1 + zbias, 1.0);
     }
   )
 
@@ -640,15 +640,17 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
     vec4<float> (1, 0, 0, 0),
     vec4<float> (0, 1, 0, 0),
     vec4<float> (0, 0, 1, 0),
+    vec4<float> (1, 0, 1, 0),
     vec4<float> (1, 1, 0, 1),
   };
 
   for (unsigned int i = 0; i < max_lod_level; ++i)
+//  for (int i = max_lod_level - 1; i >= 0; --i)
   {
     if (lod_colors[i].a == 0)
       continue;
 
-    m_shader->zbias = 0.00001f * (i + 1) * 1;
+    m_shader->zbias = 0.00001f * (i + 1) * 0;
     m_shader->offset_color = lod_colors[i];
 
     for (const auto& t : m_tiles[i])
@@ -657,12 +659,19 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 	mat4<double>::translate (vec3<double> (t.pos (), 0))
 	* mat4<double>::scale (vec3<double> (t.size (), 1));
 
+      m_shader->tile_scale = vec2<float> (1);
+//      m_shader->tile_scale = vec2<float> (i + 1);
+
       auto mvp = proj_trv * cam_trv * tile_trv;
 
       m_shader->mvp = (mat4<float>)mvp;
 
       m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
-      t.mesh ().render_outline ();
+
+      if (i == max_lod_level - 1 && 0)
+        t.mesh ().render_wireframe ();
+      else
+        t.mesh ().render_outline ();
     }
   }
 }
