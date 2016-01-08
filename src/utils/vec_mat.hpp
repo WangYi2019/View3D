@@ -46,9 +46,10 @@ template <typename T> struct vec2
   {
     return vec2 (a.x + b.x, a.y + b.y);
   }
-  template <typename S> friend constexpr vec2 operator + (const vec2& a, S b)
+
+  template <typename S> constexpr vec2 operator + (S b) const
   {
-    return vec2 (a.x + b, a.y + b);
+    return { x + b, y + b };
   }
   template <typename S> friend constexpr vec2 operator + (S a, const vec2& b)
   {
@@ -67,9 +68,9 @@ template <typename T> struct vec2
   {
     return { a.x - b.x, a.y - b.y };
   }
-  template <typename S> friend constexpr vec2 operator - (const vec2& a, S b)
+  template <typename S> constexpr vec2 operator - (S b) const
   {
-    return { a.x - b, a.y - b };
+    return { x - b, y - b };
   }
   template <typename S> friend constexpr vec2 operator - (S a, const vec2& b)
   {
@@ -290,9 +291,9 @@ template <typename T> struct vec3
   {
     return { a.x + b.x, a.y + b.y, a.z + b.z };
   }
-  template <typename S> friend constexpr vec3 operator + (const vec3& a, S b)
+  template <typename S> constexpr vec3 operator + (S b) const
   {
-    return { a.x + b, a.y + b, a.z + b };
+    return { x + b, y + b, z + b };
   }
   template <typename S> friend constexpr vec3 operator + (S a, const vec3& b)
   {
@@ -311,9 +312,9 @@ template <typename T> struct vec3
   {
     return { a.x - b.x, a.y - b.y, a.z - b.z };
   }
-  template <typename S> constexpr friend vec3 operator - (const vec3& a, S b)
+  template <typename S> constexpr vec3 operator - (S b) const
   {
-    return { a.x - b, a.y - b, a.z - b };
+    return { x - b, y - b, z - b };
   }
   template <typename S> constexpr friend vec3 operator - (S a, const vec3& b)
   {
@@ -531,11 +532,11 @@ template <typename T> struct vec4
     return { a.vec_ext + b.vec_ext };
   }
 
-  template <typename S> friend constexpr
+  template <typename S> constexpr
   typename std::enable_if<!is_vec<S>::value, vec4>::type
-  operator + (const vec4& a, S b)
+  operator + (S b) const
   {
-    return { a.vec_ext + (T)b };
+    return { vec_ext + (T)b };
   }
 
   template <typename S> friend constexpr
@@ -558,9 +559,9 @@ template <typename T> struct vec4
   {
     return { a.vec_ext - b.vec_ext };
   }
-  template <typename S> constexpr friend vec4 operator - (const vec4& a, S b)
+  template <typename S> constexpr vec4 operator - (S b) const
   {
-    return { a.vec_ext - (T)b };
+    return { vec_ext - (T)b };
   }
   template <typename S> constexpr friend vec4 operator - (S a, const vec4& b)
   {
