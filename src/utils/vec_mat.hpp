@@ -772,6 +772,14 @@ template <typename T> struct mat4
     return result;
   }
 
+  friend mat4 operator + (const mat4& a, const mat4& b)
+  {
+    mat4 result;
+    for (unsigned int i = 0; i < element_count; ++i)
+      result.m[i] = a.m[i] + b.m[i];
+    return result;
+  }
+
   friend vec4<T> operator * (const mat4& m, const vec4<T>& v)
   {
     return vec4<T> (m.m00 * v.x + m.m01 * v.y + m.m02 * v.z + m.m03 * v.w,
