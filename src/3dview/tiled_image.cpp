@@ -256,6 +256,11 @@ public:
     }
     else
       m_grid_mesh = *i;
+
+    m_trv = mat4<double>::translate (vec3<double> (m_pos, 0))
+	    * mat4<double>::scale (vec3<double> (m_size, 1));
+
+    m_subtiles.fill (nullptr);
   }
 
   tile (const tile&) = delete;
@@ -265,7 +270,9 @@ public:
   : m_pos (std::move (rhs.m_pos)),
     m_size (std::move (rhs.m_size)),
     m_lod (std::move (rhs.m_lod)),
-    m_grid_mesh (std::move (rhs.m_grid_mesh))
+    m_grid_mesh (std::move (rhs.m_grid_mesh)),
+    m_trv (std::move (rhs.m_trv)),
+    m_subtiles (std::move (rhs.m_subtiles))
   {
   }
 
@@ -280,6 +287,8 @@ public:
       check_delete_grid_mesh_last_ref ();
 
       m_grid_mesh = std::move (rhs.m_grid_mesh);
+      m_trv = std::move (rhs.m_trv);
+      m_subtiles = std::move (rhs.m_subtiles);
     }
     return *this;
   }
@@ -328,12 +337,23 @@ public:
     return *m_grid_mesh;
   }
 
+  const mat4<double>& trv (void) const { return m_trv; }
+
+  const std::array<tile*, 4> subtiles (void) const { return m_subtiles; }
+  void set_subtiles (const std::array<tile*, 4>& t) { m_subtiles = t; }
+
 private:
   vec2<uint32_t> m_pos;
   vec2<uint32_t> m_size;
   unsigned int m_lod;
 
   std::shared_ptr<grid_mesh> m_grid_mesh;
+
+  mat4<double> m_trv;
+
+  // one tile (lower detail level) is subdivided into
+  // 4 tiles (higher detail level)
+  std::array<tile*, 4> m_subtiles;
 
   // textures from the cache.
   //std::shared_ptr<gl::texture> m_rgb_texture;
@@ -412,27 +432,28 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
   m_shader = g_shader;
 
   // setup mipmaps for the whole image.
-  vec2<unsigned int> sz (size);
-  for (unsigned int i = 0; i < max_lod_level && sz.x > 0 && sz.y > 0;
-       ++i, sz /= 2)
   {
-    std::cout << "tiled_image new mipmap level " << sz.x << " x " << sz.y << std::endl;
+    vec2<unsigned int> sz (size);
+    for (unsigned int i = 0; i < max_lod_level && sz.x > 0 && sz.y > 0;
+	 ++i, sz /= 2)
+    {
+      std::cout << "tiled_image new mipmap level " << sz.x << " x " << sz.y << std::endl;
 /*
-    // for lower levels, use lower color resolution images.
-    m_rgb_image[i] = image (sz.x <= 512 || sz.y <= 512
-			    ? pixel_format::rgb_555
-			    : pixel_format::rgba_8888, sz);
+      // for lower levels, use lower color resolution images.
+      m_rgb_image[i] = image (sz.x <= 512 || sz.y <= 512
+			      ? pixel_format::rgb_555
+			      : pixel_format::rgba_8888, sz);
 */
-    m_rgb_image[i] = image (pixel_format::rgba_8888, sz);
+      m_rgb_image[i] = image (pixel_format::rgba_8888, sz);
 //    m_rgb_image[i] = image (pixel_format::bgr_888, sz);
-    m_rgb_image[i].fill ({ 0 });
+      m_rgb_image[i].fill ({ 0 });
 
-    m_height_image[i] = image (pixel_format::l_8, sz);
-    m_height_image[i].fill ({ 0 });
+      m_height_image[i] = image (pixel_format::l_8, sz);
+      m_height_image[i].fill ({ 0 });
+    }
   }
 
   // setup tiles
-  sz = vec2<unsigned int> (size);
   for (unsigned int i = 0; i < max_lod_level; ++i)
   {
     const auto physical_tile_size = tile_grid_size << i;
@@ -452,6 +473,48 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 	m_tiles[i].emplace_back (tile_tl, tile_br - tile_tl, i);
       }
   }
+
+  // link tiles
+  for (unsigned int i = max_lod_level-1; i > 0; --i)
+  {
+    const auto physical_tile_size = tile_grid_size << i;
+    auto num_tiles = (size + (physical_tile_size-1)) / physical_tile_size;
+
+    const auto parent_physical_tile_size = tile_grid_size << (i-1);
+    auto parent_num_tiles = (size + (parent_physical_tile_size-1)) / parent_physical_tile_size;
+
+
+    for (unsigned int y = 0; y < num_tiles.y; ++y)
+      for (unsigned int x = 0; x < num_tiles.x; ++x)
+      {
+	// this is the lower detail level tile, which has up to 4 higher level
+	// tiles.  notice that at the borders there might be some missing
+	// higher level tiles.
+	auto& this_tile = m_tiles[i].at (x + y * num_tiles.x);
+	auto& subtiles = m_tiles[i-1];
+
+	std::array<tile*, 4> t;
+
+	vec2<unsigned int> subcoords[4] =
+	{
+	  { x*2 + 0, y*2 + 0 },
+	  { x*2 + 1, y*2 + 0 },
+	  { x*2 + 0, y*2 + 1 },
+	  { x*2 + 1, y*2 + 1 }
+	};
+
+	for (unsigned int ii = 0; ii < 4; ++ii)
+	{
+	  if (subcoords[ii].x < parent_num_tiles.x
+	      && subcoords[ii].y < parent_num_tiles.y)
+	    t[ii] = &subtiles.at (subcoords[ii].x + subcoords[ii].y*parent_num_tiles.x);
+	  else
+	    t[ii] = nullptr;
+	}
+	this_tile.set_subtiles (t);
+      }
+  }
+
 }
 
 tiled_image::tiled_image (tiled_image&& rhs)
@@ -636,10 +699,32 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
     vec4<float> (1, 0, 0, 0),
     vec4<float> (0, 1, 0, 0),
     vec4<float> (0, 0, 1, 0),
-    vec4<float> (1, 0, 1, 0),
-    vec4<float> (1, 1, 0, 1),
+    vec4<float> (1, 0, 1, 1),
+//    vec4<float> (1, 1, 0, 1),
   };
 
+/*
+- visibility candidate list
+    contains tiles that could be potentially visible.
+
+- visibility list
+    entries from the candidate list are moved to the visibility list
+    after making sure that a candidate is really visible.
+
+- for each candidate tile
+   - each element either goes into the visibility list or not
+     in any case it is removed from the candidate list
+
+   - calculate tile area / screen area ratio (mipmap D) and visibility
+   - if tile is visible and mipmap D < 1 (or > 1 ...)
+      - add all its sub-tiles (higher detail level) to the candidate list
+   - if tile is visible and mipmap D = 1
+      - add this tile to the visibility list.
+*/
+
+  auto proj_cam_trv = proj_trv * cam_trv;
+
+#if 0
   for (unsigned int i = 0; i < max_lod_level; ++i)
 //  for (int i = max_lod_level - 1; i >= 0; --i)
   {
@@ -651,20 +736,13 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 
     for (const auto& t : m_tiles[i])
     {
-      auto tile_trv =
-	mat4<double>::translate (vec3<double> (t.pos (), 0))
-	* mat4<double>::scale (vec3<double> (t.size (), 1));
-
-      m_shader->tile_scale = vec2<float> (1);
-//      m_shader->tile_scale = vec2<float> (i + 1);
-
-      auto mvp = proj_trv * (cam_trv * tile_trv);
+      auto mvp = proj_cam_trv * t.trv ();
 
       m_shader->mvp = (mat4<float>)mvp;
 
       m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
 
-      if (i == max_lod_level - 1 && 1)
+      if (i == max_lod_level - 1 && 0)
       {
 	glLineWidth (0.5f);
 	t.mesh ().render_wireframe ();
@@ -676,5 +754,36 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
       }
     }
   }
+#endif
+
+  for (int i = max_lod_level - 1; i >= 3; --i)
+  {
+    m_shader->zbias = 0.00001f * (i + 1) * 0;
+
+    for (const auto& t : m_tiles[i])
+    {
+      glLineWidth (1.5f * i);
+      m_shader->mvp = (mat4<float>)(proj_cam_trv * t.trv ());
+      m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
+      m_shader->offset_color = lod_colors[t.lod ()];
+
+      t.mesh ().render_outline ();
+
+      for (const auto& tt : t.subtiles ())
+      {
+	if (tt == nullptr)
+	  continue;
+
+        glLineWidth (1.5f * i / 2);
+        m_shader->mvp = (mat4<float>)(proj_cam_trv * tt->trv ());
+        m_shader->pos = gl::vertex_attrib (tt->mesh ().vertex_buffer (), &vertex::pos);
+        m_shader->offset_color = lod_colors[tt->lod ()];
+
+        tt->mesh ().render_outline ();
+      }
+    }
+  }
+
+
 }
 

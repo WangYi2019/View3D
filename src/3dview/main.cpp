@@ -152,7 +152,7 @@ int main (int argc, const char* argv[])
 	  break;
 
 	case input_event::mouse_wheel:
-	  scene.set_zoom (scene.zoom () + e.wheel_delta * 0.05f);
+	  scene.set_zoom (scene.zoom () + e.wheel_delta * 0.025f);
 		scene.screen_to_img ();
 	  break;
       }

@@ -25,7 +25,7 @@ test_scene1::test_scene1 (void)
   m_last_proj_trv = mat4<double>::identity ();
   m_last_screen_size = { 1, 1 };
 
-  m_image = std::make_unique<tiled_image> (vec2<unsigned int> (8469/3, 10192/5));
+  m_image = std::make_unique<tiled_image> (vec2<unsigned int> (8469/1, 10192/1));
 
 //  m_image->update (0, 0, "outputRGB.bmp", "output.bmp");
 
@@ -119,7 +119,6 @@ vec2<double> test_scene1::screen_to_img (void) const
 
   return (4.0 / m_last_screen_size) * (1.0 / p_scr_len);
 }
-
 
 mat4<double>
 test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
