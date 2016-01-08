@@ -11,10 +11,16 @@
 #include "display.hpp"
 #include "pixel_format.hpp"
 
+
 struct window_x11 : window
 {
   Window m_win;
   Display* m_disp;
+
+  vec2<int> m_mouse_down_pos = { 0 };
+  int m_mouse_down_button = 0;
+  bool m_mouse_dragging = false;
+  vec2<int> m_mouse_dragging_last_pos = { 0 };
 
   window_x11 (Window w, Display* d) : m_win (w), m_disp (d) { }
 
@@ -43,20 +49,119 @@ struct window_x11 : window
     XMapWindow (m_disp, m_win);
   }
 
-  virtual bool process_events (void) override
+  virtual bool
+  process_events (const std::function<void (const input_event&)>& clb) override
   {
-    XEvent e;
-    if (!XPending (m_disp))
-      return true;
-
-    XNextEvent (m_disp, &e);
-    if (e.type == KeyPress)
+    while (XPending (m_disp))
     {
-      if (XLookupKeysym (&e.xkey, 0) == XK_Escape)
-        return false;
+      XEvent e;
+      input_event ee;
+
+      XNextEvent (m_disp, &e);
+
+      switch (e.type)
+      {
+	case KeyPress:
+	  std::cout << "key press " << e.xkey.keycode << std::endl;
+
+	  if (XLookupKeysym (&e.xkey, 0) == XK_Escape)
+	    return false;
+	  break;
+
+	case KeyRelease:
+	  std::cout << "key release " << e.xkey.keycode << std::endl;
+	  break;
+
+	case ClientMessage:
+	  return false;
+
+	case MotionNotify:
+	  //std::cout << "motion notify " << e.xmotion.state << std::endl;
+	  ee.type = input_event::mouse_move;
+	  ee.pos = { e.xmotion.x, e.xmotion.y };
+	  clb (ee);
+
+	  if (m_mouse_down_button != 0)
+	  {
+	    if (length (ee.pos - m_mouse_down_pos) >= 2)
+	    {
+	      ee = { };
+	      ee.type = input_event::mouse_drag;
+	      ee.pos = { e.xmotion.x, e.xmotion.y };
+	      ee.drag_start_pos = m_mouse_down_pos;
+	      ee.drag_delta = ee.pos - m_mouse_dragging_last_pos;
+	      ee.drag_abs = ee.pos - m_mouse_down_pos;
+	      ee.button = m_mouse_down_button;
+	      clb (ee);
+
+	      m_mouse_dragging_last_pos = { e.xmotion.x, e.xmotion.y };
+	    }
+	  }
+	  break;
+
+	case ButtonPress:
+	  //std::cout << "button press " << e.xbutton.button << std::endl;
+
+	  if (e.xbutton.button > 3)
+	  {
+	    // mouse wheel
+	  }
+	  else
+	  {
+	    ee.type = input_event::mouse_down;
+	    ee.pos = { e.xbutton.x, e.xbutton.y };
+	    ee.button = e.xbutton.button;
+	    clb (ee);
+
+	    m_mouse_down_pos = ee.pos;
+	    m_mouse_down_button = ee.button;
+	    m_mouse_dragging_last_pos = ee.pos;
+	  }
+
+	  break;
+
+	case ButtonRelease:
+	  // std::cout << "button release " << e.xbutton.button << std::endl;
+
+	  if (e.xbutton.button > 3)
+	  {
+	    // mouse wheel
+	    ee.type = input_event::mouse_wheel;
+	    ee.pos = { e.xbutton.x, e.xbutton.y };
+	    ee.wheel_delta = 0;
+	    if (e.xbutton.button == 4)
+	      ee.wheel_delta = -1;
+	    else if (e.xbutton.button == 5)
+	      ee.wheel_delta = 1;
+	    clb (ee);
+	  }
+	  else
+	  {
+	    ee.type = input_event::mouse_up;
+	    ee.pos = { e.xbutton.x, e.xbutton.y };
+	    ee.button = e.xbutton.button;
+	    clb (ee);
+
+	    if (m_mouse_down_button == ee.button)
+	    {
+	      if (length (ee.pos - m_mouse_down_pos) < 2)
+	      {
+		ee = { };
+		ee.type = input_event::mouse_click;
+		ee.pos = m_mouse_down_pos;
+		ee.button = m_mouse_down_button;
+		clb (ee);
+	      }
+	    }
+
+	    m_mouse_down_button = 0;
+	    m_mouse_down_pos = { 0 };
+	    m_mouse_dragging = false;
+	    m_mouse_dragging_last_pos = { 0 };
+	  }
+	  break;
+      }
     }
-    else if (e.type == ClientMessage)
-      return false;
 
     return true;
   }
@@ -105,7 +210,9 @@ struct display_x11 : display
    else
       winattr.colormap = DefaultColormap (m_disp, 0);
 
-    winattr.event_mask = KeyPressMask;
+    winattr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask
+			 | ButtonReleaseMask | PointerMotionMask;
+
     const unsigned long mask = CWBackPixel | CWBorderPixel | CWColormap
                                | CWEventMask;
 

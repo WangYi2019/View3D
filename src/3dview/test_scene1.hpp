@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <memory>
+#include "utils/vec_mat.hpp"
 
 class tiled_image;
 
@@ -17,11 +18,36 @@ public:
 	       std::chrono::microseconds delta_time,
 	       bool en_wireframe);
 
+  const vec2<double>& img_pos (void) const { return m_img_pos; }
+  void set_img_pos (const vec2<double>& v) { m_img_pos = v; }
+
+  vec2<double> screen_to_img (void) const;
+
+  float tilt_angle (void) const { return m_tilt_angle; }
+  void set_tilt_angle (float val);
+
+  float rotate_angle (void) const { return m_rotate_angle; }
+  void set_rotate_angle (float val);
+
+  float zoom (void) const { return m_zoom; }
+  void set_zoom (float val);
+
 private:
   std::unique_ptr<tiled_image> m_image;
 
   unsigned int m_frame_number;
   float m_rotate_angle;
+
+  float m_tilt_angle;
+  float m_zoom;
+
+  vec2<double> m_img_pos;
+
+  mat4<double> m_last_proj_trv;
+  vec2<double> m_last_screen_size;
+
+  mat4<double> calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
+			     const vec2<double>& scroll) const;
 };
 
 #endif // includeguard_test_scene_includeguard

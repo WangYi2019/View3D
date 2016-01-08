@@ -106,21 +106,34 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
     //color_img.fill (0, 0, 16, 8, 0.0f, 0.5f, 0.0f, 0);
   }
 */
-/*
+
   {
     image tmp (pixel_format::rgba_8888,
 	       { ceil_pow2 (color_img.width ()), ceil_pow2 (color_img.height ()) });
 
-    color_img.copy_to (tmp);
-
+//    color_img.copy_to (tmp);
+/*
     tmp = tmp.pyr_down ();
     tmp = tmp.pyr_down ();
     tmp = tmp.pyr_down ();
     tmp = tmp.pyr_down ();
 
     color_img = std::move (tmp);
+*/
+    
+//    tmp.pyr_down_to (color_img);
 
 std::cout << "color_img = " << color_img.width () << " x " << color_img.height () << std::endl;
+  }
+
+
+/*
+  {
+    image tmp = color_img.subimg ({0, 0}, {512,512});
+//    color_img = tmp.pyr_down ();
+//    tmp.pyr_down_to (color_img);
+    tmp.copy_to (color_img);
+    tmp.pyr_down_to (color_img);
   }
 */
 
@@ -279,7 +292,7 @@ void test_scene::render (unsigned int width, unsigned int height,
       * mat4<float>::identity ();
 #else
   mat4<float> cam_trv = mat4<float>::identity ()
-      * mat4<float>::translate (0, 0, -4.5)
+      * mat4<float>::translate (0, 0, -3.5)
       * mat4<float>::rotate_x (0)
       * mat4<float>::rotate_z (0)
       * mat4<float>::identity ();

@@ -176,7 +176,7 @@ private:
     m_index_buffer_count = idx.size ();
 
     // wireframe index buffer (quad edges only)
-    idx.reserve (size.x * size.y * 2);
+    idx.reserve (size.x * size.y * 4);
     idx.clear ();
 
     for (unsigned int y = 0; y < size.y - 1; ++y)
@@ -191,14 +191,14 @@ private:
 
     for (unsigned int y = 0; y < size.y - 1; ++y)
     {
-      idx.push_back ((size.x-1 + 0) + ((y + 0) * size.y));
-      idx.push_back ((size.x-1 + 0) + ((y + 1) * size.y));
+      idx.push_back ((size.x-1 + 0) + ((y + 0) * size.x));
+      idx.push_back ((size.x-1 + 0) + ((y + 1) * size.x));
     }
 
     for (unsigned int x = 0; x < size.x - 1; ++x)
     {
-      idx.push_back ((x + 0) + ((size.y-1 + 0) * size.y));
-      idx.push_back ((x + 1) + ((size.y-1 + 0) * size.y));
+      idx.push_back ((x + 0) + ((size.y-1 + 0) * size.x));
+      idx.push_back ((x + 1) + ((size.y-1 + 0) * size.x));
     }
 
     m_wireframe_index_buffer = gl::buffer (gl::buffer::index, idx);
@@ -629,8 +629,6 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
   m_shader->color_texture = 0;
   m_shader->height_texture = 0;
 
-  glLineWidth (0.5f);
-
   glDisable (GL_TEXTURE_2D);
   glDisable (GL_DEPTH_TEST);
 
@@ -662,16 +660,22 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
       m_shader->tile_scale = vec2<float> (1);
 //      m_shader->tile_scale = vec2<float> (i + 1);
 
-      auto mvp = proj_trv * cam_trv * tile_trv;
+      auto mvp = proj_trv * (cam_trv * tile_trv);
 
       m_shader->mvp = (mat4<float>)mvp;
 
       m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
 
-      if (i == max_lod_level - 1 && 0)
-        t.mesh ().render_wireframe ();
-      else
-        t.mesh ().render_outline ();
+      if (i == max_lod_level - 1 && 1)
+      {
+	glLineWidth (0.5f);
+	t.mesh ().render_wireframe ();
+      }
+
+      {
+	glLineWidth (1.5f);
+	t.mesh ().render_outline ();
+      }
     }
   }
 }

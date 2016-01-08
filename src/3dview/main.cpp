@@ -95,7 +95,69 @@ int main (int argc, const char* argv[])
 
   auto prev_time = std::chrono::high_resolution_clock::now ();
 
-  while (win->process_events ())
+  vec2<double> drag_start_img_pos;
+  float drag_start_tilt_angle;
+  float drag_start_rot_angle;
+
+  while (win->process_events (
+    [&] (auto&& e)
+    {
+#if 1
+      switch (e.type)
+      {
+/*
+	case input_event::mouse_move:
+	  std::cout << "mouse move " << e.pos.x << ", " << e.pos.y << std::endl;
+	  break;
+
+	case input_event::mouse_down:
+	  std::cout << "mouse down " << e.pos.x << ", " << e.pos.y
+		    << "  " << e.button << std::endl;
+	  break;
+
+	case input_event::mouse_up:
+	  std::cout << "mouse up " << e.pos.x << ", " << e.pos.y
+		    << "  " << e.button << std::endl;
+	  break;
+*/
+	case input_event::mouse_down:
+	  if (e.button == 1)
+	    drag_start_img_pos = scene.img_pos ();
+	  if (e.button == 3)
+	  {
+	    drag_start_tilt_angle = scene.tilt_angle ();
+	    drag_start_rot_angle = scene.rotate_angle ();
+	  }
+	  break;
+
+	case input_event::mouse_click:
+	  std::cout << "mouse click " << e.pos.x << ", " << e.pos.y
+		    << "  " << e.button << std::endl;
+	  break;
+
+	case input_event::mouse_drag:
+	  if (e.button == 1)
+	  {
+	    // move the image by e.drag_abs pixels on the screen.
+	    // we need to know how many pixels on the screen are 
+	    scene.set_img_pos (drag_start_img_pos
+				+ vec2<double> (e.drag_abs) * scene.screen_to_img ());
+	  }
+	  if (e.button == 3)
+	  {
+	    scene.set_tilt_angle (drag_start_tilt_angle - e.drag_abs.y * 0.1f);
+	    scene.set_rotate_angle (drag_start_rot_angle + e.drag_abs.x * 0.1f);
+		scene.screen_to_img ();
+	  }
+	  break;
+
+	case input_event::mouse_wheel:
+	  scene.set_zoom (scene.zoom () + e.wheel_delta * 0.05f);
+		scene.screen_to_img ();
+	  break;
+      }
+#endif
+    }))
   {
     auto cur_time = std::chrono::high_resolution_clock::now ();
     auto delta_time = prev_time - cur_time;
@@ -112,3 +174,12 @@ int main (int argc, const char* argv[])
 abort_main_loop:;
   return 0;
 }
+
+
+// http://www.mingw.org/wiki/sampledll
+// http://www.mingw.org/wiki/Interoperability_of_Libraries_Created_by_Different_Compiler_Brands
+
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms632593(v=vs.85).aspx
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms644946(v=vs.85).aspx
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms644927(v=vs.85).aspx
+

@@ -705,6 +705,11 @@ template <typename T> constexpr inline vec4<T> normalize (const vec4<T>& a)
   return a * (T (1) / length (a));
 }
 
+template <typename T> constexpr inline vec4<T> homogenize (const vec4<T>& a)
+{
+  return a * (T (1) / a.w);
+}
+
 namespace std
 {
 template <typename T> constexpr inline vec4<T> min (const vec4<T>& a, const vec4<T>& b)
