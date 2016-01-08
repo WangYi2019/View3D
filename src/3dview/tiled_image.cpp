@@ -347,7 +347,6 @@ struct tiled_image::shader : public gl::shader
 {
   uniform< mat4<float>, highp > mvp;
   uniform< vec4<float>, lowp > offset_color;
-  uniform< vec2<float>, highp > tile_scale;
 
   uniform< sampler2D, mediump > color_texture;
   uniform< sampler2D, mediump > height_texture;
@@ -361,7 +360,6 @@ struct tiled_image::shader : public gl::shader
     named_parameter (mvp);
     named_parameter (pos);
     named_parameter (offset_color);
-    named_parameter (tile_scale);
     named_parameter (color_texture);
     named_parameter (height_texture);
     named_parameter (zbias);
@@ -378,7 +376,7 @@ struct tiled_image::shader : public gl::shader
       vec4 height = texture2D (height_texture, uv);
 
       color_uv = uv;
-      gl_Position = mvp * vec4 (pos * tile_scale, height.r * 0.1 + zbias, 1.0);
+      gl_Position = mvp * vec4 (pos, height.r * 0.1 + zbias, 1.0);
     }
   )
 
