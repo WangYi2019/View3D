@@ -37,7 +37,7 @@ static inline vec4<uint8_t> float_to_u8 (const vec4<float>& val)
   return (vec4<uint8_t>) std::min (std::max (std::min (one, val), zero) * 256, u8max);
 }
 
-static inline constexpr vec4<float> u8_to_float (const vec4<uint8_t>& val)
+static inline vec4<float> u8_to_float (const vec4<uint8_t>& val)
 {
   return vec4<float> (val) * 1.0f/255.0f;
 }

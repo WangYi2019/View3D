@@ -601,9 +601,10 @@ template <typename T> struct vec4
   {
     return { a.vec_ext / b.vec_ext };
   }
-  template <typename S> constexpr friend vec4 operator / (const vec4& a, S b)
+  template <typename S> friend vec4 operator / (const vec4& a, S b)
   {
-    return { a.vec_ext / (T)b };
+    T bb (b);
+    return { a.vec_ext / bb };
   }
   template <typename S> constexpr friend vec4 operator / (S a, const vec4& b)
   {
