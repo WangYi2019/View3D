@@ -129,6 +129,7 @@ private:
   tile_visibility
   calc_tile_visibility (const tile& t,
 			const mat4<double>& proj_cam_trv,
+			const mat4<double>& viewport_trv,
 			const mat4<double>& viewport_proj_cam_trv) const;
 };
 

@@ -894,15 +894,24 @@ tiled_image::calc_tile_visibility (const tile& t,
 }
 #endif
 
+template <typename T> static inline T
+triangle_area (const vec2<T>& p0, const vec2<T>& p1, const vec2<T>& p2)
+{
+  auto a = length (p1 - p0);
+  auto b = length (p2 - p1);
+  auto c = length (p2 - p0);
+
+  return std::sqrt ( (a + b + c) * (b + c - a) * (c + a - b) * (a + b - c) ) / 4;
+}
+
 
 tiled_image::tile_visibility
 tiled_image::calc_tile_visibility (const tile& t,
 				   const mat4<double>& proj_cam_trv,
+				   const mat4<double>& viewport_trv,
 				   const mat4<double>& viewport_proj_cam_trv) const
 {
   // treat the tile as a bounding box with height = 0...
-
-  tile_visibility res;
 
   enum plane_bit
   {
@@ -919,8 +928,15 @@ tiled_image::calc_tile_visibility (const tile& t,
 
   struct point
   {
+    // original point
     vec4<double> p;
+
+    // point in clip space (perspective transform, not homogenized)
     vec4<double> pc;
+
+    // point in screen space (actual screen coordinates)
+    vec4<double> ps;
+
     uint8_t planes = 0;
 
     point (void) = default;
@@ -937,15 +953,16 @@ tiled_image::calc_tile_visibility (const tile& t,
     // true: on the inside of the frustum
     // false: on the outside of the frustum
     bool plane_side (unsigned int p) const { return planes & (1 << p); }
+    bool plane_side (plane_bit p) const { return planes & p; }
   };
 
-  point corners[] =
-  {
+  std::array<point, 4> corners =
+  {{
     { vec4<double> (t.pos ().x, t.pos ().y, 0, 1) },
     { vec4<double> (t.pos ().x + t.size ().x, t.pos ().y, 0, 1) },
     { vec4<double> (t.pos ().x + t.size ().x, t.pos ().y + t.size ().y, 0, 1) },
     { vec4<double> (t.pos ().x, t.pos ().y + t.size ().y, 0, 1) }
-  };
+  }};
 
   for (auto& c : corners)
   {
@@ -1043,17 +1060,96 @@ tiled_image::calc_tile_visibility (const tile& t,
     // if there is no intersection, the frustum box might be completely
     // inside of the tested box.
 
+    is_visible = visible;
+  }
+
+#ifdef tile_visibility_log
+  std::cout << "   is_visible = " << is_visible << std::endl;
+#endif
+
+  tile_visibility res;
+
+  if (is_visible == visible)
+  {
+    res.visible = true;
+
+    // calculate the tile area
+    // as a simplification, we use the longest edge for level-of-detail
+    // selection.
+//#define use_max_edge_length
+
+#ifdef use_max_edge_length
+    auto phys_sz = t.physical_size ();
+    res.image_area = std::max (phys_sz.x, phys_sz.y);
+#else
+    auto phys_sz = t.physical_size ();
+    res.image_area = phys_sz.x * phys_sz.y;
+#endif
+
+    // if a corner of the tile is in front of the znear plane, we can't
+    // do a simple projection and would have to do znear clipping to calculate
+    // the actual area.  to avoid that, assume that it's very close to the
+    // viewport (camera) and set it to something that would cause the selection
+    // of a higher detail level.
+    bool intersects_znear = false;
+    for (const auto& c : corners)
+      if (c.plane_side (near) == false)
+      {
+	intersects_znear = true;
+	break;
+      }
+
+#ifdef tile_visibility_log
+    std::cout << "   intersects_znear = " << intersects_znear << std::endl;
+#endif
+
+    if (intersects_znear)
+      res.display_area = res.image_area * 32;
+    else
+    {
+      // project points into screen space and find the longest edge.
+      for (auto& c : corners)
+	c.ps = viewport_trv * homogenize (c.pc);
+
+#ifdef use_max_edge_length
+      res.display_area = 0;
+
+      for (unsigned int i = 0; i < corners.size (); ++i)
+      {
+	// this assumes that the corner points are in clockwise order.
+	unsigned int ii = i + 1;
+	if (ii == corners.size ())
+	  ii = 0;
+
+	auto edge_len = length (corners[ii].ps.xy () - corners[i].ps.xy ());
+
+	#ifdef tile_visibility_log
+	std::cout << "edge (" << corners[i].ps.x << ", " << corners[i].ps.y << "), ("
+		  << corners[ii].ps.x << ", " << corners[ii].ps.y << ")  len: "
+		  << edge_len << std::endl;
+	#endif
+	res.display_area = std::max (res.display_area, edge_len);
+      }
+#else
+      //static_assert (corners.size () == 4, "");
+
+      res.display_area =
+	triangle_area (corners[0].ps.xy (), corners[1].ps.xy (), corners[2].ps.xy ())
+	+ triangle_area (corners[0].ps.xy (), corners[2].ps.xy (), corners[3].ps.xy ());
+#endif
+    }
+  }
+  else
+  {
+    res.visible = false;
+    res.image_area = 0;
+    res.display_area = 0;
   }
 
 
 #ifdef tile_visibility_log
-  std::cout << "   is_visible = " << is_visible;
   std::cout << std::endl;
 #endif
-
-  res.visible = !(is_visible == invisible);
-  res.image_area = 0;
-  res.display_area = 0;
 
   return res;
 }
@@ -1109,10 +1205,17 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
   for (auto&& t : m_tiles.back ())
   {
     m_candidate_tiles.push_back (&t);
+//break;
   }
 
-#ifdef tile_visibility_log
-std::cout << std::endl << std::endl;
+//#define per_frame_log
+
+#if defined (tile_visibility_log) || defined (per_frame_log)
+
+std::cout
+<< "\n\n=========================================="
+<< std::endl;
+
 #endif
 
   while (!m_candidate_tiles.empty ())
@@ -1120,14 +1223,38 @@ std::cout << std::endl << std::endl;
     tile* t = m_candidate_tiles.back ();
     m_candidate_tiles.pop_back ();
 
-    auto tv = calc_tile_visibility (*t, proj_cam_trv, viewport_proj_cam_trv);
+    auto tv = calc_tile_visibility (*t, proj_cam_trv, viewport_trv, viewport_proj_cam_trv);
     if (tv.visible)
     {
-      m_visible_tiles.push_back (t);
+      double lod_d = tv.display_area / tv.image_area;
+
+#ifdef per_frame_log
+      std::cout << "visible tile image area = " << tv.image_area
+		<< " disp area: " << tv.display_area
+		<< " lod: " << t->lod ()
+		<< " lod d: " << lod_d << std::endl;
+#endif
+
+#ifdef use_max_edge_length
+      const double d_threshold = 2.125;
+#else
+      const double d_threshold = 1.75;
+#endif
+
+      if (t->has_subtiles () && lod_d > d_threshold && t->lod () > 0)
+      {
+	for (tile* subtile : t->subtiles ())
+	  if (subtile != nullptr)
+	    m_candidate_tiles.push_back (subtile);
+      }
+      else
+	m_visible_tiles.push_back (t);
     }
   }
 
+#ifdef per_frame_log
   std::cout << "visible tiles: " << m_visible_tiles.size () << std::endl;
+#endif
 
   // render tiles from lowest detail level to highest detail level.
   // notice that lower detail level = higher lod number.
@@ -1139,16 +1266,25 @@ std::cout << std::endl << std::endl;
 	       return b->lod () < a->lod ();
 	     });
 
+/*
+  const auto proj_cam_trv2 =
+	proj_trv
+	* mat4<double>::translate (0, 0, -2)
+	* cam_trv;
+*/
+
+  const auto proj_cam_trv2 = proj_cam_trv;
+
   for (const tile* t : m_visible_tiles)
   {
-    m_shader->mvp = (mat4<float>)(proj_cam_trv * t->trv ());
+    m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
     m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
     m_shader->offset_color = lod_colors[t->lod ()];
 
-    glLineWidth (0.5f * t->lod ());
+    glLineWidth (0.5f * t->lod () + 0.125f);
     t->mesh ().render_outline ();
 
-    glLineWidth (0.025f * t->lod ());
+    glLineWidth (0.025f * t->lod () + 0.125f);
     t->mesh ().render_wireframe ();
   }
 
