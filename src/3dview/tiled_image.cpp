@@ -815,84 +815,6 @@ struct tiled_image::tile_visibility
   double display_area; 
 };
 
-#if 0
-static bool is_edge_visible (const vec2<double>& a, const vec2<double>& b)
-{
-  return CohenSutherlandLineClipAndDraw (a, b);
-}
-
-tiled_image::tile_visibility
-tiled_image::calc_tile_visibility (const tile& t,
-				   const mat4<double>& proj_cam_trv,
-				   const mat4<double>& viewport_proj_cam_trv) const
-{
-  tile_visibility res;
-  res.image_area = t.size ().x * t.size ().y;
-
-  vec4<double> corners[] =
-  {
-    { t.pos ().x, t.pos ().y, 0, 1 },
-    { t.pos ().x + t.size ().x, t.pos ().y, 0, 1 },
-    { t.pos ().x + t.size ().x, t.pos ().y + t.size ().y, 0, 1 },
-    { t.pos ().x, t.pos ().y + t.size ().y, 0, 1 }
-  };
-
-  for (auto& p : corners)
-  {
-//    auto ptrv = viewport_proj_cam_trv * p;
-    auto ptrv = proj_cam_trv * p;
-    p = { homogenize (ptrv).xyz (), ptrv.w };
-  }
-
-  std::cout << "calc tile visibility " << std::endl;
-
-  int visible_count = 0;
-
-  vec2<int> corner_vis[4];
-
-  for (unsigned int i = 0; i < 4; ++i)
-  {
-    const auto& p = corners[i];
-    auto& v = corner_vis[i];
-
-    std::cout.precision (8);
-    std::cout << "   (" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
-
-    if (p.x < -1)
-      v.x = -1;
-    else if (p.x > 1)
-      v.x = 1;
-    else
-      v.x = 0;
-
-    if (p.y < -1)
-      v.y = -1;
-    else if (p.y > 1)
-      v.y = 1;
-    else
-      v.y = 0;
-
-    std::cout << "\t(" << v.x << ", " << v.y << ")";
-
-    std::cout << std::endl;
-    std::cout.precision (6);
-  }
-
-  bool e0 = is_edge_visible (corners[0].xy (), corners[1].xy ());
-  bool e1 = is_edge_visible (corners[1].xy (), corners[2].xy ());
-  bool e2 = is_edge_visible (corners[2].xy (), corners[3].xy ());
-  bool e3 = is_edge_visible (corners[3].xy (), corners[0].xy ());
-
-  std::cout << "e = " << e0 << " " << e1 << " " << e2 << " " << e3 << std::endl;
-
-  std::cout << std::endl;
-
-  res.visible = true;
-  res.display_area = 0;
-
-  return res;
-}
-#endif
 
 template <typename T> static inline T
 triangle_area (const vec2<T>& p0, const vec2<T>& p1, const vec2<T>& p2)
@@ -1076,7 +998,7 @@ tiled_image::calc_tile_visibility (const tile& t,
     // calculate the tile area
     // as a simplification, we use the longest edge for level-of-detail
     // selection.
-//#define use_max_edge_length
+#define use_max_edge_length
 
 #ifdef use_max_edge_length
     auto phys_sz = t.physical_size ();
@@ -1208,7 +1130,7 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 //break;
   }
 
-//#define per_frame_log
+#define per_frame_log
 
 #if defined (tile_visibility_log) || defined (per_frame_log)
 
@@ -1227,19 +1149,21 @@ std::cout
     if (tv.visible)
     {
       double lod_d = tv.display_area / tv.image_area;
-
+/*
 #ifdef per_frame_log
       std::cout << "visible tile image area = " << tv.image_area
 		<< " disp area: " << tv.display_area
 		<< " lod: " << t->lod ()
 		<< " lod d: " << lod_d << std::endl;
 #endif
+*/
 
 #ifdef use_max_edge_length
-      const double d_threshold = 2.125;
-#else
       const double d_threshold = 1.75;
+#else
+      const double d_threshold = 2;
 #endif
+
 
       if (t->has_subtiles () && lod_d > d_threshold && t->lod () > 0)
       {
@@ -1249,6 +1173,40 @@ std::cout
       }
       else
 	m_visible_tiles.push_back (t);
+
+/*
+      bool use_higher_lod = false;
+
+      if (t->has_subtiles ())
+      {
+	m_tile_visibilities.clear ();
+	for (tile* st : t->subtiles ())
+	  if (st != nullptr)
+	  {
+	    auto stv = calc_tile_visibility (*st, proj_cam_trv, viewport_trv,
+					     viewport_proj_cam_trv);
+	    if (stv.visible)
+	      m_tile_visibilities.emplace_back (st, stv);
+	  }
+
+	std::cout << "lod d: " << lod_d;
+	for (const auto& stv : m_tile_visibilities)
+	  std::cout << " " << (stv.second.display_area / stv.second.image_area);
+
+	for (const auto& stv : m_tile_visibilities)
+	  if (stv.second.display_area / stv.second.image_area > d_threshold / 2)
+	    use_higher_lod = true;
+
+	std::cout << std::endl;
+      }
+
+      if (!use_higher_lod)
+	m_visible_tiles.push_back (t);
+      else
+	for (tile* subtile : t->subtiles ())
+	  if (subtile != nullptr)
+	    m_candidate_tiles.push_back (subtile);
+*/
     }
   }
 
@@ -1284,8 +1242,8 @@ std::cout
     glLineWidth (0.5f * t->lod () + 0.125f);
     t->mesh ().render_outline ();
 
-    glLineWidth (0.025f * t->lod () + 0.125f);
-    t->mesh ().render_wireframe ();
+//    glLineWidth (0.025f * t->lod () + 0.125f);
+//    t->mesh ().render_wireframe ();
   }
 
 #if 0

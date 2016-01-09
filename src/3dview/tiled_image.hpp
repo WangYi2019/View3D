@@ -121,6 +121,8 @@ private:
   // actually visible tiles for display.   modified during rendering.
   mutable std::vector<tile*> m_visible_tiles;
 
+  mutable std::vector<std::pair<tile*, tile_visibility>> m_tile_visibilities;
+
   static void
   update_mipmaps (std::array<image, max_lod_level>& img,
 		  const vec2<unsigned int>& top_level_xy,
