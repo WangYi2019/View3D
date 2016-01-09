@@ -29,7 +29,7 @@ test_scene1::test_scene1 (void)
 
 //  m_image->update (0, 0, "outputRGB.bmp", "output.bmp");
 
-  std::string base_path = "/home/oleg/20151130133409/";
+  std::string base_path = "/home/yam/20151130133409/";
 
   static const struct
   {
@@ -79,7 +79,7 @@ test_scene1::~test_scene1 (void)
 
 void test_scene1::set_tilt_angle (float val)
 {
-  m_tilt_angle = std::min (60.0f, std::max (0.0f, val));
+  m_tilt_angle = std::min (80.0f, std::max (0.0f, val));
 }
 
 void test_scene1::set_rotate_angle (float val)
@@ -173,6 +173,10 @@ void test_scene1::render (unsigned int width, unsigned int height,
     mat4<double>::proj_perspective (deg_to_rad (60.0f), (float)width / -(float)height,
                                     0.00001f, 10000.0f);
 
+
+  auto viewport_trv =
+    mat4<double>::scale (width * 0.5, height * 0.5, 1, 1)
+    * mat4<double>::translate (1, 1, 0);
 /*
   m_rotate_angle += delta_time.count () * 0.0000001f;
   if (m_rotate_angle > 2*M_PI)
@@ -181,7 +185,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, m_img_pos);
 
-  m_image->render (cam_trv, m_last_proj_trv);
+  m_image->render (cam_trv, m_last_proj_trv, viewport_trv);
 
   gl_check_log_error ();
 }

@@ -15,7 +15,7 @@ class tiled_image
 {
 public:
   // how many LED levels we have
-  static constexpr unsigned int max_lod_level = 5;
+  static constexpr unsigned int max_lod_level = 6;
   static constexpr unsigned int max_lod_scale_factor = 1 << max_lod_level;
 
   // the grid size of one geometry tile.  the grid size is constant for each
@@ -87,13 +87,15 @@ for this need support for shared image buffers
 	       const void* height_data, uint32_t height_data_stride_bytes);
 */
 
-  void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv);
+  void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
+	       const mat4<double>& viewport_trv);
 
 private:
   struct vertex;
   struct shader;
   class grid_mesh;
   class tile;
+  struct tile_visibility;
 
   // shader and geomety is shared amongst image instances.
   static std::vector<std::shared_ptr<grid_mesh>> g_grid_meshes;
@@ -113,10 +115,21 @@ private:
   // all tiles in the image.
   std::array<std::vector<tile>, max_lod_level> m_tiles;
 
+  // candidate tiles for display.  modified during rendering.
+  mutable std::vector<tile*> m_candidate_tiles;
+
+  // actually visible tiles for display.   modified during rendering.
+  mutable std::vector<tile*> m_visible_tiles;
+
   static void
   update_mipmaps (std::array<image, max_lod_level>& img,
 		  const vec2<unsigned int>& top_level_xy,
 		  const vec2<unsigned int>& top_level_size);
+
+  tile_visibility
+  calc_tile_visibility (const tile& t,
+			const mat4<double>& proj_cam_trv,
+			const mat4<double>& viewport_proj_cam_trv) const;
 };
 
 #endif // includeguard_tiled_image_hpp_includeguard

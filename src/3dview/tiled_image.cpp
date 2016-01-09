@@ -342,6 +342,14 @@ public:
   const std::array<tile*, 4> subtiles (void) const { return m_subtiles; }
   void set_subtiles (const std::array<tile*, 4>& t) { m_subtiles = t; }
 
+  bool has_subtiles (void) const
+  {
+    for (auto&& t : m_subtiles)
+      if (t != nullptr)
+	return true;
+    return false;
+  }
+
 private:
   vec2<uint32_t> m_pos;
   vec2<uint32_t> m_size;
@@ -522,7 +530,9 @@ tiled_image::tiled_image (tiled_image&& rhs)
   m_rgb_image (std::move (rhs.m_rgb_image)),
   m_height_image (std::move (rhs.m_height_image)),
   m_shader (std::move (rhs.m_shader)),
-  m_tiles (std::move (rhs.m_tiles))
+  m_tiles (std::move (rhs.m_tiles)),
+  m_candidate_tiles (std::move (rhs.m_candidate_tiles)),
+  m_visible_tiles (std::move (rhs.m_visible_tiles))
 {
   rhs.m_size = { 0 };
 }
@@ -536,6 +546,8 @@ tiled_image& tiled_image::operator = (tiled_image&& rhs)
     m_height_image = std::move (rhs.m_height_image);
     m_shader = std::move (rhs.m_shader);
     m_tiles = std::move (rhs.m_tiles);
+    m_candidate_tiles = std::move (rhs.m_candidate_tiles);
+    m_visible_tiles = std::move (rhs.m_visible_tiles);
 
     if (g_shader != nullptr && g_shader.use_count () == 1)
       g_shader = nullptr;
@@ -684,7 +696,372 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
 }
 
 
-void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv)
+
+// ---------------------------------------------------------------------------
+const unsigned int INSIDE = 0; // 0000
+const unsigned int LEFT = 1;   // 0001
+const unsigned int RIGHT = 2;  // 0010
+const unsigned int BOTTOM = 4; // 0100
+const unsigned int TOP = 8;    // 1000
+
+// Compute the bit code for a point (x, y) using the clip rectangle
+// bounded diagonally by (xmin, ymin), and (xmax, ymax)
+
+// ASSUME THAT xmax, xmin, ymax and ymin are global constants.
+
+const double viewport_xmin = -1;
+const double viewport_ymin = -1;
+const double viewport_xmax = 1;
+const double viewport_ymax = 1;
+
+static unsigned int ComputeOutCode (const vec2<double>& p)
+{
+  unsigned code = INSIDE;
+
+  if (p.x < viewport_xmin)
+    code |= LEFT;
+  else if (p.x > viewport_xmax)
+    code |= RIGHT;
+  if (p.y < viewport_ymin)
+    code |= BOTTOM;
+  else if (p.y > viewport_ymax)
+    code |= TOP;
+
+  return code;
+}
+
+// Cohen–Sutherland clipping algorithm clips a line from
+// P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with 
+// diagonal from (xmin, ymin) to (xmax, ymax).
+static bool CohenSutherlandLineClipAndDraw (vec2<double> p0, vec2<double> p1)
+{
+  unsigned int outcode0 = ComputeOutCode (p0);
+  unsigned int outcode1 = ComputeOutCode (p1);
+  bool accept = false;
+
+  while (true)
+  {
+    if (!(outcode0 | outcode1))
+    {
+      accept = true;
+      break;
+    }
+    else if (outcode0 & outcode1)
+      break;
+    else
+    {
+      // failed both tests, so calculate the line segment to clip
+      // from an outside point to an intersection with clip edge
+      double x, y;
+
+      // At least one endpoint is outside the clip rectangle; pick it.
+      unsigned int outcodeOut = outcode0 ? outcode0 : outcode1;
+
+      // Now find the intersection point;
+      // use formulas y = y0 + slope * (x - x0), x = x0 + (1 / slope) * (y - y0)
+      if (outcodeOut & TOP)
+      {
+        x = p0.x + (p1.x - p0.x) * (viewport_ymax - p0.y) / (p1.y - p0.y);
+        y = viewport_ymax;
+      }
+      else if (outcodeOut & BOTTOM)
+      {
+        x = p0.x + (p1.x - p0.x) * (viewport_ymin - p0.y) / (p1.y - p0.y);
+        y = viewport_ymin;
+      }
+      else if (outcodeOut & RIGHT)
+      {
+        y = p0.y + (p1.y - p0.y) * (viewport_xmax - p0.x) / (p1.x - p0.x);
+        x = viewport_xmax;
+      }
+      else if (outcodeOut & LEFT)
+      {
+        y = p0.y + (p1.y - p0.y) * (viewport_xmin - p0.x) / (p1.x - p0.x);
+        x = viewport_xmin;
+      }
+
+       // Now we move outside point to intersection point to clip
+       // and get ready for next pass.
+      if (outcodeOut == outcode0)
+      {
+        p0 = { x, y };
+        outcode0 = ComputeOutCode(p0);
+      }
+      else
+      {
+        p1 = { x, y };
+        outcode1 = ComputeOutCode(p1);
+      }
+    }
+  }
+/*
+	if (accept) {
+               // Following functions are left for implementation by user based on
+               // their platform (OpenGL/graphics.h etc.)
+               DrawRectangle(xmin, ymin, xmax, ymax);
+               LineSegment(x0, y0, x1, y1);
+	}
+*/
+  return accept;
+}
+
+// ---------------------------------------------------------------------------
+
+
+struct tiled_image::tile_visibility
+{
+  bool visible;
+  double image_area;
+  double display_area; 
+};
+
+#if 0
+static bool is_edge_visible (const vec2<double>& a, const vec2<double>& b)
+{
+  return CohenSutherlandLineClipAndDraw (a, b);
+}
+
+tiled_image::tile_visibility
+tiled_image::calc_tile_visibility (const tile& t,
+				   const mat4<double>& proj_cam_trv,
+				   const mat4<double>& viewport_proj_cam_trv) const
+{
+  tile_visibility res;
+  res.image_area = t.size ().x * t.size ().y;
+
+  vec4<double> corners[] =
+  {
+    { t.pos ().x, t.pos ().y, 0, 1 },
+    { t.pos ().x + t.size ().x, t.pos ().y, 0, 1 },
+    { t.pos ().x + t.size ().x, t.pos ().y + t.size ().y, 0, 1 },
+    { t.pos ().x, t.pos ().y + t.size ().y, 0, 1 }
+  };
+
+  for (auto& p : corners)
+  {
+//    auto ptrv = viewport_proj_cam_trv * p;
+    auto ptrv = proj_cam_trv * p;
+    p = { homogenize (ptrv).xyz (), ptrv.w };
+  }
+
+  std::cout << "calc tile visibility " << std::endl;
+
+  int visible_count = 0;
+
+  vec2<int> corner_vis[4];
+
+  for (unsigned int i = 0; i < 4; ++i)
+  {
+    const auto& p = corners[i];
+    auto& v = corner_vis[i];
+
+    std::cout.precision (8);
+    std::cout << "   (" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
+
+    if (p.x < -1)
+      v.x = -1;
+    else if (p.x > 1)
+      v.x = 1;
+    else
+      v.x = 0;
+
+    if (p.y < -1)
+      v.y = -1;
+    else if (p.y > 1)
+      v.y = 1;
+    else
+      v.y = 0;
+
+    std::cout << "\t(" << v.x << ", " << v.y << ")";
+
+    std::cout << std::endl;
+    std::cout.precision (6);
+  }
+
+  bool e0 = is_edge_visible (corners[0].xy (), corners[1].xy ());
+  bool e1 = is_edge_visible (corners[1].xy (), corners[2].xy ());
+  bool e2 = is_edge_visible (corners[2].xy (), corners[3].xy ());
+  bool e3 = is_edge_visible (corners[3].xy (), corners[0].xy ());
+
+  std::cout << "e = " << e0 << " " << e1 << " " << e2 << " " << e3 << std::endl;
+
+  std::cout << std::endl;
+
+  res.visible = true;
+  res.display_area = 0;
+
+  return res;
+}
+#endif
+
+
+tiled_image::tile_visibility
+tiled_image::calc_tile_visibility (const tile& t,
+				   const mat4<double>& proj_cam_trv,
+				   const mat4<double>& viewport_proj_cam_trv) const
+{
+  // treat the tile as a bounding box with height = 0...
+
+  tile_visibility res;
+
+  enum plane_bit
+  {
+    left = 1 << 0,
+    right = 1 << 1,
+    top = 1 << 2,
+    bottom = 1 << 3,
+    near = 1 << 4,
+    far = 1 << 5,
+
+    all_3d_planes = left | right | top | bottom | near | far,
+    all_2d_planes = left | right | top | bottom
+  };
+
+  struct point
+  {
+    vec4<double> p;
+    vec4<double> pc;
+    uint8_t planes = 0;
+
+    point (void) = default;
+    point (const point&) = default;
+    point (const vec4<double>& pp) : p (pp) { }
+
+    bool is_top (void) const { return planes & top; }
+    bool is_bottom (void) const { return planes & bottom; }
+    bool is_left (void) const { return planes & left; }
+    bool is_right (void) const { return planes & right; }
+    bool is_near (void) const { return planes & near; }
+    bool is_far (void) const { return planes & far; }
+
+    // true: on the inside of the frustum
+    // false: on the outside of the frustum
+    bool plane_side (unsigned int p) const { return planes & (1 << p); }
+  };
+
+  point corners[] =
+  {
+    { vec4<double> (t.pos ().x, t.pos ().y, 0, 1) },
+    { vec4<double> (t.pos ().x + t.size ().x, t.pos ().y, 0, 1) },
+    { vec4<double> (t.pos ().x + t.size ().x, t.pos ().y + t.size ().y, 0, 1) },
+    { vec4<double> (t.pos ().x, t.pos ().y + t.size ().y, 0, 1) }
+  };
+
+  for (auto& c : corners)
+  {
+    // transform point into clip space: pc = (xc, yc, zc, wc)
+    // do not homogenize it.
+    const auto& pc = c.pc = proj_cam_trv * c.p;
+
+    c.planes |= -pc.w < pc.x ? right : 0;
+    c.planes |=  pc.x < pc.w ? left : 0;
+    c.planes |=  pc.y < pc.w ? top : 0;
+    c.planes |= -pc.w < pc.y ? bottom : 0;
+    c.planes |= -pc.w < pc.z ? near : 0;
+    c.planes |=  pc.z < pc.w ? far : 0;
+  }
+
+// #define tile_visibility_log
+
+#ifdef tile_visibility_log
+  for (const auto& c : corners)
+  {
+    std::cout << "   (" << c.pc.x << ", " << c.pc.y << ", " << c.pc.z << ", " << c.pc.w << ")\n"
+	      << "      f: " << c.is_far () << "    " << c.is_top () << "      " << (int)c.planes << "\n"
+	      << "            " << c.is_left () << "   " << c.is_right () << "\n"
+	      << "      n: " << c.is_near () << "    " << c.is_bottom () << "\n";
+  }
+#endif
+
+  enum
+  {
+    unknown = -1,
+    invisible,
+    visible,
+  };
+
+  int is_visible = unknown;
+
+  if (is_visible == unknown)
+  {
+    // check if any point is completely inside the frustum.  if that's the
+    // case the thing is definitely visible.
+    for (const auto& c : corners)
+      if (c.planes == all_3d_planes)
+      {
+	is_visible = visible;
+	break;
+      }
+  }
+
+  if (is_visible == unknown)
+  {
+    // check if all points are on the outer side of a frustum plane.
+    // a point is on the outer side of a plane if the plane bit is 0.
+    unsigned int or_sum = 0;
+
+    for (const auto& c : corners)
+      or_sum |= c.planes;
+
+    // if all points are on the other side of a plane that bit will be 0 in
+    // the OR sum.
+    for (unsigned int i = 0; i < 6; ++i)
+      if ((or_sum & (1 << i)) == 0)
+      {
+	is_visible = invisible;
+	break;
+      }
+  }
+
+  if (is_visible == unknown)
+  {
+    // all points are outside, but not on the same side of a single plane.
+    // the frustum box might be completely inside of the tested box.
+    // check this condition only for the left,right,top,bottom planes.
+    // count the number of points of each plane that are on the outer side
+    // of that plane.  if each plane has 1 point, there are no intersections
+    // and the frustum is completely enclosed.
+    unsigned int pout[6] = { 0, 0, 0, 0, 0, 0 };
+
+    for (const auto& c : corners)
+      for (unsigned int i = 0; i < 6; ++i)
+        if (c.plane_side (i) == false)
+	  pout[i] += 1;
+
+#ifdef tile_visibility_log
+    std::cout << "pout = ";
+    for (unsigned int i = 0; i < 6; ++i)
+      std::cout << pout[i] << " ";
+    std::cout << std::endl;
+#endif
+  }
+
+  if (is_visible == unknown)
+  {
+    // all points are outside, but not on the same side of a single plane.
+    // if the edges of the tested box intersect the frustum box, it's visible.
+    // if there is no intersection, the frustum box might be completely
+    // inside of the tested box.
+
+  }
+
+
+#ifdef tile_visibility_log
+  std::cout << "   is_visible = " << is_visible;
+  std::cout << std::endl;
+#endif
+
+  res.visible = !(is_visible == invisible);
+  res.image_area = 0;
+  res.display_area = 0;
+
+  return res;
+}
+
+
+
+void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
+			  const mat4<double>& viewport_trv)
 {
   m_shader->activate ();
   m_shader->color_texture = 0;
@@ -722,7 +1099,58 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
       - add this tile to the visibility list.
 */
 
-  auto proj_cam_trv = proj_trv * cam_trv;
+  const auto proj_cam_trv = proj_trv * cam_trv;
+  const auto viewport_proj_cam_trv = viewport_trv * proj_cam_trv;
+
+  m_candidate_tiles.clear ();
+  m_visible_tiles.clear ();
+
+  // initially add all lowest level tiles as candidates.
+  for (auto&& t : m_tiles.back ())
+  {
+    m_candidate_tiles.push_back (&t);
+  }
+
+#ifdef tile_visibility_log
+std::cout << std::endl << std::endl;
+#endif
+
+  while (!m_candidate_tiles.empty ())
+  {
+    tile* t = m_candidate_tiles.back ();
+    m_candidate_tiles.pop_back ();
+
+    auto tv = calc_tile_visibility (*t, proj_cam_trv, viewport_proj_cam_trv);
+    if (tv.visible)
+    {
+      m_visible_tiles.push_back (t);
+    }
+  }
+
+  std::cout << "visible tiles: " << m_visible_tiles.size () << std::endl;
+
+  // render tiles from lowest detail level to highest detail level.
+  // notice that lower detail level = higher lod number.
+  m_shader->zbias = 0.00001f;
+
+  std::sort (m_visible_tiles.begin (), m_visible_tiles.end (),
+	     [] (const tile* a, const tile* b)
+	     {
+	       return b->lod () < a->lod ();
+	     });
+
+  for (const tile* t : m_visible_tiles)
+  {
+    m_shader->mvp = (mat4<float>)(proj_cam_trv * t->trv ());
+    m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
+    m_shader->offset_color = lod_colors[t->lod ()];
+
+    glLineWidth (0.5f * t->lod ());
+    t->mesh ().render_outline ();
+
+    glLineWidth (0.025f * t->lod ());
+    t->mesh ().render_wireframe ();
+  }
 
 #if 0
   for (unsigned int i = 0; i < max_lod_level; ++i)
@@ -756,6 +1184,7 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
   }
 #endif
 
+#if 0
   for (int i = max_lod_level - 1; i >= 3; --i)
   {
     m_shader->zbias = 0.00001f * (i + 1) * 0;
@@ -783,7 +1212,6 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
       }
     }
   }
-
-
+#endif
 }
 
