@@ -470,12 +470,9 @@ void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::text
 
   // the image position in the key is in the lod=0 coordinate system.
   // the actual position depends on the lod value.
-  auto src_pos = k.img_pos >> k.lod;
-
-  auto&& subimg = img.subimg (vec2<int> (src_pos), { texture_tile_size });
+  auto&& subimg = img.subimg (vec2<int> (k.img_pos >> k.lod), { texture_tile_size });
 
   tex.upload (subimg.data (), { 0 }, subimg.size (), subimg.bytes_per_line ());
-  glFlush ();
 }
 
 // ----------------------------------------------------------------------------
