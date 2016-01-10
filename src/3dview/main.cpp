@@ -40,6 +40,7 @@ int main (int argc, const char* argv[])
   const char* height_img = argv[8];
   const unsigned int lod = std::stoul (argv[9]);
   bool en_wireframe = std::stoi (argv[10]);
+  bool en_debug_dist = false;
 
   std::cout << "using window size: " << window_width << " x " << window_height
             << std::endl;
@@ -108,6 +109,8 @@ int main (int argc, const char* argv[])
 	case input_event::key_down:
 	  if (e.keycode == 67) // F1 key
 	    en_wireframe = !en_wireframe;
+	  else if (e.keycode == 68) // F2 key
+	    en_debug_dist = !en_debug_dist;
 	  break;
 /*
 	case input_event::mouse_move:
@@ -168,7 +171,7 @@ int main (int argc, const char* argv[])
 
     scene.render (window_width, window_height,
 		  std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
-		  en_wireframe);
+		  en_wireframe, en_debug_dist);
 
     dev->swap_buffers ();
 

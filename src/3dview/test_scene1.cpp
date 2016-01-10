@@ -151,7 +151,7 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
 
 void test_scene1::render (unsigned int width, unsigned int height,
 			 std::chrono::microseconds delta_time,
-			 bool en_wireframe)
+			 bool en_wireframe, bool en_debug_dist)
 {
   glViewport (0, 0, width, height);
   glClearColor (0.5f, 0.5f, 0.5f, 1);
@@ -185,7 +185,8 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, m_img_pos);
 
-  m_image->render (cam_trv, m_last_proj_trv, viewport_trv, en_wireframe);
+  m_image->render (cam_trv, m_last_proj_trv, viewport_trv, en_wireframe,
+		  en_debug_dist);
 
   gl_check_log_error ();
 }

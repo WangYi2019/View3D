@@ -1029,13 +1029,14 @@ tiled_image::calc_tile_visibility (const tile& t,
 
 
 void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-			  const mat4<double>& viewport_trv, bool render_wireframe)
+			  const mat4<double>& viewport_trv, bool render_wireframe,
+			  bool debug_dist)
 {
   const float zscale = 0.05f;
 
   m_shader->activate ();
   m_shader->color_texture = 0;
-  m_shader->height_texture = 0;
+  m_shader->height_texture = 1;
 
 
   static const std::array<vec4<float>, max_lod_level> lod_colors =
@@ -1137,20 +1138,16 @@ std::cout
 	       return b->lod () < a->lod ();
 	     });
 
-/*
-  const auto proj_cam_trv2 =
-	proj_trv
-	* mat4<double>::translate (0, 0, -2)
-	* cam_trv;
-*/
-  const auto proj_cam_trv2 = proj_cam_trv;
+  auto proj_cam_trv2 = proj_cam_trv;
+
+  if (debug_dist)
+    proj_cam_trv2 = proj_trv * mat4<double>::translate (0, 0, -1) * cam_trv;
+
 
   glEnable (GL_TEXTURE_2D);
   glEnable (GL_DEPTH_TEST);
 
   m_shader->offset_color = { 0 };
-  m_shader->color_texture = 0;
-  m_shader->height_texture = 1;
   m_shader->zbias = 0;
   m_shader->color = { 1 };
 
@@ -1197,67 +1194,5 @@ std::cout
       t->mesh ().render_outline ();
     }
   }
-
-#if 0
-  for (unsigned int i = 0; i < max_lod_level; ++i)
-//  for (int i = max_lod_level - 1; i >= 0; --i)
-  {
-    if (lod_colors[i].a == 0)
-      continue;
-
-    m_shader->zbias = 0.00001f * (i + 1) * 0;
-    m_shader->offset_color = lod_colors[i];
-
-    for (const auto& t : m_tiles[i])
-    {
-      auto mvp = proj_cam_trv * t.trv ();
-
-      m_shader->mvp = (mat4<float>)mvp;
-
-      m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
-
-      if (i == max_lod_level - 1 && 0)
-      {
-	glLineWidth (0.5f);
-	t.mesh ().render_wireframe ();
-      }
-
-      {
-	glLineWidth (1.5f);
-	t.mesh ().render_outline ();
-      }
-    }
-  }
-#endif
-
-#if 0
-  for (int i = max_lod_level - 1; i >= 3; --i)
-  {
-    m_shader->zbias = 0.00001f * (i + 1) * 0;
-
-    for (const auto& t : m_tiles[i])
-    {
-      glLineWidth (1.5f * i);
-      m_shader->mvp = (mat4<float>)(proj_cam_trv * t.trv ());
-      m_shader->pos = gl::vertex_attrib (t.mesh ().vertex_buffer (), &vertex::pos);
-      m_shader->offset_color = lod_colors[t.lod ()];
-
-      t.mesh ().render_outline ();
-
-      for (const auto& tt : t.subtiles ())
-      {
-	if (tt == nullptr)
-	  continue;
-
-        glLineWidth (1.5f * i / 2);
-        m_shader->mvp = (mat4<float>)(proj_cam_trv * tt->trv ());
-        m_shader->pos = gl::vertex_attrib (tt->mesh ().vertex_buffer (), &vertex::pos);
-        m_shader->offset_color = lod_colors[tt->lod ()];
-
-        tt->mesh ().render_outline ();
-      }
-    }
-  }
-#endif
 }
 

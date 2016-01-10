@@ -88,7 +88,8 @@ for this need support for shared image buffers
 */
 
   void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-	       const mat4<double>& viewport_trv, bool render_wireframe);
+	       const mat4<double>& viewport_trv, bool render_wireframe,
+	       bool debug_dist);
 
 private:
   struct vertex;

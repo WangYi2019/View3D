@@ -16,7 +16,7 @@ public:
 
   void render (unsigned int width, unsigned int height,
 	       std::chrono::microseconds delta_time,
-	       bool en_wireframe);
+	       bool en_wireframe, bool en_debug_dist);
 
   const vec2<double>& img_pos (void) const { return m_img_pos; }
   void set_img_pos (const vec2<double>& v) { m_img_pos = v; }
