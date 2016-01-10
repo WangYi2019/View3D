@@ -88,7 +88,7 @@ for this need support for shared image buffers
 */
 
   void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-	       const mat4<double>& viewport_trv);
+	       const mat4<double>& viewport_trv, bool render_wireframe);
 
 private:
   struct vertex;
@@ -152,7 +152,7 @@ private:
   calc_tile_visibility (const tile& t,
 			const mat4<double>& proj_cam_trv,
 			const mat4<double>& viewport_trv,
-			const mat4<double>& viewport_proj_cam_trv) const;
+			float zscale) const;
 };
 
 #endif // includeguard_tiled_image_hpp_includeguard

@@ -39,7 +39,7 @@ int main (int argc, const char* argv[])
   const char* rgb_img = argv[7];
   const char* height_img = argv[8];
   const unsigned int lod = std::stoul (argv[9]);
-  const bool en_wireframe = std::stoi (argv[10]);
+  bool en_wireframe = std::stoi (argv[10]);
 
   std::cout << "using window size: " << window_width << " x " << window_height
             << std::endl;
@@ -105,6 +105,10 @@ int main (int argc, const char* argv[])
 #if 1
       switch (e.type)
       {
+	case input_event::key_down:
+	  if (e.keycode == 67) // F1 key
+	    en_wireframe = !en_wireframe;
+	  break;
 /*
 	case input_event::mouse_move:
 	  std::cout << "mouse move " << e.pos.x << ", " << e.pos.y << std::endl;
