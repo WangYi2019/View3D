@@ -458,8 +458,8 @@ void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::text
     tex = gl::texture (img.format (), { texture_tile_size + texture_border * 2 });
     tex.set_address_mode_u (gl::texture::clamp);
     tex.set_address_mode_v (gl::texture::clamp);
-    tex.set_min_filter (gl::texture::nearest);
-    tex.set_mag_filter (gl::texture::nearest);
+    tex.set_min_filter (gl::texture::linear);
+    tex.set_mag_filter (gl::texture::linear);
   }
 
   // the image position in the key is in the lod=0 coordinate system.
@@ -1185,7 +1185,7 @@ std::cout
 */
 
 #ifdef use_max_edge_length
-      const double d_threshold = 2;
+      const double d_threshold = 1.7;
 #else
       const double d_threshold = 2;
 #endif
