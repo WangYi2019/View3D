@@ -362,10 +362,6 @@ private:
   // one tile (lower detail level) is subdivided into
   // 4 tiles (higher detail level)
   std::array<tile*, 4> m_subtiles;
-
-  // textures from the cache.
-  //std::shared_ptr<gl::texture> m_rgb_texture;
-  //std::shared_ptr<gl::texture> m_height_texture;
 };
 
 
@@ -375,11 +371,13 @@ struct tiled_image::shader : public gl::shader
 {
   uniform< mat4<float>, highp > mvp;
   uniform< vec4<float>, lowp > offset_color;
+  uniform< vec4<float>, lowp > color;
 
   uniform< sampler2D, mediump > color_texture;
   uniform< sampler2D, mediump > height_texture;
 
   uniform< float, highp> zbias;
+  uniform< float, highp> zscale;
 
   attribute< vec2<float>, highp > pos;
 
@@ -387,10 +385,12 @@ struct tiled_image::shader : public gl::shader
   {
     named_parameter (mvp);
     named_parameter (pos);
+    named_parameter (color);
     named_parameter (offset_color);
     named_parameter (color_texture);
     named_parameter (height_texture);
     named_parameter (zbias);
+    named_parameter (zscale);
   }
 
   vertex_shader_text
@@ -399,12 +399,10 @@ struct tiled_image::shader : public gl::shader
 
     void main (void)
     {
-      vec2 uv = pos;
+      vec4 height = texture2D (height_texture, pos);
 
-      vec4 height = texture2D (height_texture, uv);
-
-      color_uv = uv;
-      gl_Position = mvp * vec4 (pos, height.r * 0.1 + zbias, 1.0);
+      color_uv = pos;
+      gl_Position = mvp * vec4 (pos, height.r * zscale + zbias, 1.0);
     }
   )
 
@@ -414,7 +412,7 @@ struct tiled_image::shader : public gl::shader
 
     void main (void)
     {
-      gl_FragColor = texture2D (color_texture, color_uv) + offset_color;
+      gl_FragColor = texture2D (color_texture, color_uv) * color + offset_color;
     }
   )
 };
@@ -423,13 +421,71 @@ std::shared_ptr<tiled_image::shader> tiled_image::g_shader;
 
 // ----------------------------------------------------------------------------
 
-tiled_image::tiled_image (void)
-: m_size (0, 0)
+struct tiled_image::texture_key
 {
+  unsigned int lod;
+  vec2<unsigned int> img_pos;
+
+  // assume that image coorindates are max. 29 bits (536870912 x 536870912 pixels)
+  uint64_t packed;
+
+  texture_key (void) = default;
+  texture_key (const texture_key&) = default;
+  texture_key (unsigned int l, const vec2<unsigned int>& p)
+  : lod (l), img_pos (p)
+  {
+    packed = (l & 63)
+	     | (((uint64_t)p.x & ((1u << 29)-1)) << 6)
+	     | (((uint64_t)p.y & ((1u << 29)-1)) << (6+29));
+  }
+
+  bool operator < (const texture_key& rhs) const
+  {
+    return packed < rhs.packed;
+  }
+
+
+  friend std::ostream& operator << (std::ostream& out, const tiled_image::texture_key& k)
+  {
+    return out << k.lod << " " << k.img_pos.x << " " << k.img_pos.y
+		<< " (" << std::hex << k.packed << std::dec << ")";
+  }
+};
+
+void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::texture& tex)
+{
+  std::cout << "load_texture_tile "
+	    << k.lod << " " << k.img_pos.x << "," << k.img_pos.y << std::endl;
+
+  auto&& img = m_img.get ()[k.lod];
+
+  if (tex.empty () || tex.format () != img.format ())
+  {
+    tex = gl::texture (img.format (), { texture_tile_size });
+    tex.set_address_mode_u (gl::texture::clamp);
+    tex.set_address_mode_v (gl::texture::clamp);
+    tex.set_min_filter (gl::texture::linear);
+    tex.set_mag_filter (gl::texture::linear);
+  }
+
+  // the image position in the key is in the lod=0 coordinate system.
+  // the actual position depends on the lod value.
+  auto src_pos = k.img_pos >> k.lod;
+
+  auto&& subimg = img.subimg (vec2<int> (src_pos), { texture_tile_size });
+
+  tex.upload (subimg.data (), { 0 }, subimg.size (), subimg.bytes_per_line ());
+  glFlush ();
 }
 
+// ----------------------------------------------------------------------------
+
+tiled_image::tiled_image (void) : tiled_image (vec2<uint32_t> (0, 0)) { }
+
 tiled_image::tiled_image (const vec2<uint32_t>& size)
-: m_size (size)
+: m_size (size),
+  m_rgb_texture_cache (load_texture_tile (m_rgb_image)),
+  m_height_texture_cache (load_texture_tile (m_height_image))
 {
   if (size.x == 0 || size.y == 0)
     return;
@@ -525,12 +581,15 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 
 }
 
+
 tiled_image::tiled_image (tiled_image&& rhs)
 : m_size (std::move (rhs.m_size)),
   m_rgb_image (std::move (rhs.m_rgb_image)),
   m_height_image (std::move (rhs.m_height_image)),
   m_shader (std::move (rhs.m_shader)),
   m_tiles (std::move (rhs.m_tiles)),
+  m_rgb_texture_cache (std::move (rhs.m_rgb_texture_cache)),
+  m_height_texture_cache (std::move (rhs.m_height_texture_cache)),
   m_candidate_tiles (std::move (rhs.m_candidate_tiles)),
   m_visible_tiles (std::move (rhs.m_visible_tiles))
 {
@@ -546,6 +605,8 @@ tiled_image& tiled_image::operator = (tiled_image&& rhs)
     m_height_image = std::move (rhs.m_height_image);
     m_shader = std::move (rhs.m_shader);
     m_tiles = std::move (rhs.m_tiles);
+    m_rgb_texture_cache = std::move (rhs.m_rgb_texture_cache);
+    m_height_texture_cache = std::move (rhs.m_height_texture_cache);
     m_candidate_tiles = std::move (rhs.m_candidate_tiles);
     m_visible_tiles = std::move (rhs.m_visible_tiles);
 
@@ -1085,8 +1146,6 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
   m_shader->color_texture = 0;
   m_shader->height_texture = 0;
 
-  glDisable (GL_TEXTURE_2D);
-  glDisable (GL_DEPTH_TEST);
 
   static const std::array<vec4<float>, max_lod_level> lod_colors =
   {
@@ -1130,7 +1189,7 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 //break;
   }
 
-#define per_frame_log
+//#define per_frame_log
 
 #if defined (tile_visibility_log) || defined (per_frame_log)
 
@@ -1159,7 +1218,7 @@ std::cout
 */
 
 #ifdef use_max_edge_length
-      const double d_threshold = 1.75;
+      const double d_threshold = 1.5;
 #else
       const double d_threshold = 2;
 #endif
@@ -1233,14 +1292,46 @@ std::cout
 
   const auto proj_cam_trv2 = proj_cam_trv;
 
+  glEnable (GL_TEXTURE_2D);
+  glEnable (GL_DEPTH_TEST);
+
+  m_shader->offset_color = { 0 };
+  m_shader->color_texture = 0;
+  m_shader->height_texture = 1;
+  m_shader->zbias = 0;
+  m_shader->color = { 1 };
+
+  m_shader->zscale = 0.05f;
+
+  for (const tile* t : m_visible_tiles)
+  {
+    m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
+    m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
+
+    auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
+    auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
+
+    t0.bind (0);
+    t1.bind (1);
+
+    t->mesh ().render_textured ();
+  }
+
+
+  glDisable (GL_TEXTURE_2D);
+  glDisable (GL_DEPTH_TEST);
+
+  m_shader->zscale = 0.00f;
+  m_shader->color = { 0 };
+
   for (const tile* t : m_visible_tiles)
   {
     m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
     m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
     m_shader->offset_color = lod_colors[t->lod ()];
 
-    glLineWidth (0.5f * t->lod () + 0.125f);
-    t->mesh ().render_outline ();
+//    glLineWidth (0.5f * t->lod () + 0.125f);
+//    t->mesh ().render_outline ();
 
 //    glLineWidth (0.025f * t->lod () + 0.125f);
 //    t->mesh ().render_wireframe ();

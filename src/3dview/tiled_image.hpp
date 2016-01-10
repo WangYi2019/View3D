@@ -9,7 +9,7 @@
 #include "gl/gl.hpp"
 #include "utils/vec_mat.hpp"
 #include "image.hpp"
-
+#include "lru_cache.hpp"
 
 class tiled_image
 {
@@ -96,6 +96,22 @@ private:
   class grid_mesh;
   class tile;
   struct tile_visibility;
+  struct texture_key;
+
+  struct load_texture_tile
+  {
+    std::reference_wrapper<std::array<image, max_lod_level>> m_img;
+
+    load_texture_tile (std::array<image, max_lod_level>& img) : m_img (img) { }
+    load_texture_tile (void) = delete;
+    load_texture_tile (const load_texture_tile&) = default;
+    load_texture_tile (load_texture_tile&&) = default;
+    load_texture_tile& operator = (const load_texture_tile&) = default;
+    load_texture_tile& operator = (load_texture_tile&&) = default;
+
+    // replace the specified entry for the specified key.
+    void operator () (const texture_key& key, gl::texture& entry);
+  };
 
   // shader and geomety is shared amongst image instances.
   static std::vector<std::shared_ptr<grid_mesh>> g_grid_meshes;
@@ -114,6 +130,10 @@ private:
 
   // all tiles in the image.
   std::array<std::vector<tile>, max_lod_level> m_tiles;
+
+  // texture tile cache
+  lru_cache<texture_key, gl::texture, load_texture_tile> m_rgb_texture_cache;
+  lru_cache<texture_key, gl::texture, load_texture_tile> m_height_texture_cache;
 
   // candidate tiles for display.  modified during rendering.
   mutable std::vector<tile*> m_candidate_tiles;

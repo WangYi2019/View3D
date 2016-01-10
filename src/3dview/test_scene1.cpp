@@ -65,12 +65,12 @@ test_scene1::test_scene1 (void)
     { "20/20151130133409view20.bmp", "20/20151130133409view20-3d3-13.bmp",  549, 536 },
 
   };
-/*
+
   for (auto&& i : images)
     m_image->update (i.x, i.y,
 		     (base_path + i.rgb_img).c_str (),
 		     (base_path + i.height_img).c_str ());
-*/
+
 }
 
 test_scene1::~test_scene1 (void)
