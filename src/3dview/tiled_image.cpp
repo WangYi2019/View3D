@@ -1110,7 +1110,7 @@ std::cout
 */
 
 #ifdef use_max_edge_length
-      const double d_threshold = 1.5;
+      const double d_threshold = 2;
 #else
       const double d_threshold = 2;
 #endif
