@@ -22,6 +22,8 @@ struct input_event
     mouse_move,
     mouse_drag,
     mouse_wheel,
+    key_down,
+    key_up,
   };
 
   type_t type = unknown;

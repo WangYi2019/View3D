@@ -66,10 +66,17 @@ struct window_x11 : window
 
 	  if (XLookupKeysym (&e.xkey, 0) == XK_Escape)
 	    return false;
+
+	  ee.type = input_event::key_down;
+	  ee.keycode = e.xkey.keycode;
+	  clb (ee);
 	  break;
 
 	case KeyRelease:
 	  std::cout << "key release " << e.xkey.keycode << std::endl;
+	  ee.type = input_event::key_up;
+	  ee.keycode = e.xkey.keycode;
+	  clb (ee);
 	  break;
 
 	case ClientMessage:
