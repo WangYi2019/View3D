@@ -585,9 +585,10 @@ public:
 		    m_format.gl_fmt (), m_format.gl_type (), data);
     else
     {
-      // GL textures have y = 0 = bottom ... but we want y = 0 = top,
-      // so have to mirror the y offset coordinate.
-      glTexSubImage2D (GL_TEXTURE_2D, 0, dst_xy.x, m_size.y - size.y - dst_xy.y,
+      // GL textures have y = 0 = bottom.
+      // this matches the GL viewport coordinate system and usually everything
+      // pans out normally, as if it were y = 0 = top.
+      glTexSubImage2D (GL_TEXTURE_2D, 0, dst_xy.x, dst_xy.y,
 		       size.x, size.y, m_format.gl_fmt (), m_format.gl_type (), data);
     }
   }

@@ -63,25 +63,11 @@ public:
     std::vector<vertex> vtx;
     vtx.reserve (size.x * size.y);
 
+    // the integer coordinates are scaled in the shader into the 0..1 range.
+    // they are also used to address textures, which might have another scale.
     for (unsigned int y = 0; y < size.y; ++y)
       for (unsigned int x = 0; x < size.x; ++x)
-	vtx.emplace_back (vec2<float> (x, y) * (1.0f / vec2<float> (size - 1)));
-
-    // make sure that the top edge y is 0
-    // make sure that the bottom edge y is 1
-    for (unsigned int x = 0; x < size.x; ++x)
-    {
-      vtx[x].pos.y = 0;
-      vtx[(size.y-1) * size.x].pos.y = 1;
-    }
-
-    // make sure that the left edge x is 0
-    // make sure that the right edge x is 1
-    for (unsigned int y = 0; y < size.y; ++y)
-    {
-      vtx[y * size.x + 0].pos.x = 0;
-      vtx[y * size.x + size.x-1].pos.x = 1;
-    }
+	vtx.emplace_back (vec2<float> (x, y));
 
     m_vertex_buffer = gl::buffer (gl::buffer::vertex, vtx);
     m_vertex_buffer_count = vtx.size ();
@@ -376,8 +362,10 @@ struct tiled_image::shader : public gl::shader
   uniform< sampler2D, mediump > color_texture;
   uniform< sampler2D, mediump > height_texture;
 
-  uniform< float, highp> zbias;
-  uniform< float, highp> zscale;
+  uniform< float, highp > zbias;
+  uniform< float, highp > zscale;
+  uniform< vec2<float>, highp > tile_scale;
+  uniform< vec2<float>, highp > texture_scale;
 
   attribute< vec2<float>, highp > pos;
 
@@ -391,6 +379,8 @@ struct tiled_image::shader : public gl::shader
     named_parameter (height_texture);
     named_parameter (zbias);
     named_parameter (zscale);
+    named_parameter (tile_scale);
+    named_parameter (texture_scale);
   }
 
   vertex_shader_text
@@ -399,10 +389,10 @@ struct tiled_image::shader : public gl::shader
 
     void main (void)
     {
-      vec4 height = texture2D (height_texture, pos);
+      color_uv = pos * texture_scale;
 
-      color_uv = pos;
-      gl_Position = mvp * vec4 (pos, height.r * zscale + zbias, 1.0);
+      float height = texture2D (height_texture, color_uv).r;
+      gl_Position = mvp * vec4 (pos * tile_scale, height * zscale + zbias, 1.0);
     }
   )
 
@@ -1158,6 +1148,9 @@ std::cout
     m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
     m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
 
+    m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size () - 1);
+    m_shader->texture_scale = 1.0f / vec2<float> (texture_tile_size - 1);
+
     auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
     auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
 
@@ -1180,6 +1173,9 @@ std::cout
       m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
       m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
       m_shader->offset_color = lod_colors[t->lod ()];
+
+      m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size () - 1);
+      m_shader->texture_scale = 1.0f / vec2<float> (texture_tile_size - 1);
 
       auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
       auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
