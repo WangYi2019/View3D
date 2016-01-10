@@ -454,8 +454,8 @@ struct tiled_image::texture_key
 
 void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::texture& tex)
 {
-  std::cout << "load_texture_tile "
-	    << k.lod << " " << k.img_pos.x << "," << k.img_pos.y << std::endl;
+//  std::cout << "load_texture_tile "
+//	    << k.lod << " " << k.img_pos.x << "," << k.img_pos.y << std::endl;
 
   auto&& img = m_img.get ()[k.lod];
 
@@ -484,8 +484,8 @@ tiled_image::tiled_image (void) : tiled_image (vec2<uint32_t> (0, 0)) { }
 
 tiled_image::tiled_image (const vec2<uint32_t>& size)
 : m_size (size),
-  m_rgb_texture_cache (load_texture_tile (m_rgb_image)),
-  m_height_texture_cache (load_texture_tile (m_height_image))
+  m_rgb_texture_cache (load_texture_tile (m_rgb_image), 1024),
+  m_height_texture_cache (load_texture_tile (m_height_image), 1024)
 {
   if (size.x == 0 || size.y == 0)
     return;

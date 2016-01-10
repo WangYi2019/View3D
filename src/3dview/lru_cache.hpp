@@ -12,7 +12,8 @@ public:
   lru_cache (lru_cache&&) = default;
   lru_cache& operator = (lru_cache&&) = default;
 
-  lru_cache (CreateFunc&& f) : m_create_func (std::forward<CreateFunc> (f))
+  lru_cache (CreateFunc&& f, unsigned int capacity)
+  : m_capacity (capacity), m_create_func (std::forward<CreateFunc> (f))
   {
   }
 
@@ -23,7 +24,7 @@ public:
     {
       // requested entry is not in the cache.
 
-      if (m_lru_list.empty () || m_map.size () < 512)
+      if (m_lru_list.empty () || m_map.size () < m_capacity)
       {
 	m_lru_list.emplace_front (k, Value ());
 	m_map.emplace (k, m_lru_list.begin ());
@@ -56,6 +57,7 @@ public:
   }
 
 private:
+  unsigned int m_capacity;
   std::list<std::pair<Key, Value>> m_lru_list;
   std::map<Key, typename std::list<std::pair<Key, Value>>::iterator> m_map;
 
