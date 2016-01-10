@@ -65,8 +65,8 @@ public:
 
     // the integer coordinates are scaled in the shader into the 0..1 range.
     // they are also used to address textures, which might have another scale.
-    for (unsigned int y = 0; y < size.y; ++y)
-      for (unsigned int x = 0; x < size.x; ++x)
+    for (unsigned int y = 0; y < size.y + 1; ++y)
+      for (unsigned int x = 0; x < size.x + 1; ++x)
 	vtx.emplace_back (vec2<float> (x, y));
 
     m_vertex_buffer = gl::buffer (gl::buffer::vertex, vtx);
@@ -144,18 +144,20 @@ private:
 
     // every cell in the grid consists of 2 triangles.
     std::vector<IndexType> idx;
-    idx.reserve ((size.x - 1) * (size.y - 1) * 6);
+    idx.reserve (size.x * size.y * 6);
 
-    for (unsigned int y = 0; y < size.y - 1; ++y)
-      for (unsigned int x = 0; x < size.x - 1; ++x)
+    const unsigned int grid_stride = size.x + 1;
+
+    for (unsigned int y = 0; y < size.y; ++y)
+      for (unsigned int x = 0; x < size.x; ++x)
       {
-	idx.push_back ((x + 0) + ((y + 0) * size.x));
-	idx.push_back ((x + 1) + ((y + 0) * size.x));
-	idx.push_back ((x + 0) + ((y + 1) * size.x));
+	idx.push_back ((x + 0) + ((y + 0) * grid_stride));
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride));
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride));
 
-	idx.push_back ((x + 0) + ((y + 1) * size.x));
-	idx.push_back ((x + 1) + ((y + 0) * size.x));
-	idx.push_back ((x + 1) + ((y + 1) * size.x));
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride));
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride));
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride));
       }
 
     m_index_buffer = gl::buffer (gl::buffer::index, idx);
@@ -165,26 +167,26 @@ private:
     idx.reserve (size.x * size.y * 4);
     idx.clear ();
 
-    for (unsigned int y = 0; y < size.y - 1; ++y)
-      for (unsigned int x = 0; x < size.x - 1; ++x)
+    for (unsigned int y = 0; y < size.y; ++y)
+      for (unsigned int x = 0; x < size.x; ++x)
       {
-	idx.push_back ((x + 0) + ((y + 0) * size.x));
-	idx.push_back ((x + 0) + ((y + 1) * size.x));
+	idx.push_back ((x + 0) + ((y + 0) * grid_stride));
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride));
 
-	idx.push_back ((x + 0) + ((y + 0) * size.x));
-	idx.push_back ((x + 1) + ((y + 0) * size.x));
+	idx.push_back ((x + 0) + ((y + 0) * grid_stride));
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride));
       }
 
-    for (unsigned int y = 0; y < size.y - 1; ++y)
+    for (unsigned int y = 0; y < size.y; ++y)
     {
-      idx.push_back ((size.x-1 + 0) + ((y + 0) * size.x));
-      idx.push_back ((size.x-1 + 0) + ((y + 1) * size.x));
+      idx.push_back ((size.x + 0) + ((y + 0) * grid_stride));
+      idx.push_back ((size.x + 0) + ((y + 1) * grid_stride));
     }
 
-    for (unsigned int x = 0; x < size.x - 1; ++x)
+    for (unsigned int x = 0; x < size.x; ++x)
     {
-      idx.push_back ((x + 0) + ((size.y-1 + 0) * size.x));
-      idx.push_back ((x + 1) + ((size.y-1 + 0) * size.x));
+      idx.push_back ((x + 0) + ((size.y + 0) * grid_stride));
+      idx.push_back ((x + 1) + ((size.y + 0) * grid_stride));
     }
 
     m_wireframe_index_buffer = gl::buffer (gl::buffer::index, idx);
@@ -194,17 +196,17 @@ private:
     idx.reserve (4*2);
     idx.clear ();
 
-    idx.push_back (0 + 0 * size.x);
-    idx.push_back ((size.x - 1) + 0 * size.x);
+    idx.push_back (0 + 0 * grid_stride);
+    idx.push_back ((size.x) + 0 * grid_stride);
 
-    idx.push_back ((size.x - 1) + 0 * size.x);
-    idx.push_back ((size.x - 1) + (size.y - 1) * size.x);
+    idx.push_back ((size.x) + 0 * grid_stride);
+    idx.push_back ((size.x) + (size.y) * grid_stride);
 
-    idx.push_back ((size.x - 1) + (size.y - 1) * size.x);
-    idx.push_back (0 + (size.y - 1) * size.x);
+    idx.push_back ((size.x) + (size.y) * grid_stride);
+    idx.push_back (0 + (size.y) * grid_stride);
 
-    idx.push_back (0 + (size.y - 1) * size.x);
-    idx.push_back (0 + 0 * size.x);
+    idx.push_back (0 + (size.y) * grid_stride);
+    idx.push_back (0 + 0 * grid_stride);
 
     m_outline_index_buffer = gl::buffer (gl::buffer::index, idx);
     m_outline_index_buffer_count = idx.size ();
@@ -366,6 +368,7 @@ struct tiled_image::shader : public gl::shader
   uniform< float, highp > zscale;
   uniform< vec2<float>, highp > tile_scale;
   uniform< vec2<float>, highp > texture_scale;
+  uniform< vec2<float>, highp > texture_border;
 
   attribute< vec2<float>, highp > pos;
 
@@ -381,6 +384,7 @@ struct tiled_image::shader : public gl::shader
     named_parameter (zscale);
     named_parameter (tile_scale);
     named_parameter (texture_scale);
+    named_parameter (texture_border);
   }
 
   vertex_shader_text
@@ -389,7 +393,7 @@ struct tiled_image::shader : public gl::shader
 
     void main (void)
     {
-      color_uv = pos * texture_scale;
+      color_uv = (pos + texture_border) * texture_scale;
 
       float height = texture2D (height_texture, color_uv).r;
       gl_Position = mvp * vec4 (pos * tile_scale, height * zscale + zbias, 1.0);
@@ -451,18 +455,99 @@ void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::text
 
   if (tex.empty () || tex.format () != img.format ())
   {
-    tex = gl::texture (img.format (), { texture_tile_size });
+    tex = gl::texture (img.format (), { texture_tile_size + texture_border * 2 });
     tex.set_address_mode_u (gl::texture::clamp);
     tex.set_address_mode_v (gl::texture::clamp);
-    tex.set_min_filter (gl::texture::linear);
-    tex.set_mag_filter (gl::texture::linear);
+    tex.set_min_filter (gl::texture::nearest);
+    tex.set_mag_filter (gl::texture::nearest);
   }
 
   // the image position in the key is in the lod=0 coordinate system.
   // the actual position depends on the lod value.
-  auto&& subimg = img.subimg (vec2<int> (k.img_pos >> k.lod), { texture_tile_size });
+  auto&& subimg_pos_tl = vec2<int> (k.img_pos >> k.lod) - texture_border;
+  auto&& subimg_pos_br = subimg_pos_tl + texture_tile_size + texture_border * 2;
 
-  tex.upload (subimg.data (), { 0 }, subimg.size (), subimg.bytes_per_line ());
+  vec2<int> tex_pos (0);
+
+  bool replicate_top_edge = false;
+  bool replicate_left_edge = false;
+  bool replicate_bottom_edge = false;
+  bool replicate_right_edge = false;
+
+  // at the image edges we can't take any border pixels from
+  // the source image and thus have to replicate pixel stripes.
+  if (subimg_pos_tl.x < 0)
+  {
+    tex_pos.x += 0 - subimg_pos_tl.x;
+    replicate_left_edge = true;
+  }
+  if (subimg_pos_tl.y < 0)
+  {
+    tex_pos.y += 0 - subimg_pos_tl.y;
+    replicate_top_edge = true;
+  }
+
+  if (subimg_pos_br.x >= (int)img.size ().x)
+    replicate_right_edge = true;
+  if (subimg_pos_br.y >= (int)img.size ().y)
+    replicate_bottom_edge = true;
+
+  auto&& subimg = img.subimg (subimg_pos_tl,
+			      { texture_tile_size + texture_border*2});
+
+  tex.upload (subimg.data (), tex_pos, subimg.size (), subimg.bytes_per_line ());
+
+  // replicate more than 1 border pixel because of geometry skirt.
+  if (replicate_left_edge)
+  {
+    auto&& i = img.subimg ({ 0, subimg_pos_tl.y }, { 1, texture_tile_size + texture_border*2 });
+    tex.upload (i.data (), { texture_border - 1, tex_pos.y }, i.size (), i.bytes_per_line ());
+    tex.upload (i.data (), { texture_border - 2, tex_pos.y }, i.size (), i.bytes_per_line ());
+  }
+  if (replicate_top_edge)
+  {
+    auto&& i = img.subimg ({ subimg_pos_tl.x, 0 }, { texture_tile_size + texture_border*2, 1 });
+    tex.upload (i.data (), { tex_pos.x, texture_border - 1 }, i.size (), i.bytes_per_line ());
+    tex.upload (i.data (), { tex_pos.x, texture_border - 2 }, i.size (), i.bytes_per_line ());
+  }
+  if (replicate_right_edge)
+  {
+    auto&& i = img.subimg ({ img.size ().x - 1, subimg_pos_tl.y }, { 1, texture_tile_size + texture_border*2 });
+
+    int d = subimg_pos_br.x - (int)img.size ().x - texture_border;
+
+    tex.upload (i.data (), { texture_border + texture_tile_size - d, tex_pos.y },
+		i.size (), i.bytes_per_line ());
+
+    tex.upload (i.data (), { texture_border + texture_tile_size - d + 1, tex_pos.y },
+		i.size (), i.bytes_per_line ());
+  }
+  if (replicate_bottom_edge)
+  {
+    auto&& i = img.subimg ({ subimg_pos_tl.x, img.size ().y - 1 }, { texture_tile_size + texture_border*2, 1 });
+
+    int d = subimg_pos_br.y - (int)img.size ().y - texture_border;
+
+    tex.upload (i.data (), { tex_pos.x, texture_border + texture_tile_size - d },
+		i.size (), i.bytes_per_line ());
+
+    tex.upload (i.data (), { tex_pos.x, texture_border + texture_tile_size - d + 1},
+		i.size (), i.bytes_per_line ());
+  }
+/*
+FIXME: replicate corners, too
+  if (replicate_bottom_edge && replicate_right_edge && 0)
+  {
+    auto&& i = img.subimg (vec2<int> (img.size ()) - 1, { 1 });
+
+    auto&& d = subimg_pos_br - vec2<int> (img.size ()) - texture_border;
+
+    // have to replicate 1 corner pixel -> 4 corner pixels here ...
+
+    tex.upload (i.data (), texture_border + texture_tile_size - d,
+		i.size (), i.bytes_per_line ());
+  }
+*/
 }
 
 // ----------------------------------------------------------------------------
@@ -1027,7 +1112,7 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
   m_shader->activate ();
   m_shader->color_texture = 0;
   m_shader->height_texture = 1;
-
+  m_shader->texture_border = texture_border;
 
   static const std::array<vec4<float>, max_lod_level> lod_colors =
   {
@@ -1148,14 +1233,14 @@ std::cout
     m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
     m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
 
-    m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size () - 1);
-    m_shader->texture_scale = 1.0f / vec2<float> (texture_tile_size - 1);
-
     auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
     auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
 
     t0.bind (0);
     t1.bind (1);
+
+    m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
+    m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
     t->mesh ().render_textured ();
   }
@@ -1174,14 +1259,14 @@ std::cout
       m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
       m_shader->offset_color = lod_colors[t->lod ()];
 
-      m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size () - 1);
-      m_shader->texture_scale = 1.0f / vec2<float> (texture_tile_size - 1);
-
       auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
       auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
 
       t0.bind (0);
       t1.bind (1);
+
+      m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
+      m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
       // glLineWidth (0.025f * t->lod () + 0.125f);
       // t->mesh ().render_wireframe ();

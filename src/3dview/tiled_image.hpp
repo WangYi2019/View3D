@@ -18,11 +18,14 @@ public:
   static constexpr unsigned int max_lod_level = 6;
   static constexpr unsigned int max_lod_scale_factor = 1 << max_lod_level;
 
+  // to avoid creases textures have to have some sampling border.
+  static constexpr unsigned int texture_border = 8;
+
   // the grid size of one geometry tile.  the grid size is constant for each
   // detail level, but the tile is rendered bigger.
   // the grid size defines the subdivision of the top detail level.  bigger
   // grid size means fewer top-level tiles and more geometry per frame.
-  static constexpr unsigned int tile_grid_size = 128;
+  static constexpr unsigned int tile_grid_size = 128 - texture_border*2;
 
   // the size of one texture tile (color or height texture).
   // texture tiles are independent of the grid size.  e.g. at lower detail
@@ -38,7 +41,7 @@ public:
   // if texture tiles are managed and selected manually for each mipmap level
   // and automatic gpu mipmapping is not used, we have more freedom on the
   // texture tile size.
-  static constexpr unsigned int texture_tile_size = 128;
+  static constexpr unsigned int texture_tile_size = 128 - texture_border*2;
 
   // for now texture tiles are the same as geometry tiles.
   static_assert (texture_tile_size == tile_grid_size, "");
