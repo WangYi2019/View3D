@@ -792,28 +792,25 @@ tiled_image::update (int32_t x, int32_t y,
   // this will trigger texture re-uploads.
   // notice that this step has to be done on the main/GL thread as it might
   // try to delete GL textures.
+  invalidate_texture_cache (m_rgb_texture_cache, rgb_regions);
+  invalidate_texture_cache (m_height_texture_cache, height_regions);
+}
+
+void tiled_image
+::invalidate_texture_cache (lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
+			    const std::array<update_region, max_lod_level>& regions)
+{
   for (unsigned int i = 0; i < max_lod_level; ++i)
   {
-    vec2<unsigned int> rgb_tl = rgb_regions[i].tl / texture_tile_size;
-    vec2<unsigned int> rgb_br = (rgb_regions[i].br + texture_tile_size - 1) / texture_tile_size;
+    vec2<unsigned int> tl = regions[i].tl / texture_tile_size;
+    vec2<unsigned int> br = (regions[i].br + texture_tile_size - 1) / texture_tile_size;
 
-    for (unsigned int y = rgb_tl.y; y < rgb_br.y; ++y)
-      for (unsigned int x = rgb_tl.x; x < rgb_tl.x; ++x)
+    for (unsigned int y = tl.y; y < br.y; ++y)
+      for (unsigned int x = tl.x; x < tl.x; ++x)
       {
 	texture_key k (i, { x * texture_tile_size, y * texture_tile_size });
-	// std::cout << "invalidating rgb texture " << k << std::endl;
-	m_rgb_texture_cache.erase (k);
-      }
-
-    vec2<unsigned int> height_tl = height_regions[i].tl / texture_tile_size;
-    vec2<unsigned int> height_br = (height_regions[i].br + texture_tile_size - 1) / texture_tile_size;
-
-    for (unsigned int y = height_tl.y; y < height_br.y; ++y)
-      for (unsigned int x = height_tl.x; x < height_tl.x; ++x)
-      {
-	texture_key k (i, { x * texture_tile_size, y * texture_tile_size });
-	// std::cout << "invalidating height texture " << k << std::endl;
-	m_height_texture_cache.erase (k);
+	// std::cout << "invalidating texture " << k << std::endl;
+	cache.erase (k);
       }
   }
 }

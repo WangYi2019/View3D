@@ -158,6 +158,10 @@ private:
 		  const vec2<unsigned int>& top_level_xy,
 		  const vec2<unsigned int>& top_level_size);
 
+  static void
+  invalidate_texture_cache (lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
+			    const std::array<update_region, max_lod_level>& regions);
+
   tile_visibility
   calc_tile_visibility (const tile& t,
 			const mat4<double>& proj_cam_trv,
