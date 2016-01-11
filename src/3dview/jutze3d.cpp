@@ -54,6 +54,10 @@ enum
   WM_USER_3DVIEW_DISABLE_RENDERING,
   WM_USER_3DVIEW_RESIZE_IMAGE,
   WM_USER_3DVIEW_CENTER_IMAGE,
+  WM_USER_3DVIEW_FILL_IMAGE,
+  WM_USER_3DVIEW_FILL_IMAGE_AREA,
+  WM_USER_3DVIEW_UPDATE_IMAGE_AREA_1,
+  WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2,
 };
 
 struct create_window_args
@@ -77,6 +81,46 @@ struct center_image_args
   unsigned int y;
   double x_rotate;
   double y_rotate;
+};
+
+struct fill_image_args
+{
+  float r;
+  float g;
+  float b;
+  float z;
+};
+
+struct fill_image_area_args
+{
+  unsigned int x;
+  unsigned int y;
+  unsigned int width;
+  unsigned int height;
+  float r;
+  float g;
+  float b;
+  float z;
+};
+
+struct update_image_area1_args
+{
+  unsigned int x, y;
+  unsigned int width, height;
+  const char* rgb_bmp_file;
+  const char* height_bmp_file;
+  unsigned int src_x, src_y;
+  unsigned int src_width, src_height;
+};
+
+struct update_image_area2_args
+{
+  unsigned int x, y;
+  unsigned int width, height;
+  const void* rgb_data;
+  unsigned int rgb_data_stride_bytes;
+  const void* height_data;
+  unsigned int height_data_stride_bytes;
 };
 
 void post_thread_message_wait (unsigned int msg, void* args = nullptr)
@@ -103,7 +147,6 @@ void JUTZE3D_API
 view3d_init (void)
 {
   g_thread = std::thread (thread_func);
-//  MessageBox (nullptr, "It works!", "TEST MOON PLEASE IGNORE", MB_OK);
 
   while (g_thread_running == false)
     std::this_thread::sleep_for (std::chrono::milliseconds (10));
@@ -178,7 +221,8 @@ view3d_center_image (unsigned int x, unsigned int y,
 void JUTZE3D_API
 view3d_fill_image (float r, float g, float b, float z)
 {
-
+  fill_image_args args = { r, g, b, z };
+  post_thread_message_wait (WM_USER_3DVIEW_FILL_IMAGE, &args);
 }
 
 void JUTZE3D_API
@@ -186,6 +230,8 @@ view3d_fill_image_area (unsigned int x, unsigned int y,
 		 unsigned int width, unsigned int height,
 		 float r, float g, float b, float z)
 {
+  fill_image_area_args args = { x, y, width, height, r, g, b, z };
+  post_thread_message_wait (WM_USER_3DVIEW_FILL_IMAGE_AREA, &args);
 }
 
 void JUTZE3D_API
@@ -196,6 +242,10 @@ view3d_update_image_area_1 (unsigned int x, unsigned int y,
 			    unsigned int src_x, unsigned int src_y,
 			    unsigned int src_width, unsigned int src_height)
 {
+  update_image_area1_args args = { x, y, width, height, rgb_bmp_file,
+				   height_bmp_file, src_x, src_y,
+				   src_width, src_height };
+  post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_1, &args);
 }
 
 
@@ -205,6 +255,9 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
 			    const void* height_data, unsigned int height_data_stride_bytes)
 {
+  update_image_area2_args args = { x, y, width, height, rgb_data, rgb_data_stride_bytes,
+				   height_data, height_data_stride_bytes };
+  post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
 }
 
 void thread_func (void)
@@ -358,6 +411,50 @@ void thread_func (void)
 	}
 	ack_thread_message (msg);
 	break;
+
+      case WM_USER_3DVIEW_FILL_IMAGE:
+	if (g_scene != nullptr && g_scene->image () != nullptr)
+	{
+	  auto&& args = *(fill_image_args*)msg.lParam;
+	  g_scene->image ()->fill (args.r, args.g, args.b, args.z);
+	}
+	ack_thread_message (msg);
+	break;
+
+      case WM_USER_3DVIEW_FILL_IMAGE_AREA:
+	if (g_scene != nullptr && g_scene->image () != nullptr)
+	{
+	  auto&& args = *(fill_image_area_args*)msg.lParam;
+
+	  g_scene->image ()->fill (args.x, args.y, args.width, args.height,
+				   args.r, args.g, args.b, args.z);
+	}
+	ack_thread_message (msg);
+	break;
+
+      case WM_USER_3DVIEW_UPDATE_IMAGE_AREA_1:
+	if (g_scene != nullptr && g_scene->image () != nullptr)
+	{
+	  auto&& args = *(update_image_area1_args*)msg.lParam;
+	  g_scene->image ()->update (args.x, args.y, args.rgb_bmp_file,
+				     args.height_bmp_file,
+				     args.src_x, args.src_y,
+				     args.src_width, args.src_height);
+	}
+	ack_thread_message (msg);
+	break;
+
+      case WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2:
+	if (g_scene != nullptr && g_scene->image () != nullptr)
+	{
+	  auto&& args = *(update_image_area2_args*)msg.lParam;
+	  g_scene->image ()->update (args.x, args.y, args.width, args.height,
+				     args.rgb_data, args.rgb_data_stride_bytes,
+				     args.height_data, args.height_data_stride_bytes);
+	}
+	ack_thread_message (msg);
+	break;
+
 
       default:
 	TranslateMessage (&msg);
