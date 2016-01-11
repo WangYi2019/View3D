@@ -69,6 +69,7 @@ option (TARGET_C_EXCEPTIONS "C Exceptions" OFF)
 #option (TARGET_DISABLE_GLOBAL_DTORS "Disable global destructor code" ON)
 option (TARGET_FULL_STATIC "Full static linking" ON)
 set (TARGET_OPTIMIZE "-O2" CACHE STRING "Optimization flags")
+option (TARGET_STRIP_SYMBOLS "Strip symbols" OFF)
 
 # if LTO is used it's better to disable function-sections as it 
 # results in smaller code.
@@ -124,6 +125,9 @@ if (TARGET_FULL_STATIC)
   set (TARGET_OPTIONS "${TARGET_OPTIONS} -static")
 endif ()
 
+if (TARGET_STRIP_SYMBOLS)
+  set (TARGET_OPTIONS "${TARGET_OPTIONS} -s")
+endif ()
 
 set (CMAKE_C_FLAGS "\
 ${TARGET_OPTIMIZE} \

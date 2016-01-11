@@ -68,6 +68,8 @@ option (TARGET_CXX_EXCEPTIONS "C++ Exceptions" ON)
 option (TARGET_C_EXCEPTIONS "C Exceptions" OFF)
 option (TARGET_DISABLE_GLOBAL_DTORS "Disable global destructor code" ON)
 set (TARGET_OPTIMIZE "-O2" CACHE STRING "Optimization flags")
+option (TARGET_STRIP_SYMBOLS "Strip symbols" OFF)
+
 set (TARGET_ROM_END "0xFFFFFFFF" CACHE STRING "ROM end address")
 set (TARGET_ROM_SIZE "1024*256" CACHE STRING "ROM size in bytes")
 set (TARGET_RAM_SIZE "1024*128" CACHE STRING "RAM size in bytes")
@@ -177,6 +179,10 @@ set (ASM_OPTIONS "-Wa,--no-warn")
 # default options
 
 set (TARGET_OPTIONS "-msave-acc-in-interrupts")
+
+if (TARGET_STRIP_SYMBOLS)
+  set (TARGET_OPTIONS "${TARGET_OPTIONS} -s")
+endif ()
 
 if(${TARGET_ENDIAN} STREQUAL "big")
   set (TARGET_OPTIONS "${TARGET_OPTIONS} -mbig-endian-data -Wl,--oformat=elf32-rx-be -Wa,-mbig-endian")
