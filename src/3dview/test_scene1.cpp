@@ -29,7 +29,7 @@ test_scene1::test_scene1 (const char* file_desc_file)
   m_last_screen_size = { 1, 1 };
 
   s_expr file_desc;
-  std::fstream (file_desc_file, std::ios::in) >> file_desc;
+  std::fstream (file_desc_file, std::ios::in | std::ios::binary) >> file_desc;
 
   for (auto&& i : file_desc)
   {
