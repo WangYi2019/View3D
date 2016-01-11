@@ -122,6 +122,7 @@ struct window_win32 : window
 
       case WM_CLOSE:
 	std::cout << "window closed" << std::endl;
+	ReleaseCapture ();
 	PostQuitMessage (0);
 	return 0;
 
