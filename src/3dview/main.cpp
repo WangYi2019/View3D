@@ -100,17 +100,22 @@ int main (int argc, const char* argv[])
   float drag_start_tilt_angle;
   float drag_start_rot_angle;
 
-  while (win->process_events (
+  bool quit = false;
+
+  win->set_input_event_clb (
     [&] (auto&& e)
     {
-#if 1
       switch (e.type)
       {
 	case input_event::key_down:
-	  if (e.keycode == 67) // F1 key
+	  if (e.keycode == input_event::key_esc)
+	    quit = true;
+	  else if (e.keycode == input_event::key_f1)
 	    en_wireframe = !en_wireframe;
-	  else if (e.keycode == 68) // F2 key
+	  else if (e.keycode == input_event::key_f2)
 	    en_debug_dist = !en_debug_dist;
+	  else if (e.keycode == input_event::key_space)
+	    std::cout << "SPACE" << std::endl;
 	  break;
 /*
 	case input_event::mouse_move:
@@ -128,9 +133,9 @@ int main (int argc, const char* argv[])
 	  break;
 */
 	case input_event::mouse_down:
-	  if (e.button == 1)
+	  if (e.button == input_event::button_left)
 	    drag_start_img_pos = scene.img_pos ();
-	  if (e.button == 3)
+	  if (e.button == input_event::button_right)
 	  {
 	    drag_start_tilt_angle = scene.tilt_angle ();
 	    drag_start_rot_angle = scene.rotate_angle ();
@@ -143,14 +148,14 @@ int main (int argc, const char* argv[])
 	  break;
 
 	case input_event::mouse_drag:
-	  if (e.button == 1)
+	  if (e.button == input_event::button_left)
 	  {
 	    // move the image by e.drag_abs pixels on the screen.
 	    // we need to know how many pixels on the screen are 
 	    scene.set_img_pos (drag_start_img_pos
 				+ vec2<double> (e.drag_abs) * scene.screen_to_img ());
 	  }
-	  if (e.button == 3)
+	  if (e.button == input_event::button_right)
 	  {
 	    scene.set_tilt_angle (drag_start_tilt_angle - e.drag_abs.y * 0.1f);
 	    scene.set_rotate_angle (drag_start_rot_angle + e.drag_abs.x * 0.1f);
@@ -163,8 +168,10 @@ int main (int argc, const char* argv[])
 		scene.screen_to_img ();
 	  break;
       }
-#endif
-    }))
+    });
+
+
+  while (win->process_events () && !quit)
   {
     auto cur_time = std::chrono::high_resolution_clock::now ();
     auto delta_time = prev_time - cur_time;

@@ -11,6 +11,7 @@
 #include "display.hpp"
 #include "pixel_format.hpp"
 
+static input_event::key_code_t remap_key (KeySym k);
 
 struct window_x11 : window
 {
@@ -21,6 +22,8 @@ struct window_x11 : window
   int m_mouse_down_button = 0;
   bool m_mouse_dragging = false;
   vec2<int> m_mouse_dragging_last_pos = { 0 };
+
+  std::function<void (const input_event&)> m_input_clb;
 
   window_x11 (Window w, Display* d) : m_win (w), m_disp (d) { }
 
@@ -49,8 +52,14 @@ struct window_x11 : window
     XMapWindow (m_disp, m_win);
   }
 
+  virtual void
+  set_input_event_clb (const std::function<void (const input_event&)>& f) override
+  {
+    m_input_clb = f;
+  }
+
   virtual bool
-  process_events (const std::function<void (const input_event&)>& clb) override
+  process_events (void) override
   {
     while (XPending (m_disp))
     {
@@ -62,21 +71,23 @@ struct window_x11 : window
       switch (e.type)
       {
 	case KeyPress:
-	  std::cout << "key press " << e.xkey.keycode << std::endl;
-
-	  if (XLookupKeysym (&e.xkey, 0) == XK_Escape)
-	    return false;
+	{
+//	  std::cout << "key press " << e.xkey.keycode << std::endl;
+	  auto ks = XLookupKeysym (&e.xkey, 0);
 
 	  ee.type = input_event::key_down;
-	  ee.keycode = e.xkey.keycode;
-	  clb (ee);
+	  ee.keycode = remap_key (ks);
+	  if (m_input_clb)
+	    m_input_clb (ee);
 	  break;
+	}
 
 	case KeyRelease:
-	  std::cout << "key release " << e.xkey.keycode << std::endl;
+//	  std::cout << "key release " << e.xkey.keycode << std::endl;
 	  ee.type = input_event::key_up;
-	  ee.keycode = e.xkey.keycode;
-	  clb (ee);
+	  ee.keycode = remap_key (XLookupKeysym (&e.xkey, 0));
+	  if (m_input_clb)
+	    m_input_clb (ee);
 	  break;
 
 	case ClientMessage:
@@ -86,7 +97,8 @@ struct window_x11 : window
 	  //std::cout << "motion notify " << e.xmotion.state << std::endl;
 	  ee.type = input_event::mouse_move;
 	  ee.pos = { e.xmotion.x, e.xmotion.y };
-	  clb (ee);
+	  if (m_input_clb)
+	    m_input_clb (ee);
 
 	  if (m_mouse_down_button != 0)
 	  {
@@ -99,7 +111,8 @@ struct window_x11 : window
 	      ee.drag_delta = ee.pos - m_mouse_dragging_last_pos;
 	      ee.drag_abs = ee.pos - m_mouse_down_pos;
 	      ee.button = m_mouse_down_button;
-	      clb (ee);
+	      if (m_input_clb)
+		m_input_clb (ee);
 
 	      m_mouse_dragging_last_pos = { e.xmotion.x, e.xmotion.y };
 	    }
@@ -118,7 +131,8 @@ struct window_x11 : window
 	    ee.type = input_event::mouse_down;
 	    ee.pos = { e.xbutton.x, e.xbutton.y };
 	    ee.button = e.xbutton.button;
-	    clb (ee);
+	    if (m_input_clb)
+	      m_input_clb (ee);
 
 	    m_mouse_down_pos = ee.pos;
 	    m_mouse_down_button = ee.button;
@@ -140,14 +154,18 @@ struct window_x11 : window
 	      ee.wheel_delta = -1;
 	    else if (e.xbutton.button == 5)
 	      ee.wheel_delta = 1;
-	    clb (ee);
+
+	    if (m_input_clb)
+	      m_input_clb (ee);
 	  }
 	  else
 	  {
 	    ee.type = input_event::mouse_up;
 	    ee.pos = { e.xbutton.x, e.xbutton.y };
 	    ee.button = e.xbutton.button;
-	    clb (ee);
+	    if (m_input_clb)
+	      m_input_clb (ee);
+
 
 	    if (m_mouse_down_button == ee.button)
 	    {
@@ -157,7 +175,8 @@ struct window_x11 : window
 		ee.type = input_event::mouse_click;
 		ee.pos = m_mouse_down_pos;
 		ee.button = m_mouse_down_button;
-		clb (ee);
+		if (m_input_clb)
+		  m_input_clb (ee);
 	      }
 	    }
 
@@ -250,3 +269,29 @@ std::unique_ptr<display> display::make_new (pixel_format pf, int swapinterval,
 {
   return std::make_unique<display_x11> (pf, swapinterval, multisample);
 }
+
+
+
+static input_event::key_code_t remap_key (KeySym k)
+{
+// http://libvncserver.sourceforge.net/doc/html/keysym_8h.html
+  switch (k)
+  {
+    default: return input_event::no_key;
+    case XK_Escape: return input_event::key_esc;
+    case XK_F1: return input_event::key_f1;
+    case XK_F2: return input_event::key_f2;
+    case XK_F3: return input_event::key_f3;
+    case XK_F4: return input_event::key_f4;
+    case XK_F5: return input_event::key_f5;
+    case XK_F6: return input_event::key_f6;
+    case XK_F7: return input_event::key_f7;
+    case XK_F8: return input_event::key_f8;
+    case XK_F9: return input_event::key_f9;
+    case XK_F10: return input_event::key_f10;
+    case XK_F11: return input_event::key_f11;
+    case XK_F12: return input_event::key_f12;
+    case XK_space: return input_event::key_space;
+  }
+}
+

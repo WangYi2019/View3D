@@ -26,13 +26,39 @@ struct input_event
     key_up,
   };
 
+  enum key_code_t
+  {
+    no_key,
+    key_f1,
+    key_f2,
+    key_f3,
+    key_f4,
+    key_f5,
+    key_f6,
+    key_f7,
+    key_f8,
+    key_f9,
+    key_f10,
+    key_f11,
+    key_f12,
+    key_esc,
+    key_space
+  };
+
+  enum button_t
+  {
+    no_button = 0,
+    button_left = 1,
+    button_right = 3
+  };
+
   type_t type = unknown;
   vec2<int> pos = { 0 };
   vec2<int> drag_start_pos = { 0 };
   vec2<int> drag_delta = { 0 };
   vec2<int> drag_abs = { 0 };
-  int button = 0;
-  int keycode = 0;
+  int button = no_button;
+  int keycode = no_key;
 
   // -1 = up, 1 = down
   int wheel_delta = 0;
@@ -45,7 +71,9 @@ struct window
   virtual void close (void) = 0;
   virtual void* handle (void) const = 0;
   virtual void show (void) = 0;
-  virtual bool process_events (const std::function<void (const input_event&)>& clb = [] (auto) { }) = 0;
+  virtual bool process_events (void) = 0;
+
+  virtual void set_input_event_clb (const std::function<void (const input_event&)>& clb) = 0;
 };
 
 struct display
