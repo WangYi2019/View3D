@@ -11,6 +11,7 @@ class tiled_image;
 class test_scene1
 {
 public:
+  test_scene1 (void);
   test_scene1 (const char* file_desc_file);
   ~test_scene1 (void);
 
@@ -33,6 +34,9 @@ public:
   void set_zoom (float val);
 
   void reset_view (void);
+
+  const std::unique_ptr<tiled_image>& image (void) const { return m_image; }
+  void resize_image (const vec2<unsigned int>& size);
 
 private:
   std::unique_ptr<tiled_image> m_image;

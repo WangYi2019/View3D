@@ -19,7 +19,7 @@ static inline float deg_to_rad (float val)
   return val * float (M_PI / 180);
 }
 
-test_scene1::test_scene1 (const char* file_desc_file)
+test_scene1::test_scene1 (void)
 {
   m_img_pos = { 0 };
   m_tilt_angle = 0;
@@ -27,7 +27,11 @@ test_scene1::test_scene1 (const char* file_desc_file)
   m_zoom = 1;
   m_last_proj_trv = mat4<double>::identity ();
   m_last_screen_size = { 1, 1 };
+}
 
+test_scene1::test_scene1 (const char* file_desc_file)
+: test_scene1 ()
+{
   s_expr file_desc;
   std::fstream (file_desc_file, std::ios::in | std::ios::binary) >> file_desc;
 
@@ -71,6 +75,13 @@ void test_scene1::reset_view (void)
   m_tilt_angle = 0;
   m_rotate_angle = 0;
   m_zoom = 1;
+}
+
+void test_scene1::resize_image (const vec2<unsigned int>& size)
+{
+  std::cout << "creating new image with size: " << size.x << " x " << size.y << std::endl;
+  m_image = std::make_unique<tiled_image> (size);
+  reset_view ();
 }
 
 void test_scene1::set_tilt_angle (float val)

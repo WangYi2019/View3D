@@ -59,6 +59,36 @@ target_link_libraries (3dview
   opengl32
 )
 
+add_definitions (
+-DJUTZE3D_EXPORTS
+)
+
+# remove the "lib" prefix from the final dll file
+set (CMAKE_SHARED_LIBRARY_PREFIX "")
+
+add_library (jutze3d_dll SHARED
+  jutze3d.cpp
+  test_scene1.cpp
+  bmp_loader.cpp
+  image.cpp
+  tiled_image.cpp
+  s_expr.cpp
+)
+
+set_target_properties (jutze3d_dll PROPERTIES
+  OUTPUT_NAME "jutze3d"
+  IMPORT_PREFIX ""
+)
+
+target_link_libraries (jutze3d_dll
+  utils
+  pthread
+  kernel32
+  gdi32
+  gl
+  opengl32
+)
+
 else ()
 
 target_link_libraries (3dview
