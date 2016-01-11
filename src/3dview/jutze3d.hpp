@@ -60,18 +60,18 @@ view3d_disable_render (void);
 // when the image size is changed, the image is cleared and old image data
 // is discarded.  the pixel values (rgb and z) are initialized to 0.
 void JUTZE3D_API
-resize_image (unsigned int width_pixels, unsigned int height_pixels);
+view3d_resize_image (unsigned int width_pixels, unsigned int height_pixels);
 
 // fill the whole image with the specified constant value.
 // the value range of the fill values is clamped to [0..1].
 void JUTZE3D_API
-fill_image (float r, float g, float b, float z);
+view3d_fill_image (float r, float g, float b, float z);
 
 // fill the specified image region with the specified constant value.
 void JUTZE3D_API
-fill_image_area (unsigned int x, unsigned int y,
-		 unsigned int width, unsigned int height,
-		 float r, float g, float b, float z);
+view3d_fill_image_area (unsigned int x, unsigned int y,
+			unsigned int width, unsigned int height,
+			float r, float g, float b, float z);
 
 // update the image area at the specified region.  because the specified
 // region in the image is overwritten, there is no problem with overlapping
@@ -85,22 +85,22 @@ fill_image_area (unsigned int x, unsigned int y,
 // to use the full image (no crop), set src_x = src_y = 0 and
 // src_width = src_height = std::numeric_limits<unsigned int>::max ()
 void JUTZE3D_API
-update_image_area_1 (unsigned int x, unsigned int y,
-		     unsigned int width, unsigned int height,
-		     const char* rgb_bmp_file,
-		     const char* height_bmp_file,
-		     unsigned int src_x, unsigned int src_y,
-		     unsigned int src_width, unsigned int src_height);
+view3d_update_image_area_1 (unsigned int x, unsigned int y,
+			    unsigned int width, unsigned int height,
+			    const char* rgb_bmp_file,
+			    const char* height_bmp_file,
+			    unsigned int src_x, unsigned int src_y,
+			    unsigned int src_width, unsigned int src_height);
 
 // this overload copies the image data from the specified memory.
 // the expected RGB data is unsigned 8 bit per component, 24 bit per pixel,
 // ordered as R,G,B.
 // the expected height data is unsigned 8 bit.
 void JUTZE3D_API
-update_image_area_2 (unsigned int x, unsigned int y,
-		     unsigned int width, unsigned int height,
-		     const void* rgb_data,  unsigned int rgb_data_stride_bytes,
-		     const void* height_data, unsigned int height_data_stride_bytes);
+view3d_update_image_area_2 (unsigned int x, unsigned int y,
+			    unsigned int width, unsigned int height,
+			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
+			    const void* height_data, unsigned int height_data_stride_bytes);
  
 #ifdef __cplusplus
 }

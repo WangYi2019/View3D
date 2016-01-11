@@ -30,8 +30,21 @@ static std::unique_ptr<gldev> g_gldev;
 static std::unique_ptr<window> g_window;
 
 static std::thread g_thread;
+static std::atomic<int> g_thread_running = ATOMIC_VAR_INIT (0);
+
+static std::unique_ptr<test_scene1> g_scene;
 
 static void thread_func (void);
+static void window_input_event_clb (const input_event& e);
+
+static bool en_wireframe = false;
+static bool en_debug_dist = false;
+static bool quit = false;
+
+static vec2<double> drag_start_img_pos;
+static float drag_start_tilt_angle;
+static float drag_start_rot_angle;
+
 
 enum
 {
@@ -41,7 +54,6 @@ enum
   WM_USER_3DVIEW_DISABLE_RENDERING,
   WM_USER_3DVIEW_RESIZE_IMAGE,
   WM_USER_3DVIEW_CENTER_IMAGE,
-  WM_
 };
 
 struct create_window_args
@@ -67,11 +79,34 @@ struct center_image_args
   double y_rotate;
 };
 
+void post_thread_message_wait (unsigned int msg, void* args = nullptr)
+{
+  if (!g_thread.joinable ())
+    return;
+
+  std::atomic<int> done = ATOMIC_VAR_INIT (0);
+  PostThreadMessage (GetThreadId (g_thread.native_handle ()), msg,
+		     (WPARAM)&done, (LPARAM)args);
+  while (done == false)
+    std::this_thread::sleep_for (std::chrono::milliseconds (10));
+}
+
+void ack_thread_message (MSG& msg)
+{
+  static_assert (sizeof (void*) <= sizeof (WPARAM), "");
+  std::atomic<int>* done = (std::atomic<int>*)msg.wParam;
+  if (done != nullptr)
+    *done = true;
+}
+
 void JUTZE3D_API
 view3d_init (void)
 {
   g_thread = std::thread (thread_func);
 //  MessageBox (nullptr, "It works!", "TEST MOON PLEASE IGNORE", MB_OK);
+
+  while (g_thread_running == false)
+    std::this_thread::sleep_for (std::chrono::milliseconds (10));
 }
 
 void JUTZE3D_API
@@ -98,7 +133,7 @@ view3d_new_window (unsigned int desktop_pos_x, unsigned int desktop_pos_y,
 		       WM_USER_3DVIEW_CREATE_WINDOW, 0, (LPARAM)&args);
   }
 
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < 100; ++i)
   {
     std::this_thread::sleep_for (std::chrono::milliseconds (20));
     if (g_window != nullptr)
@@ -115,84 +150,62 @@ view3d_new_window (unsigned int desktop_pos_x, unsigned int desktop_pos_y,
 void JUTZE3D_API
 view3d_enable_render (void)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
-
-  SendMessage ((HWND)g_window->handle (), WM_USER_3DVIEW_ENABLE_RENDERING, 0, 0);
+  post_thread_message_wait (WM_USER_3DVIEW_ENABLE_RENDERING);
 }
 
 void JUTZE3D_API
 view3d_disable_render (void)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
-
-  SendMessage ((HWND)g_window->handle (), WM_USER_3DVIEW_DISABLE_RENDERING, 0, 0);
+  post_thread_message_wait (WM_USER_3DVIEW_DISABLE_RENDERING);
 }
 
 
 void JUTZE3D_API
-resize_image (unsigned int width_pixels, unsigned int height_pixels)
+view3d_resize_image (unsigned int width_pixels, unsigned int height_pixels)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
-
   resize_image_args args = { width_pixels, height_pixels };
-
-  SendMessage ((HWND)g_window->handle (), WM_USER_3DVIEW_RESIZE_IMAGE, 0, (LPARAM)&args);
+  post_thread_message_wait (WM_USER_3DVIEW_RESIZE_IMAGE, &args);
 }
 
 void JUTZE3D_API
 view3d_center_image (unsigned int x, unsigned int y,
 		     double x_rotate, double y_rotate)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
-
   center_image_args args = { x, y, x_rotate, y_rotate };
-  SendMessage ((HWND)g_window->handle (), WM_USER_3DVIEW_CENTER_IMAGE, 0, (LPARAM)&args);
+  post_thread_message_wait (WM_USER_3DVIEW_CENTER_IMAGE, &args);
 }
 
 void JUTZE3D_API
-fill_image (float r, float g, float b, float z)
+view3d_fill_image (float r, float g, float b, float z)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
 
 }
 
 void JUTZE3D_API
-fill_image_area (unsigned int x, unsigned int y,
+view3d_fill_image_area (unsigned int x, unsigned int y,
 		 unsigned int width, unsigned int height,
 		 float r, float g, float b, float z)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
 }
 
 void JUTZE3D_API
-update_image_area_1 (unsigned int x, unsigned int y,
-		     unsigned int width, unsigned int height,
-		     const char* rgb_bmp_file,
-		     const char* height_bmp_file,
-		     unsigned int src_x, unsigned int src_y,
-		     unsigned int src_width, unsigned int src_height)
+view3d_update_image_area_1 (unsigned int x, unsigned int y,
+			    unsigned int width, unsigned int height,
+			    const char* rgb_bmp_file,
+			    const char* height_bmp_file,
+			    unsigned int src_x, unsigned int src_y,
+			    unsigned int src_width, unsigned int src_height)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
 }
 
 
 void JUTZE3D_API
-update_image_area_2 (unsigned int x, unsigned int y,
-		     unsigned int width, unsigned int height,
-		     const void* rgb_data,  unsigned int rgb_data_stride_bytes,
-		     const void* height_data, unsigned int height_data_stride_bytes)
+view3d_update_image_area_2 (unsigned int x, unsigned int y,
+			    unsigned int width, unsigned int height,
+			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
+			    const void* height_data, unsigned int height_data_stride_bytes)
 {
-  if (!g_thread.joinable () || g_window == nullptr)
-    return;
 }
-
 
 void thread_func (void)
 {
@@ -204,7 +217,6 @@ void thread_func (void)
   g_display = display::make_new (pf, swapinterval, multisample);
   g_gldev = gldev::make_new (*g_display, pf, ds, multisample);
 
-  std::unique_ptr<test_scene1> scene;
 
   if (!g_gldev->valid ())
   {
@@ -216,8 +228,6 @@ void thread_func (void)
 
   bool shutting_down = false;
   bool en_rendering = false;
-  bool en_wireframe = false;
-  bool en_debug_dist = false;
 
   unsigned int window_width = 0;
   unsigned int window_height = 0;
@@ -231,10 +241,15 @@ void thread_func (void)
 
   while (!shutting_down)
   {
+    g_thread_running = true;
+
     if (!en_rendering)
       GetMessage (&msg, nullptr, 0, 0);
     else
-      PeekMessage (&msg, nullptr, 0, 0, PM_REMOVE);
+    {
+      if (!PeekMessage (&msg, nullptr, 0, 0, PM_REMOVE))
+        goto Lcontinue;
+    }
 
     switch (msg.message)
     {
@@ -256,24 +271,26 @@ void thread_func (void)
 	  ShowWindow (msg.hwnd, SW_HIDE);
 	  break;
 	}
+        break;
 
       case WM_USER_3DVIEW_CREATE_WINDOW:
       {
 	auto&& args = *(create_window_args*)msg.lParam;
-	g_window = g_display->create_window (g_gldev->native_visual_id (),
-					     args.width, args.height);
-	if (g_window == nullptr)
-	  std::cerr << "g_window NG" << std::endl;
+	auto new_win = g_display->create_window (g_gldev->native_visual_id (),
+					         args.width, args.height);
+	if (new_win == nullptr)
+	  std::cerr << "new window NG" << std::endl;
 	else
 	{
-	  std::cerr << "show window" << std::endl;
+	  std::cerr << "show window hwnd " << new_win->handle () << std::endl;
 	  window_width = args.width;
 	  window_height = args.height;
-	  g_window->set_title (args.title),
-	  g_window->show ();
+	  new_win->set_input_event_clb (window_input_event_clb);
+	  new_win->set_title (args.title),
+	  new_win->show ();
 
 	  std::cerr << "gldev init surface" << std::endl;
-	  g_gldev->init_surface (*g_window);
+	  g_gldev->init_surface (*new_win);
 	  if (!g_gldev->surface_valid ())
 	    std::cerr << "g_gldev->surface_valid NG" << std::endl;
 	  else
@@ -303,7 +320,9 @@ void thread_func (void)
 
 	      std::cerr << "gldev init extensions" << std::endl;
 	      g_gldev->init_extensions ();
-	      scene = std::make_unique<test_scene1> ();
+	      g_scene = std::make_unique<test_scene1> ();
+
+	      g_window = std::move (new_win);
 	    }
 	  }
 	}
@@ -311,26 +330,33 @@ void thread_func (void)
       }
 
       case WM_USER_3DVIEW_DISABLE_RENDERING:
+	std::cout << "WM_USER_3DVIEW_DISABLE_RENDERING" << std::endl;
 	en_rendering = false;
+	ack_thread_message (msg);
 	break;
 
       case WM_USER_3DVIEW_ENABLE_RENDERING:
+	std::cout << "WM_USER_3DVIEW_ENABLE_RENDERING" << std::endl;
 	en_rendering = true;
+	ack_thread_message (msg);
 	break;
 
       case WM_USER_3DVIEW_RESIZE_IMAGE:
-	if (scene != nullptr)
+	std::cout << "WM_USER_3DVIEW_RESIZE_IMAGE" << std::endl;
+	if (g_scene != nullptr)
 	{
 	  auto&& args = *(resize_image_args*)msg.lParam;
-	  scene->resize_image ({ args.width, args.height });
+	  g_scene->resize_image ({ args.width, args.height });
 	}
+	ack_thread_message (msg);
 	break;
 
       case WM_USER_3DVIEW_CENTER_IMAGE:
-	if (scene != nullptr)
+	if (g_scene != nullptr)
 	{
 
 	}
+	ack_thread_message (msg);
 	break;
 
       default:
@@ -339,25 +365,93 @@ void thread_func (void)
 	break;
     }
 
+Lcontinue:
     auto cur_time = std::chrono::high_resolution_clock::now ();
     auto delta_time = prev_time - cur_time;
 
-    if (en_rendering && scene != nullptr && g_window != nullptr)
+    if (en_rendering && g_scene != nullptr && g_window != nullptr)
     {
-      scene->render (window_width, window_height,
-		     std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
-		     en_wireframe, en_debug_dist);
+      g_scene->render (window_width, window_height,
+		       std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
+		       en_wireframe, en_debug_dist);
 
       g_gldev->swap_buffers ();
     }
     prev_time = cur_time;
   }
 
-  scene = nullptr;
+  g_scene = nullptr;
   g_window = nullptr;
   g_gldev = nullptr;
   g_display = nullptr;
 }
 
+static void window_input_event_clb (const input_event& e)
+{
+  if (g_scene == nullptr)
+    return;
+
+      switch (e.type)
+      {
+	case input_event::key_down:
+	  if (e.keycode == input_event::key_esc)
+	    quit = true;
+	  else if (e.keycode == input_event::key_f1)
+	    en_wireframe = !en_wireframe;
+	  else if (e.keycode == input_event::key_f2)
+	    en_debug_dist = !en_debug_dist;
+	  else if (e.keycode == input_event::key_space)
+	    g_scene->reset_view ();
+	  break;
+/*
+	case input_event::mouse_move:
+	  std::cout << "mouse move " << e.pos.x << ", " << e.pos.y << std::endl;
+	  break;
+
+	case input_event::mouse_down:
+	  std::cout << "mouse down " << e.pos.x << ", " << e.pos.y
+		    << "  " << e.button << std::endl;
+	  break;
+
+	case input_event::mouse_up:
+	  std::cout << "mouse up " << e.pos.x << ", " << e.pos.y
+		    << "  " << e.button << std::endl;
+	  break;
+*/
+	case input_event::mouse_down:
+	  if (e.button == input_event::button_left)
+	    drag_start_img_pos = g_scene->img_pos ();
+	  if (e.button == input_event::button_right)
+	  {
+	    drag_start_tilt_angle = g_scene->tilt_angle ();
+	    drag_start_rot_angle = g_scene->rotate_angle ();
+	  }
+	  break;
+
+	case input_event::mouse_click:
+	  std::cout << "mouse click " << e.pos.x << ", " << e.pos.y
+		    << "  " << e.button << std::endl;
+	  break;
+
+	case input_event::mouse_drag:
+	  if (e.button == input_event::button_left)
+	  {
+	    // move the image by e.drag_abs pixels on the screen.
+	    // we need to know how many pixels on the screen are.
+	    g_scene->set_img_pos (drag_start_img_pos
+				+ vec2<double> (e.drag_abs) * g_scene->screen_to_img ());
+	  }
+	  if (e.button == input_event::button_right)
+	  {
+	    g_scene->set_tilt_angle (drag_start_tilt_angle - e.drag_abs.y * 0.1f);
+	    g_scene->set_rotate_angle (drag_start_rot_angle + e.drag_abs.x * 0.1f);
+	  }
+	  break;
+
+	case input_event::mouse_wheel:
+	  g_scene->set_zoom (g_scene->zoom () + e.wheel_delta * 0.0125f);
+	  break;
+      }
+}
 
 #endif // #if defined (WIN32) && defined (JUTZE3D_EXPORTS)

@@ -287,6 +287,7 @@ display_win32::create_window (int visual_id, int width, int height)
 				m_hinst,
 				w.get ());	// WM_CREATE LPARAM value
 
+  std::cout << "new window hwnd: " << hwnd << std::endl;
   assert (hwnd);
   w->m_win = hwnd;
 
