@@ -119,8 +119,8 @@ endif ()
 # default options
 
 set (TARGET_OPTIONS "")
-set (C_LANG_OPTIONS "-std=c99 -Werror=return-type")
-set (CXX_LANG_OPTIONS "-std=c++14 -Werror=return-type")
+set (C_LANG_OPTIONS "-std=c99 -Werror=return-type -lpthread -pthread")
+set (CXX_LANG_OPTIONS "-std=c++14 -Werror=return-type -lpthread -pthread")
 
 if (TARGET_FULL_STATIC)
   set (LINKER_STATIC "-Wl,-Bstatic")

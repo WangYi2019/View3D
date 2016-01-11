@@ -726,6 +726,7 @@ tiled_image::update (int32_t x, int32_t y,
 		     unsigned int src_x, unsigned int src_y,
 		     unsigned int src_width, unsigned int src_height)
 {
+#if 0
   auto t0 = std::chrono::high_resolution_clock::now ();
 
   // load and copy the new data to the top-level mipmap level and then selectively
@@ -794,12 +795,14 @@ tiled_image::update (int32_t x, int32_t y,
   // try to delete GL textures.
   invalidate_texture_cache (m_rgb_texture_cache, rgb_regions);
   invalidate_texture_cache (m_height_texture_cache, height_regions);
+#endif
 }
 
 void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 			  const void* rgb_data, uint32_t rgb_data_stride_bytes,
 			  const void* height_data, uint32_t height_data_stride_bytes)
 {
+#if 0
   struct tmp_image : public image
   {
     tmp_image (pixel_format pf, unsigned int w, unsigned int h, unsigned int stride,
@@ -844,6 +847,7 @@ void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t heigh
 
   invalidate_texture_cache (m_rgb_texture_cache, rgb_regions);
   invalidate_texture_cache (m_height_texture_cache, height_regions);
+#endif
 }
 
 void tiled_image
@@ -943,6 +947,49 @@ triangle_area (const vec2<T>& p0, const vec2<T>& p1, const vec2<T>& p2)
   return std::sqrt ( (a + b + c) * (b + c - a) * (c + a - b) * (a + b - c) ) / 4;
 }
 
+enum plane_bit
+{
+  left_plane = 1 << 0,
+  right_plane = 1 << 1,
+  top_plane = 1 << 2,
+  bottom_plane = 1 << 3,
+  near_plane = 1 << 4,
+  far_plane = 1 << 5,
+
+  all_3d_planes = left_plane | right_plane | top_plane | bottom_plane | near_plane | far_plane,
+  all_2d_planes = left_plane | right_plane | top_plane | bottom_plane
+};
+
+struct point
+{
+  // original point
+  vec4<double> p;
+
+  // point in clip space (perspective transform, not homogenized)
+  vec4<double> pc;
+
+  // point in screen space (actual screen coordinates)
+  vec4<double> ps;
+
+  uint8_t planes = 0;
+
+  point (void) = default;
+  point (const point&) = default;
+  point (const vec4<double>& pp) : p (pp) { }
+
+  bool is_top (void) const { return planes & top_plane; }
+  bool is_bottom (void) const { return planes & bottom_plane; }
+  bool is_left (void) const { return planes & left_plane; }
+  bool is_right (void) const { return planes & right_plane; }
+  bool is_near (void) const { return planes & near_plane; }
+  bool is_far (void) const { return planes & far_plane; }
+
+  // true: on the inside of the frustum
+  // false: on the outside of the frustum
+  bool plane_side (unsigned int p) const { return planes & (1 << p); }
+  bool plane_side (plane_bit p) const { return planes & p; }
+};
+
 
 tiled_image::tile_visibility
 tiled_image::calc_tile_visibility (const tile& t,
@@ -950,51 +997,6 @@ tiled_image::calc_tile_visibility (const tile& t,
 				   const mat4<double>& viewport_trv,
 				   float zscale) const
 {
-  // treat the tile as a bounding box with height = 0...
-
-  enum plane_bit
-  {
-    left = 1 << 0,
-    right = 1 << 1,
-    top = 1 << 2,
-    bottom = 1 << 3,
-    near = 1 << 4,
-    far = 1 << 5,
-
-    all_3d_planes = left | right | top | bottom | near | far,
-    all_2d_planes = left | right | top | bottom
-  };
-
-  struct point
-  {
-    // original point
-    vec4<double> p;
-
-    // point in clip space (perspective transform, not homogenized)
-    vec4<double> pc;
-
-    // point in screen space (actual screen coordinates)
-    vec4<double> ps;
-
-    uint8_t planes = 0;
-
-    point (void) = default;
-    point (const point&) = default;
-    point (const vec4<double>& pp) : p (pp) { }
-
-    bool is_top (void) const { return planes & top; }
-    bool is_bottom (void) const { return planes & bottom; }
-    bool is_left (void) const { return planes & left; }
-    bool is_right (void) const { return planes & right; }
-    bool is_near (void) const { return planes & near; }
-    bool is_far (void) const { return planes & far; }
-
-    // true: on the inside of the frustum
-    // false: on the outside of the frustum
-    bool plane_side (unsigned int p) const { return planes & (1 << p); }
-    bool plane_side (plane_bit p) const { return planes & p; }
-  };
-
   std::array<point, 8> corners =
   {{
     { vec4<double> (t.pos ().x, t.pos ().y, 0, 1) },
@@ -1014,12 +1016,12 @@ tiled_image::calc_tile_visibility (const tile& t,
     // do not homogenize it.
     const auto& pc = c.pc = proj_cam_trv * c.p;
 
-    c.planes |= -pc.w < pc.x ? right : 0;
-    c.planes |=  pc.x < pc.w ? left : 0;
-    c.planes |=  pc.y < pc.w ? top : 0;
-    c.planes |= -pc.w < pc.y ? bottom : 0;
-    c.planes |= -pc.w < pc.z ? near : 0;
-    c.planes |=  pc.z < pc.w ? far : 0;
+    c.planes |= -pc.w < pc.x ? right_plane : 0;
+    c.planes |=  pc.x < pc.w ? left_plane : 0;
+    c.planes |=  pc.y < pc.w ? top_plane : 0;
+    c.planes |= -pc.w < pc.y ? bottom_plane : 0;
+    c.planes |= -pc.w < pc.z ? near_plane : 0;
+    c.planes |=  pc.z < pc.w ? far_plane : 0;
   }
 
 // #define tile_visibility_log
@@ -1137,7 +1139,7 @@ tiled_image::calc_tile_visibility (const tile& t,
     // of a higher detail level.
     bool intersects_znear = false;
     for (const auto& c : corners)
-      if (c.plane_side (near) == false)
+      if (c.plane_side (near_plane) == false)
       {
 	intersects_znear = true;
 	break;

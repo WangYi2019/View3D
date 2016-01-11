@@ -108,7 +108,8 @@ struct window_win32 : window
     SetFocus (m_win);
   }
 
-  virtual bool process_events (void) override
+  virtual bool
+  process_events (const std::function<void (const input_event&)>& clb) override
   {
     MSG msg;
     if (PeekMessage (&msg, nullptr, 0, 0, PM_REMOVE))
