@@ -796,6 +796,56 @@ tiled_image::update (int32_t x, int32_t y,
   invalidate_texture_cache (m_height_texture_cache, height_regions);
 }
 
+void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
+			  const void* rgb_data, uint32_t rgb_data_stride_bytes,
+			  const void* height_data, uint32_t height_data_stride_bytes)
+{
+  struct tmp_image : public image
+  {
+    tmp_image (pixel_format pf, unsigned int w, unsigned int h, unsigned int stride,
+	       const void* data)
+    {
+      m_size = { w, h };
+      m_bytes_per_line = stride;
+      m_format = pf;
+      m_data.ptr = (char*)data;
+    }
+  };
+
+  tmp_image rgb_img (pixel_format::rgb_888, width, height, rgb_data_stride_bytes,
+		     rgb_data);
+
+  tmp_image height_img (pixel_format::l_8, width, height, height_data_stride_bytes,
+			height_data);
+
+  auto u0 = std::async (std::launch::deferred,
+    [&] (void)
+    {
+      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+      res.fill ({ { 0 }, { 0 } });
+
+      auto area = rgb_img.copy_to (m_rgb_image[0], { x, y });
+
+      return update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+    });
+
+  auto u1 = std::async (std::launch::async,
+    [&] (void)
+    {
+      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+      res.fill ({ { 0 }, { 0 } });
+
+      auto area = height_img.copy_to (m_height_image[0], { x, y });
+      return update_mipmaps (m_height_image, area.dst_top_left, area.size);
+    });
+
+  auto rgb_regions = u0.get ();
+  auto height_regions = u1.get ();
+
+  invalidate_texture_cache (m_rgb_texture_cache, rgb_regions);
+  invalidate_texture_cache (m_height_texture_cache, height_regions);
+}
+
 void tiled_image
 ::invalidate_texture_cache (lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
 			    const std::array<update_region, max_lod_level>& regions)
