@@ -40,6 +40,39 @@ use max texture size: 4096 x 4096
 
 // ----------------------------------------------------------------------------
 
+struct tiled_image::texture_key
+{
+  unsigned int lod;
+  vec2<unsigned int> img_pos;
+
+  // assume that image coorindates are max. 29 bits (536870912 x 536870912 pixels)
+  uint64_t packed;
+
+  texture_key (void) = default;
+  texture_key (const texture_key&) = default;
+  texture_key (unsigned int l, const vec2<unsigned int>& p)
+  : lod (l), img_pos (p)
+  {
+    packed = (l & 63)
+	     | (((uint64_t)p.x & ((1u << 29)-1)) << 6)
+	     | (((uint64_t)p.y & ((1u << 29)-1)) << (6+29));
+  }
+
+  bool operator < (const texture_key& rhs) const
+  {
+    return packed < rhs.packed;
+  }
+
+
+  friend std::ostream& operator << (std::ostream& out, const tiled_image::texture_key& k)
+  {
+    return out << k.lod << " " << k.img_pos.x << " " << k.img_pos.y
+		<< " (" << std::hex << k.packed << std::dec << ")";
+  }
+};
+
+// ----------------------------------------------------------------------------
+
 struct tiled_image::vertex
 {
   vec2<float> pos;
@@ -415,37 +448,6 @@ std::shared_ptr<tiled_image::shader> tiled_image::g_shader;
 
 // ----------------------------------------------------------------------------
 
-struct tiled_image::texture_key
-{
-  unsigned int lod;
-  vec2<unsigned int> img_pos;
-
-  // assume that image coorindates are max. 29 bits (536870912 x 536870912 pixels)
-  uint64_t packed;
-
-  texture_key (void) = default;
-  texture_key (const texture_key&) = default;
-  texture_key (unsigned int l, const vec2<unsigned int>& p)
-  : lod (l), img_pos (p)
-  {
-    packed = (l & 63)
-	     | (((uint64_t)p.x & ((1u << 29)-1)) << 6)
-	     | (((uint64_t)p.y & ((1u << 29)-1)) << (6+29));
-  }
-
-  bool operator < (const texture_key& rhs) const
-  {
-    return packed < rhs.packed;
-  }
-
-
-  friend std::ostream& operator << (std::ostream& out, const tiled_image::texture_key& k)
-  {
-    return out << k.lod << " " << k.img_pos.x << " " << k.img_pos.y
-		<< " (" << std::hex << k.packed << std::dec << ")";
-  }
-};
-
 void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::texture& tex)
 {
 //  std::cout << "load_texture_tile "
@@ -734,6 +736,8 @@ tiled_image::update (int32_t x, int32_t y,
   auto u0 = std::async (std::launch::deferred,
     [&] (void)
     {
+      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+      res.fill ({ { 0 }, { 0 } });
       try
       {
 	image img = load_bmp_image (rgb_bmp_file);
@@ -741,17 +745,21 @@ tiled_image::update (int32_t x, int32_t y,
 	auto area = img.copy_to ({ src_x, src_y }, { src_width, src_height },
 				 m_rgb_image[0], { x, y });
 
-	update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+	res = update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
       }
       catch (const std::exception& e)
       {
 	std::cerr << "exception when loading image " << rgb_bmp_file << ": " << e.what () << std::endl;
       }
+
+      return res;
     });
 
   auto u1 = std::async (std::launch::async,
     [&] (void)
     {
+      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+      res.fill ({ { 0 }, { 0 } });
       try
       {
 	image img = load_bmp_image (height_bmp_file);
@@ -759,16 +767,18 @@ tiled_image::update (int32_t x, int32_t y,
 	auto area = img.copy_to ({ src_x, src_y },  { src_width, src_height },
 				 m_height_image[0], { x, y });
 
-	update_mipmaps (m_height_image, area.dst_top_left, area.size);
+	res = update_mipmaps (m_height_image, area.dst_top_left, area.size);
       }
       catch (const std::exception& e)
       {
 	std::cerr << "exception when loading image " << height_bmp_file << ": " << e.what () << std::endl;
       }
+
+      return res;
     });
 
-  u0.get ();
-  u1.get ();
+  auto rgb_regions = u0.get ();
+  auto height_regions = u1.get ();
 
   auto t2 = std::chrono::high_resolution_clock::now ();
 
@@ -777,15 +787,48 @@ tiled_image::update (int32_t x, int32_t y,
 	    << " t2-t1 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count ()
 	    << " t2-t0 = " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t0).count ()
 	    << std::endl;
+
+  // invalidate texture tiles affected by the update regions in the caches.
+  // this will trigger texture re-uploads.
+  // notice that this step has to be done on the main/GL thread as it might
+  // try to delete GL textures.
+  for (unsigned int i = 0; i < max_lod_level; ++i)
+  {
+    vec2<unsigned int> rgb_tl = rgb_regions[i].tl / texture_tile_size;
+    vec2<unsigned int> rgb_br = (rgb_regions[i].br + texture_tile_size - 1) / texture_tile_size;
+
+    for (unsigned int y = rgb_tl.y; y < rgb_br.y; ++y)
+      for (unsigned int x = rgb_tl.x; x < rgb_tl.x; ++x)
+      {
+	texture_key k (i, { x * texture_tile_size, y * texture_tile_size });
+	// std::cout << "invalidating rgb texture " << k << std::endl;
+	m_rgb_texture_cache.erase (k);
+      }
+
+    vec2<unsigned int> height_tl = height_regions[i].tl / texture_tile_size;
+    vec2<unsigned int> height_br = (height_regions[i].br + texture_tile_size - 1) / texture_tile_size;
+
+    for (unsigned int y = height_tl.y; y < height_br.y; ++y)
+      for (unsigned int x = height_tl.x; x < height_tl.x; ++x)
+      {
+	texture_key k (i, { x * texture_tile_size, y * texture_tile_size });
+	// std::cout << "invalidating height texture " << k << std::endl;
+	m_height_texture_cache.erase (k);
+      }
+  }
 }
 
-void
+std::array<tiled_image::update_region, tiled_image::max_lod_level>
 tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
 			     const vec2<unsigned int>& top_level_xy,
 			     const vec2<unsigned int>& top_level_size)
 {
+  std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+
   auto xy = top_level_xy;
   auto size = top_level_size;
+
+  res[0] = { top_level_xy, top_level_xy + top_level_size };
 
   for (unsigned int i = 0; i < img.size () - 1; ++i)
   {
@@ -823,9 +866,13 @@ tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
     src_level.subimg (vec2<int> (src_xy), src_size)
 		.pyr_down_to (dst_level.subimg (vec2<int> (dst_xy), dst_size));
 
+    res[i + 1] = { dst_xy, dst_xy + dst_size };
+
     xy = dst_xy;
     size = dst_size;
   }
+
+  return res;
 }
 
 // ---------------------------------------------------------------------------

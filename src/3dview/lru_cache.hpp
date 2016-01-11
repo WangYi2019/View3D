@@ -56,6 +56,16 @@ public:
     return m_lru_list.front ().second;
   }
 
+  void erase (const Key& k)
+  {
+    auto i = m_map.find (k);
+    if (i == m_map.end ())
+      return;
+
+    m_lru_list.erase (i->second);
+    m_map.erase (i);
+  }
+
 private:
   unsigned int m_capacity;
   std::list<std::pair<Key, Value>> m_lru_list;

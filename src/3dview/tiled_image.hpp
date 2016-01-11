@@ -147,7 +147,13 @@ private:
 
   mutable std::vector<std::pair<tile*, tile_visibility>> m_tile_visibilities;
 
-  static void
+  struct update_region
+  {
+    vec2<unsigned int> tl;
+    vec2<unsigned int> br;
+  };
+
+  static std::array<update_region, max_lod_level>
   update_mipmaps (std::array<image, max_lod_level>& img,
 		  const vec2<unsigned int>& top_level_xy,
 		  const vec2<unsigned int>& top_level_size);
