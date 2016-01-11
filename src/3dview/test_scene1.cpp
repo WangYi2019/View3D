@@ -2,10 +2,13 @@
 #include <type_traits>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include "test_scene1.hpp"
 #include "tiled_image.hpp"
+
+#include "s_expr.hpp"
 
 #ifndef M_PI
   #define M_PI 3.14159265358979323846
@@ -16,7 +19,7 @@ static inline float deg_to_rad (float val)
   return val * float (M_PI / 180);
 }
 
-test_scene1::test_scene1 (void)
+test_scene1::test_scene1 (const char* file_desc_file)
 {
   m_img_pos = { 0 };
   m_tilt_angle = 0;
@@ -25,56 +28,49 @@ test_scene1::test_scene1 (void)
   m_last_proj_trv = mat4<double>::identity ();
   m_last_screen_size = { 1, 1 };
 
-  m_image = std::make_unique<tiled_image> (vec2<unsigned int> (8469/1, 10192/1));
+  s_expr file_desc;
+  std::fstream (file_desc_file, std::ios::in) >> file_desc;
 
-//  m_image->update (0, 0, "outputRGB.bmp", "output.bmp");
-
-  std::string base_path = "/home/yam/20151130133409/";
-
-  static const struct
+  for (auto&& i : file_desc)
   {
-    const char* rgb_img;
-    const char* height_img;
-    unsigned int x, y;
-  } images[] =
-  {
-    { "1/20151130133409view1.bmp", "1/20151130133409view1-3d3-13.bmp", 6348, 8152 },
-    { "2/20151130133409view2.bmp", "2/20151130133409view2-3d3-13.bmp", 4416, 8152 },
-    { "3/20151130133409view3.bmp", "3/20151130133409view3-3d3-13.bmp", 2483, 8152 },
-    { "4/20151130133409view4.bmp", "4/20151130133409view4-3d3-13.bmp",  549, 8152 },
+    if (i.symbol () || i.empty ())
+      continue;
 
-    { "5/20151130133409view5.bmp", "5/20151130133409view5-3d3-13.bmp", 6348, 6248 },
-    { "6/20151130133409view6.bmp", "6/20151130133409view6-3d3-13.bmp", 4416, 6248 },
-    { "7/20151130133409view7.bmp", "7/20151130133409view7-3d3-13.bmp", 2483, 6248 },
-    { "8/20151130133409view8.bmp", "8/20151130133409view8-3d3-13.bmp",  549, 6248 },
+    auto&& a0 = i (0).name ();
+    if (a0 == "size")
+    {
+      unsigned int w = i (1).as<unsigned int> ();
+      unsigned int h = i (2).as<unsigned int> ();
+      std::cout << "creating new image with size: " << w << " x " << h << std::endl;
+      m_image = std::make_unique<tiled_image> (vec2<unsigned int> (w, h));
+    }
+    else if (a0 == "fov")
+    {
+      int x = i (1).as<int> ();
+      int y = i (2).as<int> ();
+      std::string rgb_file = i (3).as<std::string> ();
+      std::string height_file = i (4).as<std::string> ();
 
+      std::cout << "adding fov at " << x << "," << y << "\n"
+		<< "   rgb image:    " << rgb_file << "\n"
+		<< "   height image: " << height_file << "\n" << std::endl;
 
-    {  "9/20151130133409view9.bmp",   "9/20151130133409view9-3d3-13.bmp",  6348, 4344 },
-    { "10/20151130133409view10.bmp", "10/20151130133409view10-3d3-13.bmp", 4416, 4344 },
-    { "11/20151130133409view11.bmp", "11/20151130133409view11-3d3-13.bmp", 2483, 4344 },
-    { "12/20151130133409view12.bmp", "12/20151130133409view12-3d3-13.bmp",  549, 4344 },
-
-    { "13/20151130133409view13.bmp", "13/20151130133409view13-3d3-13.bmp", 6348, 2440 },
-    { "14/20151130133409view14.bmp", "14/20151130133409view14-3d3-13.bmp", 4416, 2440 },
-    { "15/20151130133409view15.bmp", "15/20151130133409view15-3d3-13.bmp", 2483, 2440 },
-    { "16/20151130133409view16.bmp", "16/20151130133409view16-3d3-13.bmp",  549, 2440 },
-
-    { "17/20151130133409view17.bmp", "17/20151130133409view17-3d3-13.bmp", 6348, 536 },
-    { "18/20151130133409view18.bmp", "18/20151130133409view18-3d3-13.bmp", 4416, 536 },
-    { "19/20151130133409view19.bmp", "19/20151130133409view19-3d3-13.bmp", 2483, 536 },
-    { "20/20151130133409view20.bmp", "20/20151130133409view20-3d3-13.bmp",  549, 536 },
-
-  };
-
-  for (auto&& i : images)
-    m_image->update (i.x, i.y,
-		     (base_path + i.rgb_img).c_str (),
-		     (base_path + i.height_img).c_str ());
-
+      if (m_image != nullptr)
+	m_image->update (x, y, rgb_file.c_str (), height_file.c_str ());
+    }
+  }
 }
 
 test_scene1::~test_scene1 (void)
 {
+}
+
+void test_scene1::reset_view (void)
+{
+  m_img_pos = { 0 };
+  m_tilt_angle = 0;
+  m_rotate_angle = 0;
+  m_zoom = 1;
 }
 
 void test_scene1::set_tilt_angle (float val)
@@ -96,6 +92,9 @@ void test_scene1::set_zoom (float val)
 vec2<double> test_scene1::screen_to_img (void) const
 {
   // figure out the scale factor for screen coordinates to image coordinates.
+
+  if (m_image == nullptr)
+    return { 0 };
 
   double img_sz = std::max (m_image->size ().x, m_image->size ().y);
 
@@ -124,6 +123,9 @@ mat4<double>
 test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
 			   const vec2<double>& scroll) const
 {
+  if (m_image == nullptr)
+    return mat4<double>::zero ();
+
   double img_unit_scale = 2.0 / std::max (m_image->size ().x, m_image->size ().y);
 
   return
@@ -185,8 +187,9 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, m_img_pos);
 
-  m_image->render (cam_trv, m_last_proj_trv, viewport_trv, en_wireframe,
-		  en_debug_dist);
+  if (m_image != nullptr)
+    m_image->render (cam_trv, m_last_proj_trv, viewport_trv, en_wireframe,
+		     en_debug_dist);
 
   gl_check_log_error ();
 }

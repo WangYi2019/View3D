@@ -41,6 +41,7 @@ add_executable (3dview
   bmp_loader.cpp
   image.cpp
   tiled_image.cpp
+  s_expr.cpp
 )
 
 if (WIN32)

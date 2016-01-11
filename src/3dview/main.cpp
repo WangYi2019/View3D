@@ -18,13 +18,13 @@
 
 int main (int argc, const char* argv[])
 {
-  if (argc < 11)
+  if (argc < 8)
   {
     std::cout << "usage: "
                  "<executable> <width> <height> <swapinterval> <rgba> "
-                 "<ds> <multisample> <rgb image> <height img> <lod level> <enable wireframe>"
+                 "<ds> <multisample> <file description file>"
                  "\n"
-                 "example:  800 480 0 RGBA_8888 DS_24_8 0 outputRGB.bmp output.bmp 1 0"
+                 "example:  800 480 0 RGBA_8888 DS_24_8 0 files.txt"
               << std::endl;
 
     return 0;
@@ -36,10 +36,8 @@ int main (int argc, const char* argv[])
   const pixel_format rgba = pixel_format (argv[4]);
   const ds_format ds = ds_format (argv[5]);
   const int multisample = std::atoi (argv[6]);
-  const char* rgb_img = argv[7];
-  const char* height_img = argv[8];
-  const unsigned int lod = std::stoul (argv[9]);
-  bool en_wireframe = std::stoi (argv[10]);
+  const char* file_desc_file = argv[7];
+  bool en_wireframe = false;
   bool en_debug_dist = false;
 
   std::cout << "using window size: " << window_width << " x " << window_height
@@ -48,10 +46,7 @@ int main (int argc, const char* argv[])
   std::cout << "using rgba: " << rgba << std::endl;
   std::cout << "using ds: " << ds << std::endl;
   std::cout << "using multisample: " << multisample << std::endl;
-  std::cout << "using rgb image: " << rgb_img << std::endl;
-  std::cout << "using height image: " << height_img << std::endl;
-  std::cout << "using lod: " << lod << std::endl;
-  std::cout << "using enable wireframe: " << en_wireframe;
+  std::cout << "using file desc file: " << file_desc_file << std::endl;
 
   auto disp = display::make_new (rgba, swap_interval, multisample);
   auto dev = gldev::make_new (*disp, rgba, ds, multisample);
@@ -91,7 +86,7 @@ int main (int argc, const char* argv[])
   dev->init_extensions ();
 
 
-  test_scene1 scene;
+  test_scene1 scene (file_desc_file);
 //  test_scene scene (rgb_img, height_img, lod);
 
   auto prev_time = std::chrono::high_resolution_clock::now ();
@@ -115,7 +110,7 @@ int main (int argc, const char* argv[])
 	  else if (e.keycode == input_event::key_f2)
 	    en_debug_dist = !en_debug_dist;
 	  else if (e.keycode == input_event::key_space)
-	    std::cout << "SPACE" << std::endl;
+	    scene.reset_view ();
 	  break;
 /*
 	case input_event::mouse_move:
