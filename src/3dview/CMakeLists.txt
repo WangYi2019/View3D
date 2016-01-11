@@ -10,6 +10,7 @@ if (WIN32)
 
 add_definitions (
 -DUSE_GL
+-DWIN32
 )
 
 else ()

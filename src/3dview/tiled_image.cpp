@@ -29,11 +29,31 @@ use max texture size: 4096 x 4096
 
 */
 
+#ifdef WIN32
+
+#define WIN32_LEAN_AND_MEAN 1
+#include <windows.h>
+
+#include "mingw.thread.h"
+#include <mutex>
+#include "mingw.mutex.h"
+#include "mingw.condition_variable.h"
+#include <atomic>
+
+#else
+
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
+
+#endif
+
+#include <chrono>
 #include <limits>
 #include <iostream>
 #include <algorithm>
-#include <chrono>
-#include <future>
+
 
 #include "tiled_image.hpp"
 #include "bmp_loader.hpp"
@@ -726,60 +746,61 @@ tiled_image::update (int32_t x, int32_t y,
 		     unsigned int src_x, unsigned int src_y,
 		     unsigned int src_width, unsigned int src_height)
 {
-#if 0
-  auto t0 = std::chrono::high_resolution_clock::now ();
-
   // load and copy the new data to the top-level mipmap level and then selectively
   // update the mipmap pyramid.
+  // originally this was using std::async, which uses std::future, which nobody
+  // has implemented for mingw win threads.
+
+  std::array<tiled_image::update_region, tiled_image::max_lod_level> rgb_regions;
+  std::array<tiled_image::update_region, tiled_image::max_lod_level> height_regions;
+
+  auto t0 = std::chrono::high_resolution_clock::now ();
 
   auto t1 = std::chrono::high_resolution_clock::now ();
 
-  auto u0 = std::async (std::launch::deferred,
-    [&] (void)
+  std::thread tr (
+  [&] (void)
+  {
+    std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+    res.fill ({ { 0 }, { 0 } });
+    try
     {
-      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
-      res.fill ({ { 0 }, { 0 } });
-      try
-      {
-	image img = load_bmp_image (rgb_bmp_file);
+      image img = load_bmp_image (rgb_bmp_file);
 
-	auto area = img.copy_to ({ src_x, src_y }, { src_width, src_height },
-				 m_rgb_image[0], { x, y });
+      auto area = img.copy_to ({ src_x, src_y }, { src_width, src_height },
+			       m_rgb_image[0], { x, y });
 
-	res = update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
-      }
-      catch (const std::exception& e)
-      {
-	std::cerr << "exception when loading image " << rgb_bmp_file << ": " << e.what () << std::endl;
-      }
-
-      return res;
-    });
-
-  auto u1 = std::async (std::launch::async,
-    [&] (void)
+      res = update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+    }
+    catch (const std::exception& e)
     {
-      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
-      res.fill ({ { 0 }, { 0 } });
-      try
-      {
-	image img = load_bmp_image (height_bmp_file);
+      std::cerr << "exception when loading image " << rgb_bmp_file << ": " << e.what () << std::endl;
+    }
 
-	auto area = img.copy_to ({ src_x, src_y },  { src_width, src_height },
-				 m_height_image[0], { x, y });
+    rgb_regions = res;
+  });
 
-	res = update_mipmaps (m_height_image, area.dst_top_left, area.size);
-      }
-      catch (const std::exception& e)
-      {
-	std::cerr << "exception when loading image " << height_bmp_file << ": " << e.what () << std::endl;
-      }
+  {
+    std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+    res.fill ({ { 0 }, { 0 } });
+    try
+    {
+      image img = load_bmp_image (height_bmp_file);
 
-      return res;
-    });
+      auto area = img.copy_to ({ src_x, src_y },  { src_width, src_height },
+			       m_height_image[0], { x, y });
 
-  auto rgb_regions = u0.get ();
-  auto height_regions = u1.get ();
+      res = update_mipmaps (m_height_image, area.dst_top_left, area.size);
+    }
+    catch (const std::exception& e)
+    {
+      std::cerr << "exception when loading image " << height_bmp_file << ": " << e.what () << std::endl;
+    }
+
+    height_regions = res;
+  }
+
+  tr.join ();
 
   auto t2 = std::chrono::high_resolution_clock::now ();
 
@@ -793,16 +814,16 @@ tiled_image::update (int32_t x, int32_t y,
   // this will trigger texture re-uploads.
   // notice that this step has to be done on the main/GL thread as it might
   // try to delete GL textures.
+
   invalidate_texture_cache (m_rgb_texture_cache, rgb_regions);
   invalidate_texture_cache (m_height_texture_cache, height_regions);
-#endif
 }
+
 
 void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 			  const void* rgb_data, uint32_t rgb_data_stride_bytes,
 			  const void* height_data, uint32_t height_data_stride_bytes)
 {
-#if 0
   struct tmp_image : public image
   {
     tmp_image (pixel_format pf, unsigned int w, unsigned int h, unsigned int stride,
@@ -821,33 +842,32 @@ void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t heigh
   tmp_image height_img (pixel_format::l_8, width, height, height_data_stride_bytes,
 			height_data);
 
-  auto u0 = std::async (std::launch::deferred,
-    [&] (void)
-    {
-      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
-      res.fill ({ { 0 }, { 0 } });
+  std::array<tiled_image::update_region, tiled_image::max_lod_level> rgb_regions;
+  std::array<tiled_image::update_region, tiled_image::max_lod_level> height_regions;
 
-      auto area = rgb_img.copy_to (m_rgb_image[0], { x, y });
+  std::thread tr (
+  [&] (void)
+  {
+    std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+    res.fill ({ { 0 }, { 0 } });
 
-      return update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
-    });
+    auto area = rgb_img.copy_to (m_rgb_image[0], { x, y });
 
-  auto u1 = std::async (std::launch::async,
-    [&] (void)
-    {
-      std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
-      res.fill ({ { 0 }, { 0 } });
+    rgb_regions = update_mipmaps (m_rgb_image, area.dst_top_left, area.size);
+  });
 
-      auto area = height_img.copy_to (m_height_image[0], { x, y });
-      return update_mipmaps (m_height_image, area.dst_top_left, area.size);
-    });
+  {
+    std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
+    res.fill ({ { 0 }, { 0 } });
 
-  auto rgb_regions = u0.get ();
-  auto height_regions = u1.get ();
+    auto area = height_img.copy_to (m_height_image[0], { x, y });
+    height_regions = update_mipmaps (m_height_image, area.dst_top_left, area.size);
+  }
+
+  tr.join ();
 
   invalidate_texture_cache (m_rgb_texture_cache, rgb_regions);
   invalidate_texture_cache (m_height_texture_cache, height_regions);
-#endif
 }
 
 void tiled_image
@@ -956,8 +976,8 @@ enum plane_bit
   near_plane = 1 << 4,
   far_plane = 1 << 5,
 
-  all_3d_planes = left_plane | right_plane | top_plane | bottom_plane | near_plane | far_plane,
-  all_2d_planes = left_plane | right_plane | top_plane | bottom_plane
+  all_2d_planes = left_plane | right_plane | top_plane | bottom_plane,
+  all_3d_planes = all_2d_planes | near_plane | far_plane
 };
 
 struct point
