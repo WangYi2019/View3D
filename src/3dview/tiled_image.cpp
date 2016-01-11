@@ -880,9 +880,9 @@ void tiled_image
     vec2<unsigned int> br = (regions[i].br + texture_tile_size - 1) / texture_tile_size;
 
     for (unsigned int y = tl.y; y < br.y; ++y)
-      for (unsigned int x = tl.x; x < tl.x; ++x)
+      for (unsigned int x = tl.x; x < br.x; ++x)
       {
-	texture_key k (i, { x * texture_tile_size, y * texture_tile_size });
+	texture_key k (i, { x * (texture_tile_size << i), y * (texture_tile_size << i) });
 	// std::cout << "invalidating texture " << k << std::endl;
 	cache.erase (k);
       }
