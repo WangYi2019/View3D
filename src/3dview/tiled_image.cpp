@@ -1368,6 +1368,7 @@ std::cout
     glDisable (GL_DEPTH_TEST);
 
     m_shader->color = { 0 };
+    m_shader->zbias = 0.001f;
 
     for (const tile* t : m_visible_tiles)
     {
@@ -1387,9 +1388,11 @@ std::cout
       // glLineWidth (0.025f * t->lod () + 0.125f);
       // t->mesh ().render_wireframe ();
 
-      glLineWidth (0.5f * t->lod () + 0.125f);
+      glLineWidth (0.5f * t->lod () + 0.75f);
       t->mesh ().render_outline ();
     }
   }
+
+  gl_check_log_error ();
 }
 
