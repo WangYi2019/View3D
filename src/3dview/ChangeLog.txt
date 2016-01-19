@@ -1,0 +1,13 @@
+
+
+---------------------------------
+- z scale is now proportional to the board image size.
+
+- fixed some out-of-bounds memory access bugs in image operations.
+
+- implemented function view3d_center_image
+
+---------------------------------
+nepcon 2016 expo version
+
+- ....
