@@ -38,6 +38,8 @@ public:
   const std::unique_ptr<tiled_image>& image (void) const { return m_image; }
   void resize_image (const vec2<unsigned int>& size);
 
+  void center_image (const vec2<unsigned int>& image_point);
+
 private:
   std::unique_ptr<tiled_image> m_image;
 

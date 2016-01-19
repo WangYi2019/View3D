@@ -407,7 +407,10 @@ void thread_func (void)
       case WM_USER_3DVIEW_CENTER_IMAGE:
 	if (g_scene != nullptr)
 	{
-
+	  auto&& args = *(center_image_args*)msg.lParam;
+	  g_scene->center_image ({ args.x, args.y });
+	  g_scene->set_tilt_angle (args.x_rotate);
+	  g_scene->set_rotate_angle (args.y_rotate);
 	}
 	ack_thread_message (msg);
 	break;

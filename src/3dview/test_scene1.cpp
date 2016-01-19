@@ -100,6 +100,15 @@ void test_scene1::set_zoom (float val)
   m_zoom = std::min (10.0f, std::max (-10.0f, val));
 }
 
+void test_scene1::center_image (const vec2<unsigned int>& image_point)
+{
+  double img_sz = std::max (m_image->size ().x, m_image->size ().y);
+
+  auto&& pt = vec2<double> (image_point) * 2 - vec2<double> (m_image->size ());
+
+  m_img_pos = -(vec2<double> (1 / img_sz) * pt);
+}
+
 vec2<double> test_scene1::screen_to_img (void) const
 {
   // figure out the scale factor for screen coordinates to image coordinates.
