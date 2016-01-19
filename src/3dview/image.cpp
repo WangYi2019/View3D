@@ -718,8 +718,8 @@ image::fill (const vec2<int>& xy, const vec2<unsigned int>& size,
   if (empty ())
     return { };
 
-  const vec2<unsigned int> tl (std::max (vec2<int> (0), xy));
-  const vec2<unsigned int> br (std::min (xy + (vec2<int>)size, (vec2<int>)m_size));
+  const vec2<unsigned int> tl (std::min (std::max (vec2<int> (0), xy), (vec2<int>)m_size));
+  const vec2<unsigned int> br (std::min (std::max (vec2<int> (0), xy + (vec2<int>)size), (vec2<int>)m_size));
   const vec2<unsigned int> fill_size = br - tl;
 
   if (fill_size.x == 0 || fill_size.y == 0)
@@ -744,11 +744,11 @@ image::copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
   // go bad.  catch this by limiting the size early.
   const auto use_src_size = std::min (src_size, size ());
 
-  const vec2<unsigned int> src_tl (std::max (vec2<int> (0), src_xy));
-  const vec2<unsigned int> src_br (std::min (src_xy + (vec2<int>)use_src_size, (vec2<int>)size ()));
+  const vec2<unsigned int> src_tl (std::min (std::max (vec2<int> (0), src_xy), (vec2<int>)size ()));
+  const vec2<unsigned int> src_br (std::min (std::max (vec2<int> (0), src_xy + (vec2<int>)use_src_size), (vec2<int>)size ()));
 
-  const vec2<unsigned int> dst_tl (std::max (vec2<int> (0), dst_xy));
-  const vec2<unsigned int> dst_br (std::min (dst_xy + (vec2<int>)use_src_size, (vec2<int>)dst.size ()));
+  const vec2<unsigned int> dst_tl (std::min (std::max (vec2<int> (0), dst_xy), (vec2<int>)dst.size ()));
+  const vec2<unsigned int> dst_br (std::min (std::max (vec2<int> (0), dst_xy + (vec2<int>)use_src_size), (vec2<int>)dst.size ()));
 
   const auto src_copy_sz = src_br - src_tl;
   const auto dst_copy_sz = dst_br - dst_tl;
@@ -817,8 +817,8 @@ void image::pyr_down_to (image& dst) const
 
 image image::subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const
 {
-  const vec2<unsigned int> src_tl (std::max (vec2<int> (0), xy));
-  const vec2<unsigned int> src_br (std::min (xy + (vec2<int>)sz, (vec2<int>)size ()));
+  const vec2<unsigned int> src_tl (std::min (std::max (vec2<int> (0), xy), (vec2<int>)size ()));
+  const vec2<unsigned int> src_br (std::min (std::max (vec2<int> (0), xy + (vec2<int>)sz), (vec2<int>)size ()));
 
   const auto copy_sz = src_br - src_tl;
 
