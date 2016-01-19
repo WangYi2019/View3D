@@ -1223,7 +1223,11 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 			  const mat4<double>& viewport_trv, bool render_wireframe,
 			  bool debug_dist)
 {
-  const float zscale = 0.05f;
+//  (10000 / 10000) * 0.05 = 0.05
+//  (10000/ 2000) * 0.05 = 0.25
+
+//  const float zscale = 0.05f;
+  const float zscale = (10000.0 / std::max (m_size.x, m_size.y)) * 0.05; 
 
   m_shader->activate ();
   m_shader->color_texture = 0;
