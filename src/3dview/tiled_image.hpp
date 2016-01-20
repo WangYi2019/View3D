@@ -89,7 +89,7 @@ public:
 
   void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
 	       const mat4<double>& viewport_trv, bool render_wireframe,
-	       bool debug_dist);
+	       bool debug_dist) const;
 
 private:
   struct vertex;
@@ -133,16 +133,14 @@ private:
   std::array<std::vector<tile>, max_lod_level> m_tiles;
 
   // texture tile cache
-  lru_cache<texture_key, gl::texture, load_texture_tile> m_rgb_texture_cache;
-  lru_cache<texture_key, gl::texture, load_texture_tile> m_height_texture_cache;
+  mutable lru_cache<texture_key, gl::texture, load_texture_tile> m_rgb_texture_cache;
+  mutable lru_cache<texture_key, gl::texture, load_texture_tile> m_height_texture_cache;
 
   // candidate tiles for display.  modified during rendering.
-  mutable std::vector<tile*> m_candidate_tiles;
+  mutable std::vector<const tile*> m_candidate_tiles;
 
   // actually visible tiles for display.   modified during rendering.
-  mutable std::vector<tile*> m_visible_tiles;
-
-  mutable std::vector<std::pair<tile*, tile_visibility>> m_tile_visibilities;
+  mutable std::vector<const tile*> m_visible_tiles;
 
   struct update_region
   {

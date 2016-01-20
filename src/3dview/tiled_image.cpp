@@ -1221,7 +1221,7 @@ tiled_image::calc_tile_visibility (const tile& t,
 
 void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
 			  const mat4<double>& viewport_trv, bool render_wireframe,
-			  bool debug_dist)
+			  bool debug_dist) const
 {
 //  (10000 / 10000) * 0.05 = 0.05
 //  (10000/ 2000) * 0.05 = 0.25
@@ -1288,7 +1288,7 @@ std::cout
 
   while (!m_candidate_tiles.empty ())
   {
-    tile* t = m_candidate_tiles.back ();
+    auto&& t = m_candidate_tiles.back ();
     m_candidate_tiles.pop_back ();
 
     auto tv = calc_tile_visibility (*t, proj_cam_trv, viewport_trv, zscale);
