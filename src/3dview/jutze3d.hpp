@@ -101,7 +101,24 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
 			    const void* height_data, unsigned int height_data_stride_bytes);
- 
+
+// adds a new 3D box to the board.
+// board_pos_x, board_pos_y is the center x,y coordinate of the box on the
+// board, in board image coordinates.
+// returns the ID for the box object.  the object ID can be used to remove the
+// object.
+unsigned int JUTZE3D_API
+view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y,
+		unsigned int box_size_x, unsigned int box_size_y, unsigned int box_size_z,
+		float fill_r, float fill_g, float fill_b, float fill_a,
+		float edge_r, float edge_g, float edge_b, float edge_a);
+
+void JUTZE3D_API
+view3d_remove_box (unsigned int obj_id);
+
+void JUTZE3D_API
+view3d_remove_all_boxes (void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -24,6 +24,7 @@ add_definitions (
 endif ()
 
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++ -s")
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=corei7 -mtune=intel")
 
 # haswell / broadwell
@@ -45,6 +46,7 @@ add_executable (3dview
   bmp_loader.cpp
   image.cpp
   tiled_image.cpp
+  simple_3dbox.cpp
   s_expr.cpp
 )
 
@@ -72,6 +74,7 @@ add_library (jutze3d_dll SHARED
   bmp_loader.cpp
   image.cpp
   tiled_image.cpp
+  simple_3dbox.cpp
   s_expr.cpp
 )
 

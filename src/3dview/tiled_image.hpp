@@ -88,7 +88,8 @@ public:
 	       const void* height_data, uint32_t height_data_stride_bytes);
 
   void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-	       const mat4<double>& viewport_trv, bool render_wireframe,
+	       const mat4<double>& viewport_trv, float zscale,
+	       bool render_wireframe,
 	       bool debug_dist) const;
 
 private:

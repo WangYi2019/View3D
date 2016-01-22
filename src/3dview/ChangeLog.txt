@@ -1,11 +1,13 @@
 
-
 ---------------------------------
 - z scale is now proportional to the board image size.
 
 - fixed some out-of-bounds memory access bugs in image operations.
 
 - implemented function view3d_center_image
+
+- add new functions:
+  view3d_add_box, view3d_remove_box, view3d_remove_all_boxes
 
 ---------------------------------
 nepcon 2016 expo version

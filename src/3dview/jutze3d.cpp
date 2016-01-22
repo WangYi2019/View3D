@@ -58,6 +58,9 @@ enum
   WM_USER_3DVIEW_FILL_IMAGE_AREA,
   WM_USER_3DVIEW_UPDATE_IMAGE_AREA_1,
   WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2,
+  WM_USER_3DVIEW_ADD_BOX,
+  WM_USER_3DVIEW_REMOVE_BOX,
+  WM_USER_3DVIEW_REMOVE_ALL_BOXES,
 };
 
 struct create_window_args
@@ -121,6 +124,21 @@ struct update_image_area2_args
   unsigned int rgb_data_stride_bytes;
   const void* height_data;
   unsigned int height_data_stride_bytes;
+};
+
+struct add_box_args
+{
+  unsigned int x, y;
+  unsigned int size_x, size_y, size_z;
+  float fill_r, fill_g, fill_b, fill_a;
+  float edge_r, edge_g, edge_b, edge_a;
+
+  unsigned int new_box_obj_id;
+};
+
+struct remove_box_args
+{
+  unsigned int obj_id;
 };
 
 void post_thread_message_wait (unsigned int msg, void* args = nullptr)
@@ -259,6 +277,36 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 				   height_data, height_data_stride_bytes };
   post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
 }
+
+unsigned int JUTZE3D_API
+view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y,
+		unsigned int box_size_x, unsigned int box_size_y, unsigned int box_size_z,
+		float fill_r, float fill_g, float fill_b, float fill_a,
+		float edge_r, float edge_g, float edge_b, float edge_a)
+{
+  add_box_args args = { board_pos_x, board_pos_y, box_size_x, box_size_y, box_size_z,
+			fill_r, fill_g, fill_b, fill_a,
+			edge_r, edge_g, edge_b, edge_a,
+			0 };
+
+  post_thread_message_wait (WM_USER_3DVIEW_ADD_BOX, &args);
+
+  return args.new_box_obj_id;
+}
+
+void JUTZE3D_API
+view3d_remove_box (unsigned int obj_id)
+{
+  remove_box_args args = { obj_id };
+  post_thread_message_wait (WM_USER_3DVIEW_REMOVE_BOX, &args);
+}
+
+void JUTZE3D_API
+view3d_remove_all_boxes (void)
+{
+  post_thread_message_wait (WM_USER_3DVIEW_REMOVE_ALL_BOXES);
+}
+
 
 void thread_func (void)
 {
@@ -458,6 +506,30 @@ void thread_func (void)
 	ack_thread_message (msg);
 	break;
 
+
+      case WM_USER_3DVIEW_ADD_BOX:
+	if (g_scene != nullptr)
+	{
+	  auto&& args = *(add_box_args*)msg.lParam;
+	  args.new_box_obj_id = g_scene->add_box (
+		{ args.x, args.y }, { args.size_z, args.size_y, args.size_z },
+		{ args.fill_r, args.fill_g, args.fill_b, args.fill_a },
+		{ args.edge_r, args.edge_g, args.edge_b, args.edge_a });
+	}
+	break;
+
+      case WM_USER_3DVIEW_REMOVE_BOX:
+	if (g_scene != nullptr)
+	{
+	  auto&& args = *(remove_box_args*)msg.lParam;
+	  g_scene->remove_box (args.obj_id);
+	}
+	break;
+
+      case WM_USER_3DVIEW_REMOVE_ALL_BOXES:
+	if (g_scene != nullptr)
+	  g_scene->remove_all_boxes ();
+	break;
 
       default:
 	TranslateMessage (&msg);

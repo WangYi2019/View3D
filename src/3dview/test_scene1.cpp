@@ -7,6 +7,7 @@
 
 #include "test_scene1.hpp"
 #include "tiled_image.hpp"
+#include "simple_3dbox.hpp"
 
 #include "s_expr.hpp"
 
@@ -171,6 +172,35 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
       * mat4<double>::identity ();
 }
 
+unsigned int
+test_scene1::add_box (const vec2<unsigned int>& board_pos,
+		      const vec3<unsigned int>& box_size,
+		      const vec4<float>& fill_color, const vec4<float>& edge_color)
+{
+  m_boxes.emplace_back (m_next_boxid++,
+			vec3<double> (board_pos.x, board_pos.y, 0),
+			vec3<double> (box_size), fill_color, edge_color);
+
+  return m_boxes.back ().id ();
+}
+
+void
+test_scene1::remove_box (unsigned int objid)
+{
+  auto i = std::find_if (m_boxes.begin (), m_boxes.end (),
+			 [&] (auto&& b) { return b.id () == objid; });
+
+  if (i != m_boxes.end ())
+    m_boxes.erase (i);
+}
+
+void
+test_scene1::remove_all_boxes (void)
+{
+  m_boxes.clear ();
+  m_next_boxid = 0;
+}
+
 void test_scene1::render (unsigned int width, unsigned int height,
 			 std::chrono::microseconds delta_time,
 			 bool en_wireframe, bool en_debug_dist)
@@ -193,7 +223,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
   m_last_screen_size = { width, height };
   m_last_proj_trv =
     mat4<double>::proj_perspective (deg_to_rad (60.0f), (float)width / -(float)height,
-                                    0.00001f, 10000.0f);
+                                    0.0001f, 1000.0f);
 
 
   auto viewport_trv =
@@ -207,9 +237,18 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, m_img_pos);
 
+  float zscale = 1;
+
   if (m_image != nullptr)
-    m_image->render (cam_trv, m_last_proj_trv, viewport_trv, en_wireframe,
+  {
+    zscale = (10000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05; 
+
+    m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale, en_wireframe,
 		     en_debug_dist);
+  }
 
   gl_check_log_error ();
+
+  for (auto&& b : m_boxes)
+    b.render (cam_trv, m_last_proj_trv, viewport_trv, zscale);
 }

@@ -7,6 +7,7 @@
 #include "utils/vec_mat.hpp"
 
 class tiled_image;
+class simple_3dbox;
 
 class test_scene1
 {
@@ -40,8 +41,17 @@ public:
 
   void center_image (const vec2<unsigned int>& image_point);
 
+  unsigned int
+  add_box (const vec2<unsigned int>& board_pos,
+	   const vec3<unsigned int>& box_size,
+	   const vec4<float>& fill_color, const vec4<float>& edge_color);
+
+  void remove_box (unsigned int objid);
+  void remove_all_boxes (void);
+
 private:
   std::unique_ptr<tiled_image> m_image;
+  std::vector<simple_3dbox> m_boxes;
 
   unsigned int m_frame_number;
   float m_rotate_angle;
@@ -53,6 +63,8 @@ private:
 
   mat4<double> m_last_proj_trv;
   vec2<double> m_last_screen_size;
+
+  unsigned int m_next_boxid = 0;
 
   mat4<double> calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
 			     const vec2<double>& scroll) const;
