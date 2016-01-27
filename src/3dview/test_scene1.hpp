@@ -42,7 +42,7 @@ public:
   void center_image (const vec2<unsigned int>& image_point);
 
   unsigned int
-  add_box (const vec2<unsigned int>& board_pos,
+  add_box (const vec3<unsigned int>& board_pos,
 	   const vec3<unsigned int>& box_size,
 	   const vec4<float>& fill_color, const vec4<float>& edge_color);
 

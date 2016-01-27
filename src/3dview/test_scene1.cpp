@@ -173,12 +173,12 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
 }
 
 unsigned int
-test_scene1::add_box (const vec2<unsigned int>& board_pos,
+test_scene1::add_box (const vec3<unsigned int>& board_pos,
 		      const vec3<unsigned int>& box_size,
 		      const vec4<float>& fill_color, const vec4<float>& edge_color)
 {
   m_boxes.emplace_back (m_next_boxid++,
-			vec3<double> (board_pos.x, board_pos.y, 0),
+			vec3<double> (board_pos.x, board_pos.y, board_pos.z),
 			vec3<double> (box_size), fill_color, edge_color);
 
   return m_boxes.back ().id ();

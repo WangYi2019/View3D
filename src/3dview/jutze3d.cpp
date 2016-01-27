@@ -128,7 +128,7 @@ struct update_image_area2_args
 
 struct add_box_args
 {
-  unsigned int x, y;
+  unsigned int x, y, z;
   unsigned int size_x, size_y, size_z;
   float fill_r, fill_g, fill_b, fill_a;
   float edge_r, edge_g, edge_b, edge_a;
@@ -279,12 +279,13 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 }
 
 unsigned int JUTZE3D_API
-view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y,
+view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y, unsigned int board_pos_z,
 		unsigned int box_size_x, unsigned int box_size_y, unsigned int box_size_z,
 		float fill_r, float fill_g, float fill_b, float fill_a,
 		float edge_r, float edge_g, float edge_b, float edge_a)
 {
-  add_box_args args = { board_pos_x, board_pos_y, box_size_x, box_size_y, box_size_z,
+  add_box_args args = { board_pos_x, board_pos_y, board_pos_z,
+			box_size_x, box_size_y, box_size_z,
 			fill_r, fill_g, fill_b, fill_a,
 			edge_r, edge_g, edge_b, edge_a,
 			0 };
@@ -512,7 +513,8 @@ void thread_func (void)
 	{
 	  auto&& args = *(add_box_args*)msg.lParam;
 	  args.new_box_obj_id = g_scene->add_box (
-		{ args.x, args.y }, { args.size_z, args.size_y, args.size_z },
+		{ args.x, args.y, args.z },
+		{ args.size_z, args.size_y, args.size_z },
 		{ args.fill_r, args.fill_g, args.fill_b, args.fill_a },
 		{ args.edge_r, args.edge_g, args.edge_b, args.edge_a });
 	}

@@ -1,3 +1,9 @@
+---------------------------------
+
+- fixed comment of function view3d_add_box
+  (box x,y coordinates are not the box center but top-left corner)
+
+- added box_pos_z parameter to view3d_add_box
 
 ---------------------------------
 - z scale is now proportional to the board image size.
