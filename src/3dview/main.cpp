@@ -89,11 +89,15 @@ int main (int argc, const char* argv[])
   test_scene1 scene (file_desc_file);
 //  test_scene scene (rgb_img, height_img, lod);
 /*
-  scene.add_box ({ 8469/2, 10192/2 }, { 1000, 1000, 256 },
+  scene.add_box ({ 8469/2, 10192/2, 128 }, { 1000, 1000, 256 },
 		 { 0.0f, 1.0f, 0.0f, 0.5f },
 		 { 0.0f, 1.0f, 0.0f, 1.0f });
 
-  scene.add_box ({ 8469/4, 10192/2 }, { 200, 200, 200 },
+  scene.add_box ({ 8469/2 + 1000, 10192/2, 0 }, { 1000, 1000, 128 },
+		 { 0.0f, 1.0f, 0.0f, 0.5f },
+		 { 0.0f, 1.0f, 0.0f, 1.0f });
+
+  scene.add_box ({ 8469/4, 10192/2, 1 }, { 200, 200, 128 },
 		 { 0.0f, 1.0f, 0.0f, 0.5f },
 		 { 0.0f, 1.0f, 0.0f, 1.0f });
 */
