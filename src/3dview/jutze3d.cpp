@@ -518,6 +518,7 @@ void thread_func (void)
 		{ args.fill_r, args.fill_g, args.fill_b, args.fill_a },
 		{ args.edge_r, args.edge_g, args.edge_b, args.edge_a });
 	}
+	ack_thread_message (msg);
 	break;
 
       case WM_USER_3DVIEW_REMOVE_BOX:
@@ -526,11 +527,13 @@ void thread_func (void)
 	  auto&& args = *(remove_box_args*)msg.lParam;
 	  g_scene->remove_box (args.obj_id);
 	}
+	ack_thread_message (msg);
 	break;
 
       case WM_USER_3DVIEW_REMOVE_ALL_BOXES:
 	if (g_scene != nullptr)
 	  g_scene->remove_all_boxes ();
+	ack_thread_message (msg);
 	break;
 
       default:
