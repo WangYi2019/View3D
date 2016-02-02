@@ -3,6 +3,8 @@
 - fixed missing calls to ack_thread_message for
   view3d_add_box, view3d_remove_box, view3d_remove_all_boxes
 
+- fixed handling of 3d box z coordinates
+
 ---------------------------------
 
 - fixed comment of function view3d_add_box
