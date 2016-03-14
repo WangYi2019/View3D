@@ -12,7 +12,6 @@ SET(CMAKE_SYSTEM_NAME Windows)
 
 # for 32 or 64 bits mingw-w64
 # see http://mingw-w64.sourceforge.net/
-#set(COMPILER_PREFIX "i686-w64-mingw32")
 set(COMPILER_PREFIX "x86_64-w64-mingw32")
 
 # which compilers to use for C and C++
@@ -52,7 +51,8 @@ macro (mark_as_internal _var)
   set ( ${_var} ${${_var}} CACHE INTERNAL "" FORCE )
 endmacro ()
 
-get_filename_component (TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY CACHE)
+get_filename_component (TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY)
+get_filename_component (TOOLCHAIN_DIR ${TOOLCHAIN_DIR} ABSOLUTE CACHE)
 mark_as_internal (TOOLCHAIN_DIR)
 
 
@@ -69,13 +69,19 @@ option (TARGET_SAVE_TEMPS "Save intermediate compiler output files" OFF)
 option (TARGET_VERBOSE_LINKER "Verbose linking" OFF)
 option (TARGET_CXX_EXCEPTIONS "C++ Exceptions" ON)
 option (TARGET_C_EXCEPTIONS "C Exceptions" OFF)
+option (TARGET_CXX_RTTI "C++ RTTI" ON)
 #option (TARGET_DISABLE_GLOBAL_DTORS "Disable global destructor code" ON)
+option (TARGET_ENABLE_ALL_WARNINGS "Enable all warnings" ON)
 option (TARGET_FULL_STATIC "Full static linking" ON)
 set (TARGET_OPTIMIZE "-O2" CACHE STRING "Optimization flags")
 option (TARGET_STRIP_SYMBOLS "Strip symbols" OFF)
 
-# if LTO is used it's better to disable function-sections as it 
+# if LTO is used it's better to disable function-sections as it
 # results in smaller code.
+
+if (TARGET_ENABLE_ALL_WARNINGS)
+  set (OPT_WALL "-Wall")
+endif ()
 
 if (TARGET_LTO)
   set (OPT_LTO "-flto -flto-compression-level=0")
@@ -116,11 +122,17 @@ else ()
   set (OPT_C_EXCEPTIONS "-fno-exceptions")
 endif ()
 
+if (TARGET_CXX_RTTI)
+  set (OPT_CXX_NORTTI "")
+else ()
+  set (OPT_CXX_NORTTI "-fno-rtti")
+endif ()
+
 # default options
 
 set (TARGET_OPTIONS "")
-set (C_LANG_OPTIONS "-std=c99 -Werror=return-type -lpthread -pthread")
-set (CXX_LANG_OPTIONS "-std=c++14 -Werror=return-type -lpthread -pthread")
+set (C_LANG_OPTIONS "-std=c99 -Werror=return-type ${OPT_WALL} -lpthread -pthread")
+set (CXX_LANG_OPTIONS "-std=c++14 -Werror=return-type ${OPT_WALL} -lpthread -pthread")
 
 if (TARGET_FULL_STATIC)
   set (LINKER_STATIC "-Wl,-Bstatic")
@@ -147,6 +159,7 @@ ${OPT_DISABLE_GLOBAL_DTORS} \
 set (CMAKE_CXX_FLAGS "\
 ${TARGET_OPTIMIZE} \
 ${OPT_CXX_EXCEPTIONS} \
+${OPT_CXX_NORTTI} \
 ${CXX_LANG_OPTIONS} \
 ${TARGET_OPTIONS} \
 ${ASM_OPTIONS} \
@@ -163,5 +176,8 @@ set (CMAKE_ASM_FLAGS ${CMAKE_C_FLAGS} CACHE STRING "target_asm_flags" FORCE)
 set (CMAKE_EXE_LINKER_FLAGS "\
 ${OPT_GC_SECTIONS} ${ASM_OPTIONS} ${LINKER_VERBOSE} ${LINKER_STATIC}"
 CACHE STRING "target_ld_flags" FORCE)
+
+set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_CXX_FLAGS}"
+CACHE STRING "target_ld_flags_shared" FORCE)
 
 endif ()
