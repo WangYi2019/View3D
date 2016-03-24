@@ -93,13 +93,17 @@ view3d_update_image_area_1 (unsigned int x, unsigned int y,
 			    unsigned int src_width, unsigned int src_height);
 
 // this overload copies the image data from the specified memory.
-// the expected RGB data is unsigned 8 bit per component, 24 bit per pixel,
-// ordered as R,G,B.
-// the expected height data is unsigned 8 bit.
+// the RGB input format can have the following values:
+//   0 - unsigned 8 bit per component, 24 bit per pixel, RGB order
+//   1 - unsigned 8 bit per component, 24 bit per pixel, BGR order
+//   2 - unsigned 8 bit per component, 32 bit per pixel, RGBA order
+//
+// the height input format is fixed at unsigned 8 bit.
 void JUTZE3D_API
 view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
+			    unsigned int rgb_format,
 			    const void* height_data, unsigned int height_data_stride_bytes);
 
 // adds a new 3D box to the board.

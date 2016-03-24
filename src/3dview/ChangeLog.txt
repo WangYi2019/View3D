@@ -1,5 +1,9 @@
 ---------------------------------
 
+- added rgb data format parameter to view3d_update_image_area_2
+
+---------------------------------
+
 - fixed missing calls to ack_thread_message for
   view3d_add_box, view3d_remove_box, view3d_remove_all_boxes
 

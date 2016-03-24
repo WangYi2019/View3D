@@ -822,7 +822,9 @@ tiled_image::update (int32_t x, int32_t y,
 
 void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 			  const void* rgb_data, uint32_t rgb_data_stride_bytes,
-			  const void* height_data, uint32_t height_data_stride_bytes)
+			  pixel_format rgb_format,
+			  const void* height_data, uint32_t height_data_stride_bytes,
+			  pixel_format height_format)
 {
   struct tmp_image : public image
   {
@@ -836,10 +838,10 @@ void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t heigh
     }
   };
 
-  tmp_image rgb_img (pixel_format::rgb_888, width, height, rgb_data_stride_bytes,
+  tmp_image rgb_img (rgb_format, width, height, rgb_data_stride_bytes,
 		     rgb_data);
 
-  tmp_image height_img (pixel_format::l_8, width, height, height_data_stride_bytes,
+  tmp_image height_img (height_format, width, height, height_data_stride_bytes,
 			height_data);
 
   std::array<tiled_image::update_region, tiled_image::max_lod_level> rgb_regions;

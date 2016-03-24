@@ -122,8 +122,10 @@ struct update_image_area2_args
   unsigned int width, height;
   const void* rgb_data;
   unsigned int rgb_data_stride_bytes;
+  pixel_format rgb_format;
   const void* height_data;
   unsigned int height_data_stride_bytes;
+  pixel_format height_format;
 };
 
 struct add_box_args
@@ -271,10 +273,22 @@ void JUTZE3D_API
 view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
+			    unsigned int rgb_format,
 			    const void* height_data, unsigned int height_data_stride_bytes)
 {
+  pixel_format rgb_format_pf;
+  switch (rgb_format)
+  {
+    case 0: rgb_format_pf = pixel_format::rgb_888; break;
+    case 1: rgb_format_pf = pixel_format::bgr_888; break;
+    case 2: rgb_format_pf = pixel_format::rgba_8888; break;
+    default: return;
+  }
+
   update_image_area2_args args = { x, y, width, height, rgb_data, rgb_data_stride_bytes,
-				   height_data, height_data_stride_bytes };
+				   rgb_format_pf,
+				   height_data, height_data_stride_bytes,
+				   pixel_format::l_8 };
   post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
 }
 
@@ -502,7 +516,9 @@ void thread_func (void)
 	  auto&& args = *(update_image_area2_args*)msg.lParam;
 	  g_scene->image ()->update (args.x, args.y, args.width, args.height,
 				     args.rgb_data, args.rgb_data_stride_bytes,
-				     args.height_data, args.height_data_stride_bytes);
+				     args.rgb_format,
+				     args.height_data, args.height_data_stride_bytes,
+				     args.height_format);
 	}
 	ack_thread_message (msg);
 	break;
