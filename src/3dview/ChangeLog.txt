@@ -1,5 +1,9 @@
 ---------------------------------
 
+- fixed argument passing for view3d_add_box
+
+---------------------------------
+
 - added rgb data format parameter to view3d_update_image_area_2
 
 ---------------------------------
