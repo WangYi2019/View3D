@@ -530,7 +530,7 @@ void thread_func (void)
 	  auto&& args = *(add_box_args*)msg.lParam;
 	  args.new_box_obj_id = g_scene->add_box (
 		{ args.x, args.y, args.z },
-		{ args.size_z, args.size_y, args.size_z },
+		{ args.size_x, args.size_y, args.size_z },
 		{ args.fill_r, args.fill_g, args.fill_b, args.fill_a },
 		{ args.edge_r, args.edge_g, args.edge_b, args.edge_a });
 	}

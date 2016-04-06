@@ -100,6 +100,10 @@ int main (int argc, const char* argv[])
   scene.add_box ({ 8469/4, 10192/2, 1 }, { 200, 200, 128 },
 		 { 0.0f, 1.0f, 0.0f, 0.5f },
 		 { 0.0f, 1.0f, 0.0f, 1.0f });
+
+  scene.add_box ({ 1050, 1225, 0 }, { 100, 200, 200 },
+		 { 0.0f, 1.0f, 0.0f, 0.5f },
+		 { 0.0f, 1.0f, 0.0f, 1.0f });
 */
 
   auto prev_time = std::chrono::high_resolution_clock::now ();
