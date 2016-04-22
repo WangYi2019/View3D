@@ -564,7 +564,9 @@ Lcontinue:
 
     if (en_rendering && g_scene != nullptr && g_window != nullptr)
     {
-      g_scene->render (window_width, window_height,
+      vec2<int> win_sz = g_window->client_size ();
+
+      g_scene->render (win_sz.x, win_sz.y,
 		       std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
 		       en_wireframe, en_debug_dist);
 

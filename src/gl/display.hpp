@@ -74,6 +74,9 @@ struct window
   virtual bool process_events (void) = 0;
 
   virtual void set_input_event_clb (const std::function<void (const input_event&)>& clb) = 0;
+
+  virtual vec2<int> size (void) const = 0;
+  virtual vec2<int> client_size (void) const = 0;
 };
 
 struct display

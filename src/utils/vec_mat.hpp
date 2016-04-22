@@ -934,22 +934,22 @@ template <typename T> struct mat4
   }
 
   // symmetric
-  static mat4 proj_perspective (T fHovFieldOfViewRad, T fAspect,
+  static mat4 proj_perspective (T fHovFieldOfViewRad, T fAspectX, T fAspectY,
                                 T fNearPlane, T fFarPlane)
   {
-    T left = (T)(std::tan(fHovFieldOfViewRad*0.5)*fNearPlane);
-    T top  = (T)(std::tan(fHovFieldOfViewRad/fAspect*0.5)*fNearPlane);
+    T left = (T)(std::tan(fHovFieldOfViewRad/fAspectX*0.5)*fNearPlane);
+    T top  = (T)(std::tan(fHovFieldOfViewRad/fAspectY*0.5)*fNearPlane);
     return proj_frustum (-left, left, -top, top, fNearPlane, fFarPlane);
   }
 
   // asymmetric
-  static mat4 proj_perspective (T fHovFieldOfViewRad, T fAspect,
+  static mat4 proj_perspective (T fHovFieldOfViewRad, T fAspectX, T fAspectY,
                                 T fNearPlane, T fFarPlane,
                                 T fHorizontalCenterOffset,
                                 T fVerticalCenterOffset )
   {
-    T right = (T)(std::tan(fHovFieldOfViewRad*0.5)*fNearPlane);
-    T top  = (T)(std::tan(fHovFieldOfViewRad/fAspect*0.5)*fNearPlane);
+    T right = (T)(std::tan(fHovFieldOfViewRad/fAspectX*0.5)*fNearPlane);
+    T top  = (T)(std::tan(fHovFieldOfViewRad/fAspectY*0.5)*fNearPlane);
     T left = -right;
     T bottom = -top;
 
@@ -1011,5 +1011,42 @@ static_assert (sizeof (vec3<uint8_t>) == 3, "");
 static_assert (std::is_trivial<vec4<int>>::value, "");
 static_assert (std::is_standard_layout<vec4<int>>::value, "");
 static_assert (std::is_pod<vec4<int>>::value, "");
+
+template <typename A, typename B>
+inline bool operator == (const vec2<A>& a, const vec2<B>& b)
+{
+  return (a.x == b.x) & (a.y == b.y);
+}
+
+template <typename A, typename B>
+inline bool operator != (const vec2<A>& a, const vec2<B>& b)
+{
+  return (a.x != b.x) | (a.y != b.y);
+}
+
+template <typename A, typename B>
+inline bool operator == (const vec3<A>& a, const vec3<B>& b)
+{
+  return (a.x == b.x) & (a.y == b.y) & (a.z == b.z);
+}
+
+template <typename A, typename B>
+inline bool operator != (const vec3<A>& a, const vec3<B>& b)
+{
+  return (a.x != b.x) | (a.y != b.y) | (a.z != b.z);
+}
+
+template <typename A, typename B>
+inline bool operator == (const vec4<A>& a, const vec4<B>& b)
+{
+  return (a.x == b.x) & (a.y == b.y) & (a.z == b.z) & (a.w == b.w);
+}
+
+template <typename A, typename B>
+inline bool operator != (const vec4<A>& a, const vec4<B>& b)
+{
+  return (a.x != b.x) | (a.y != b.y) | (a.z != b.z) | (a.w != b.w);
+}
+
 
 #endif // includeguard_vec_mat_hpp_includeguard

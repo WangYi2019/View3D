@@ -1,5 +1,11 @@
 ---------------------------------
 
+- added handling of window resize
+
+- fixed aspect ratio for window height > window width
+
+---------------------------------
+
 - fixed argument passing for view3d_add_box
 
 ---------------------------------

@@ -221,10 +221,14 @@ void test_scene1::render (unsigned int width, unsigned int height,
   glDisable (GL_BLEND);
 
   m_last_screen_size = { width, height };
-  m_last_proj_trv =
-    mat4<double>::proj_perspective (deg_to_rad (60.0f), (float)width / -(float)height,
-                                    0.0001f, 1000.0f);
 
+  vec2<float> aspect = width > height
+		       ? vec2<float> (1, (float)width / -(float)height)
+		       : vec2<float> ((float)height / (float)width, -1);
+
+  m_last_proj_trv =
+    mat4<double>::proj_perspective (deg_to_rad (60.0f), aspect.x, aspect.y,
+				    0.0001f, 1000.0f);
 
   auto viewport_trv =
     mat4<double>::scale (width * 0.5, height * 0.5, 1, 1)

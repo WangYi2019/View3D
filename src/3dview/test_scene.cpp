@@ -276,7 +276,7 @@ void test_scene::render (unsigned int width, unsigned int height,
   m_shader->activate ();
 
   mat4<float> proj_trv =
-    mat4<float>::proj_perspective (M_PI/3, (float)width / -(float)height,
+    mat4<float>::proj_perspective (M_PI/3, 1, (float)width / -(float)height,
                                    0.1f, 10000.0f);
 
   m_rotate_angle += delta_time.count () * 0.0000001f;

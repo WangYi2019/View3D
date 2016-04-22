@@ -185,10 +185,12 @@ int main (int argc, const char* argv[])
 
   while (win->process_events () && !quit)
   {
+    vec2<int> win_sz = win->client_size ();
+
     auto cur_time = std::chrono::high_resolution_clock::now ();
     auto delta_time = prev_time - cur_time;
 
-    scene.render (window_width, window_height,
+    scene.render (win_sz.x, win_sz.y,
 		  std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
 		  en_wireframe, en_debug_dist);
 

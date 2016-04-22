@@ -239,6 +239,26 @@ struct window_win32 : window
     m_input_clb = f;
   }
 
+  virtual vec2<int>
+  size (void) const override
+  {
+    RECT r;
+    GetWindowRect (m_win, &r);
+
+    return { r.right - r.left, r.bottom - r.top };
+  }
+
+  virtual vec2<int>
+  client_size (void) const override
+  {
+    RECT r;
+    GetClientRect (m_win, &r);
+
+    // left and top of the returned rectangle are always zero.
+
+    return { r.right, r.bottom };
+  }
+
   virtual bool
   process_events (void) override
   {

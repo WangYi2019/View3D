@@ -58,6 +58,24 @@ struct window_x11 : window
     m_input_clb = f;
   }
 
+  virtual vec2<int>
+  size (void) const override
+  {
+    XWindowAttributes attr;
+    XGetWindowAttributes (m_disp, m_win, &attr);
+
+    return vec2<int> (attr.width, attr.height) + attr.border_width;
+  }
+
+  virtual vec2<int>
+  client_size (void) const override
+  {
+    XWindowAttributes attr;
+    XGetWindowAttributes (m_disp, m_win, &attr);
+
+    return { attr.width, attr.height };
+  }
+
   virtual bool
   process_events (void) override
   {
