@@ -61,6 +61,7 @@ enum
   WM_USER_3DVIEW_ADD_BOX,
   WM_USER_3DVIEW_REMOVE_BOX,
   WM_USER_3DVIEW_REMOVE_ALL_BOXES,
+  MW_USER_3DVIEW_SET_Z_SCALE,
 };
 
 struct create_window_args
@@ -143,6 +144,11 @@ struct remove_box_args
   unsigned int obj_id;
 };
 
+struct set_z_scale_args
+{
+  float value;
+};
+
 void post_thread_message_wait (unsigned int msg, void* args = nullptr)
 {
   if (!g_thread.joinable ())
@@ -220,6 +226,13 @@ void JUTZE3D_API
 view3d_disable_render (void)
 {
   post_thread_message_wait (WM_USER_3DVIEW_DISABLE_RENDERING);
+}
+
+void JUTZE3D_API
+view3d_set_z_scale (float val)
+{
+  set_z_scale_args args = { val };
+  post_thread_message_wait (MW_USER_3DVIEW_SET_Z_SCALE, &args);
 }
 
 
@@ -549,6 +562,15 @@ void thread_func (void)
       case WM_USER_3DVIEW_REMOVE_ALL_BOXES:
 	if (g_scene != nullptr)
 	  g_scene->remove_all_boxes ();
+	ack_thread_message (msg);
+	break;
+
+      case MW_USER_3DVIEW_SET_Z_SCALE:
+	if (g_scene != nullptr)
+	{
+	  auto&& args = *(set_z_scale_args*)msg.lParam;
+	  g_scene->set_z_scale (args.value);
+	}
 	ack_thread_message (msg);
 	break;
 

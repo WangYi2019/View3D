@@ -201,6 +201,12 @@ test_scene1::remove_all_boxes (void)
   m_next_boxid = 0;
 }
 
+void
+test_scene1::set_z_scale (float val)
+{
+  m_z_scale = val;
+}
+
 void test_scene1::render (unsigned int width, unsigned int height,
 			 std::chrono::microseconds delta_time,
 			 bool en_wireframe, bool en_debug_dist)
@@ -247,8 +253,8 @@ void test_scene1::render (unsigned int width, unsigned int height,
   {
     zscale = (10000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05; 
 
-    m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale, en_wireframe,
-		     en_debug_dist);
+    m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale * m_z_scale,
+		     en_wireframe, en_debug_dist);
   }
 
   gl_check_log_error ();

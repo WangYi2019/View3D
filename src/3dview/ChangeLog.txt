@@ -1,5 +1,11 @@
 ---------------------------------
 
+- added z scale parameter, which can be set by the new function
+  'view3d_set_z_scale'.  the z scale is applied only to z image,
+  not to 3d boxes.
+
+---------------------------------
+
 - added handling of window resize
 
 - fixed aspect ratio for window height > window width

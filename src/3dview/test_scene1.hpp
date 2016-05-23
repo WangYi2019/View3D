@@ -49,6 +49,8 @@ public:
   void remove_box (unsigned int objid);
   void remove_all_boxes (void);
 
+  void set_z_scale (float val);
+
 private:
   std::unique_ptr<tiled_image> m_image;
   std::vector<simple_3dbox> m_boxes;
@@ -58,6 +60,7 @@ private:
 
   float m_tilt_angle;
   float m_zoom;
+  float m_z_scale = 1.0f;
 
   vec2<double> m_img_pos;
 

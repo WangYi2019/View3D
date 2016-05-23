@@ -53,6 +53,11 @@ view3d_enable_render (void);
 void JUTZE3D_API
 view3d_disable_render (void);
 
+// set the z value scale coefficient for the z image.  the values from the
+// z image are multiplied with this coefficient before display.  the default
+// value is 1.0.
+void JUTZE3D_API
+view3d_set_z_scale (float val);
 
 // --------------------------------------------------------------------------
 
