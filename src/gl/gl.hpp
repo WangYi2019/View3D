@@ -16,6 +16,8 @@
 
 #undef GL_GLEXT_PROTOTYPES
 
+#include <windows.h>
+
 #endif
 
 #include <GL/gl.h>

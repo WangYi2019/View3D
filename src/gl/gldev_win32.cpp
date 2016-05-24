@@ -4,6 +4,7 @@
 // names as variables, which are loaded at runtime but only in this translation
 // unit.  All the other translation units which use the gl functions normally
 // should see the extension prototypes.
+#include <windows.h>
 #include <GL/gl.h>
 #include <GL/wglext.h>
 #include <GL/glext.h>
