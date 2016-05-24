@@ -7,6 +7,12 @@
 #include <algorithm>
 #include <type_traits>
 
+#ifdef __GNUC__
+  #define vec_mat_use_vector_extensions (1)
+#else
+
+#endif
+
 // --------------------------------------------------------------------------
 
 template <typename T> struct vec2
@@ -471,7 +477,10 @@ template <typename T> struct vec4
 {
   static constexpr unsigned int element_count = 4;
   typedef T element_type;
+
+  #ifdef vec_mat_use_vector_extensions
   typedef T vec_ext_type __attribute__ ((vector_size (sizeof (T) * element_count)));
+  #endif
 
   template <typename X> struct is_vec : std::integral_constant<bool, false> { };
   template <typename TT> struct is_vec<vec4<TT>> : std::integral_constant<bool, true> { };
@@ -488,12 +497,17 @@ template <typename T> struct vec4
     };
     T xyzw[element_count];
     T rgba[element_count];
+
+    #ifdef vec_mat_use_vector_extensions
     vec_ext_type vec_ext;
+    #endif
   };
 
   constexpr vec4 (void) = default;
 
+  #ifdef vec_mat_use_vector_extensions
   constexpr vec4 (vec_ext_type v) : vec_ext (v) { }
+  #endif
 
   template <typename XYZW, typename E = typename std::enable_if<!is_vec<XYZW>::value>::type>
   constexpr vec4 (XYZW xyzw) : x (xyzw), y (xyzw), z (xyzw), w (xyzw) { }
@@ -529,14 +543,22 @@ template <typename T> struct vec4
 
   constexpr friend vec4 operator + (const vec4& a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext + b.vec_ext };
+    #else
+    return { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+    #endif
   }
 
   template <typename S> constexpr
   typename std::enable_if<!is_vec<S>::value, vec4>::type
   operator + (S b) const
   {
+    #ifdef vec_mat_use_vector_extensions
     return { vec_ext + (T)b };
+    #else
+    return { x + (T)b, y + (T)b, z + (T)b, w + (T)b };
+    #endif
   }
 
   template <typename S> friend constexpr
@@ -557,15 +579,27 @@ template <typename T> struct vec4
 
   constexpr friend vec4 operator - (const vec4& a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext - b.vec_ext };
+    #else
+    return { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
+    #endif
   }
   template <typename S> constexpr vec4 operator - (S b) const
   {
+    #ifdef vec_mat_use_vector_extensions
     return { vec_ext - (T)b };
+    #else
+    return { x - (T)b, y - (T)b, z - (T)b, w - (T)b };
+    #endif
   }
   template <typename S> constexpr friend vec4 operator - (S a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { (T)a - b.vec_ext };
+    #else
+    return { (T)a - b.x, (T)a - b.y, (T)a - b.z, (T)a - b.w };
+    #endif
   }
   vec4& operator -= (const vec4& b)
   {
@@ -578,11 +612,19 @@ template <typename T> struct vec4
 
   constexpr friend vec4 operator * (const vec4& a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext * b.vec_ext };
+    #else
+    return { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+    #endif
   }
   template <typename S> constexpr friend vec4 operator * (const vec4& a, S b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext * (T)b };
+    #else
+    return { a.x * (T)b, a.y * (T)b, a.z * (T)b, a.w * (T)b };
+    #endif
   }
   template <typename S> constexpr friend vec4 operator * (S a, const vec4& b)
   {
@@ -599,12 +641,20 @@ template <typename T> struct vec4
 
   constexpr friend vec4 operator / (const vec4& a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext / b.vec_ext };
+    #else
+    return { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
+    #endif
   }
   template <typename S> friend vec4 operator / (const vec4& a, S b)
   {
     T bb (b);
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext / bb };
+    #else
+    return { a.x / bb, a.y / bb, a.z / bb, a.w / bb };
+    #endif
   }
   template <typename S> constexpr friend vec4 operator / (S a, const vec4& b)
   {
@@ -621,7 +671,11 @@ template <typename T> struct vec4
 
   constexpr vec4 operator - (void) const
   {
+    #ifdef vec_mat_use_vector_extensions
     return vec4 { 0 - vec_ext };
+    #else
+    return vec4 { 0 - x, 0 - y, 0 - z, 0 - w };
+    #endif
   }
 
   constexpr vec4 operator + (void) const
@@ -631,7 +685,11 @@ template <typename T> struct vec4
 
   constexpr friend vec4 operator << (const vec4& a, unsigned int b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext << b };
+    #else
+    return { a.x << b, a.y << b, a.z << b, a.w << b };
+    #endif
   }
   constexpr friend vec4 operator << (unsigned int a, const vec4& b)
   {
@@ -644,7 +702,11 @@ template <typename T> struct vec4
 
   constexpr friend vec4 operator >> (const vec4& a, unsigned int b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext >> b };
+    #else
+    return { a.x >> b, a.y >> b, a.z >> b, a.w >> b };
+    #endif
   }
   constexpr friend vec4 operator >> (unsigned int a, const vec4& b)
   {
@@ -666,7 +728,11 @@ template <typename T> struct vec4
   }
   constexpr friend vec4 operator | (const vec4& a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext | b.vec_ext };
+    #else
+    return { a.x | b.x, a.y | b.y, a.z | b.z, a.w | b.w };
+    #endif
   }
   template <typename S> vec4& operator |= (const S& b)
   {
@@ -684,7 +750,11 @@ template <typename T> struct vec4
   }
   constexpr friend vec4 operator & (const vec4& a, const vec4& b)
   {
+    #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext & b.vec_ext };
+    #else
+    return { a.x & b.x, a.y & b.y, a.z & b.z, a.w & b.w };
+    #endif
   }
   template <typename S> vec4& operator &= (const S& b)
   {
