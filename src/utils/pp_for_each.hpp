@@ -256,10 +256,27 @@
 #define pp_for_each_i_124(e,e0,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,a30,a31,a32,a33,a34,a35,a36,a37,a38,a39,a40,a41,a42,a43,a44,a45,a46,a47,a48,a49,a50,a51,a52,a53,a54,a55,a56,a57,a58,a59,a60,a61,a62,a63,a64,a65,a66,a67,a68,a69,a70,a71,a72,a73,a74,a75,a76,a77,a78,a79,a80,a81,a82,a83,a84,a85,a86,a87,a88,a89,a90,a91,a92,a93,a94,a95,a96,a97,a98,a99,a100,a101,a102,a103,a104,a105,a106,a107,a108,a109,a110,a111,a112,a113,a114,a115,a116,a117,a118,a119,a120,a121,a122,a123) pp_for_each_i_1(e,e0,a0) pp_for_each_i_123(e,e0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,a30,a31,a32,a33,a34,a35,a36,a37,a38,a39,a40,a41,a42,a43,a44,a45,a46,a47,a48,a49,a50,a51,a52,a53,a54,a55,a56,a57,a58,a59,a60,a61,a62,a63,a64,a65,a66,a67,a68,a69,a70,a71,a72,a73,a74,a75,a76,a77,a78,a79,a80,a81,a82,a83,a84,a85,a86,a87,a88,a89,a90,a91,a92,a93,a94,a95,a96,a97,a98,a99,a100,a101,a102,a103,a104,a105,a106,a107,a108,a109,a110,a111,a112,a113,a114,a115,a116,a117,a118,a119,a120,a121,a122,a123)
 #define pp_for_each_i_125(e,e0,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,a30,a31,a32,a33,a34,a35,a36,a37,a38,a39,a40,a41,a42,a43,a44,a45,a46,a47,a48,a49,a50,a51,a52,a53,a54,a55,a56,a57,a58,a59,a60,a61,a62,a63,a64,a65,a66,a67,a68,a69,a70,a71,a72,a73,a74,a75,a76,a77,a78,a79,a80,a81,a82,a83,a84,a85,a86,a87,a88,a89,a90,a91,a92,a93,a94,a95,a96,a97,a98,a99,a100,a101,a102,a103,a104,a105,a106,a107,a108,a109,a110,a111,a112,a113,a114,a115,a116,a117,a118,a119,a120,a121,a122,a123,a124) pp_for_each_i_1(e,e0,a0) pp_for_each_i_124(e,e0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,a30,a31,a32,a33,a34,a35,a36,a37,a38,a39,a40,a41,a42,a43,a44,a45,a46,a47,a48,a49,a50,a51,a52,a53,a54,a55,a56,a57,a58,a59,a60,a61,a62,a63,a64,a65,a66,a67,a68,a69,a70,a71,a72,a73,a74,a75,a76,a77,a78,a79,a80,a81,a82,a83,a84,a85,a86,a87,a88,a89,a90,a91,a92,a93,a94,a95,a96,a97,a98,a99,a100,a101,a102,a103,a104,a105,a106,a107,a108,a109,a110,a111,a112,a113,a114,a115,a116,a117,a118,a119,a120,a121,a122,a123,a124)
 
+
+#ifdef _MSC_VER
+
+#define pp_for_each_prefix_args_1(e,...) (e,__VA_ARGS__)
+#define pp_for_each_prefix_args_2(e,e0,...) (e,e0,__VA_ARGS__)
+#define pp_for_each_expand_args(...) __VA_ARGS__
+
+#define pp_for_each_(e, M, ARGS) M pp_for_each_prefix_args_1 (e, pp_for_each_expand_args ARGS)
+#define pp_for_each(expander,...) pp_for_each_(expander, pp_concat(pp_for_each_, pp_args_size(__VA_ARGS__)), (__VA_ARGS__))
+
+#define pp_for_each__i(e, e0, M, ARGS) M pp_for_each_prefix_args_2 (e, e0, pp_for_each_expand_args ARGS)
+#define pp_for_each_i(expander,e0, ...) pp_for_each__i(expander, e0, pp_concat(pp_for_each_i_, pp_args_size(__VA_ARGS__)), (__VA_ARGS__))
+
+#else // _MSC_VER
+
 #define pp_for_each_(e, M, ...) M(e, __VA_ARGS__)
 #define pp_for_each(expander,...) pp_for_each_(expander, pp_concat(pp_for_each_, pp_args_size(__VA_ARGS__)), __VA_ARGS__)
 
 #define pp_for_each__i(e, e0, M, ...) M(e, e0, __VA_ARGS__)
 #define pp_for_each_i(expander,e0, ...) pp_for_each__i(expander, e0, pp_concat(pp_for_each_i_, pp_args_size(__VA_ARGS__)), __VA_ARGS__)
 
+#endif // _MSC_VER
 #endif // include_guard_pp_for_each_hpp_include_guard
+
