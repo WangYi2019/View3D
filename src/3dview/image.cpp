@@ -417,7 +417,11 @@ struct convert_line<src_format, dst_format,
   typedef typename format_traits<src_format>::storage_type src_storage;
   typedef typename format_traits<dst_format>::storage_type dst_storage;
 
+#ifdef __GNUC__
   static void __attribute__((flatten))
+#else
+  static void
+#endif
   func (const char* src, char* dst, unsigned int count)
   {
     auto&& s = (const src_storage*)src;
@@ -447,7 +451,11 @@ struct convert_line<src_format, dst_format,
   typedef typename format_traits<src_format>::storage_type src_storage;
   typedef typename format_traits<dst_format>::storage_type dst_storage;
 
+#ifdef __GNUC__
   static void __attribute__((flatten))
+#else
+  static void
+#endif
   func (const char* src, char* dst, unsigned int count)
   {
     auto&& s = (const src_storage*)src;
@@ -506,7 +514,11 @@ struct pyr_down_line<src_format, dst_format,
   typedef typename format_traits<src_format>::unpacked_widened_type src_widened;
   typedef typename format_traits<dst_format>::unpacked_type dst_unpacked;
 
+#ifdef __GNUC__
   static void __attribute__((flatten))
+#else
+  static void
+#endif
   func (const char* src0, const char* src1, char* dst, unsigned int dst_count)
   {
     auto&& s0 = (const src_storage*)src0;

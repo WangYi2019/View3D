@@ -29,7 +29,7 @@ use max texture size: 4096 x 4096
 
 */
 
-#ifdef WIN32
+#if defined (WIN32) && !defined (_MSC_VER)
 
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>

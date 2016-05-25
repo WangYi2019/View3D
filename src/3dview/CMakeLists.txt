@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project (3dview)
 
+set (CMAKE_CXX_STANDARD 14)
+
 include_directories (
   ${CMAKE_SOURCE_DIR}/..
 )
@@ -11,6 +13,7 @@ if (WIN32)
 add_definitions (
 -DUSE_GL
 -DWIN32
+-DNOMINMAX
 )
 
 else ()
@@ -23,6 +26,9 @@ add_definitions (
 
 endif ()
 
+if (MSVC)
+
+else ()
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++ -s")
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=corei7 -mtune=intel")
@@ -33,11 +39,15 @@ set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -sta
 # ivy bridge
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=core-avx-i -mtune=intel")
 
+endif ()
 
 add_subdirectory (${CMAKE_SOURCE_DIR}/../utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
 
+if (MSVC)
+else ()
 SET_SOURCE_FILES_PROPERTIES (image.cpp PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math")
+endif ()
 
 add_executable (3dview
   main.cpp
@@ -54,12 +64,18 @@ if (WIN32)
 
 target_link_libraries (3dview
   utils
-  pthread
   kernel32
   gdi32
   gl
   opengl32
 )
+
+if (MSVC)
+else ()
+target_link_libraries (3dview
+  pthread
+)
+endif ()
 
 add_definitions (
 -DJUTZE3D_EXPORTS
