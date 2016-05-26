@@ -729,7 +729,7 @@ namespace gl
 template <typename VertexType, typename ComponentType>
 inline unsigned int vertex_component_offset (ComponentType (VertexType::*comp))
 {
-  return (const char*)(&(((VertexType*)NULL)->*comp)) - (const char*)(NULL);
+  return (unsigned int)((const char*)(&(((VertexType*)NULL)->*comp)) - (const char*)(NULL));
 }
 
 // extract vertex component part count
@@ -806,9 +806,9 @@ struct vertex_attrib_desc
   const unsigned int m_offset_bytes;
   const vertex_attrib_normalize_t m_normalize;
 
-  vertex_attrib_desc (const buffer* b, GLenum t, unsigned int off,
+  vertex_attrib_desc (const buffer* b, GLenum t, size_t off,
                       vertex_attrib_normalize_t n)
-  : m_buffer (b), m_base_type (t), m_offset_bytes (off), m_normalize (n) { }
+  : m_buffer (b), m_base_type (t), m_offset_bytes ((unsigned int)off), m_normalize (n) { }
 
   const buffer& vertex_buffer (void) const { return *m_buffer; }
 

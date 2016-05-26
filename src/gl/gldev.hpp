@@ -4,8 +4,8 @@
 
 struct display;
 struct window;
-struct pixel_format;
-struct ds_format;
+class pixel_format;
+class ds_format;
 struct gldev;
 
 struct gldev

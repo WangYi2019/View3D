@@ -123,7 +123,7 @@ public:
 	vtx.emplace_back (vec2<float> (x, y));
 
     m_vertex_buffer = gl::buffer (gl::buffer::vertex, vtx);
-    m_vertex_buffer_count = vtx.size ();
+    m_vertex_buffer_count = (unsigned int)vtx.size ();
 
     if (m_vertex_buffer_count - 1 <= std::numeric_limits<uint16_t>::max ())
       build_index_buffers<uint16_t> (size);
@@ -214,7 +214,7 @@ private:
       }
 
     m_index_buffer = gl::buffer (gl::buffer::index, idx);
-    m_index_buffer_count = idx.size ();
+    m_index_buffer_count = (unsigned int)idx.size ();
 
     // wireframe index buffer (quad edges only)
     idx.reserve (size.x * size.y * 4);
@@ -243,7 +243,7 @@ private:
     }
 
     m_wireframe_index_buffer = gl::buffer (gl::buffer::index, idx);
-    m_wireframe_index_buffer_count = idx.size ();
+    m_wireframe_index_buffer_count = (unsigned int)idx.size ();
 
     // outline index buffer
     idx.reserve (4*2);
@@ -262,7 +262,7 @@ private:
     idx.push_back (0 + 0 * grid_stride);
 
     m_outline_index_buffer = gl::buffer (gl::buffer::index, idx);
-    m_outline_index_buffer_count = idx.size ();
+    m_outline_index_buffer_count = (unsigned int)idx.size ();
   }
 
 };
@@ -999,17 +999,17 @@ struct point
   point (const point&) = default;
   point (const vec4<double>& pp) : p (pp) { }
 
-  bool is_top (void) const { return planes & top_plane; }
-  bool is_bottom (void) const { return planes & bottom_plane; }
-  bool is_left (void) const { return planes & left_plane; }
-  bool is_right (void) const { return planes & right_plane; }
-  bool is_near (void) const { return planes & near_plane; }
-  bool is_far (void) const { return planes & far_plane; }
+  bool is_top (void) const { return (planes & top_plane) != 0; }
+  bool is_bottom (void) const { return (planes & bottom_plane) != 0; }
+  bool is_left (void) const { return (planes & left_plane) != 0; }
+  bool is_right (void) const { return (planes & right_plane) != 0; }
+  bool is_near (void) const { return (planes & near_plane) != 0; }
+  bool is_far (void) const { return (planes & far_plane) != 0; }
 
   // true: on the inside of the frustum
   // false: on the outside of the frustum
-  bool plane_side (unsigned int p) const { return planes & (1 << p); }
-  bool plane_side (plane_bit p) const { return planes & p; }
+  bool plane_side (unsigned int p) const { return (planes & (1 << p)) != 0; }
+  bool plane_side (plane_bit p) const { return (planes & p) != 0; }
 };
 
 

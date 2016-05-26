@@ -14,6 +14,7 @@ add_definitions (
 -DUSE_GL
 -DWIN32
 -DNOMINMAX
+-D_CRT_SECURE_NO_WARNINGS
 )
 
 else ()

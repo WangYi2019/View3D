@@ -251,7 +251,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   if (m_image != nullptr)
   {
-    zscale = (10000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05; 
+    zscale = (float)((10000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05);
 
     m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale * m_z_scale,
 		     en_wireframe, en_debug_dist);

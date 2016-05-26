@@ -496,8 +496,8 @@ void thread_func (void)
 	{
 	  auto&& args = *(center_image_args*)msg.lParam;
 	  g_scene->center_image ({ args.x, args.y });
-	  g_scene->set_tilt_angle (args.x_rotate);
-	  g_scene->set_rotate_angle (args.y_rotate);
+	  g_scene->set_tilt_angle ((float)args.x_rotate);
+	  g_scene->set_rotate_angle ((float)args.y_rotate);
 	}
 	ack_thread_message (msg);
 	break;

@@ -189,14 +189,14 @@ struct window_win32 : window
 
       case WM_KEYDOWN:
 	ee.type = input_event::key_down;
-	ee.keycode = remap_key (wparam);
+	ee.keycode = remap_key ((unsigned int)wparam);
 	if (m_input_clb)
 	  m_input_clb (ee);
 	break;
 
       case WM_KEYUP:
 	ee.type = input_event::key_up;
-	ee.keycode = remap_key (wparam);
+	ee.keycode = remap_key ((unsigned int )wparam);
 	if (m_input_clb)
 	  m_input_clb (ee);
 	break;

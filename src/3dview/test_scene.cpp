@@ -187,7 +187,7 @@ std::cout << "color_img = " << color_img.width () << " x " << color_img.height (
   }
 
   m_vertex_buffer = gl::buffer (gl::buffer::vertex, vtx);
-  m_vertex_buffer_count = vtx.size ();
+  m_vertex_buffer_count = (unsigned int)vtx.size ();
 
   // every cell in the grid consists of 2 triangles.
   std::vector<index_type> idx;
@@ -207,7 +207,7 @@ std::cout << "color_img = " << color_img.width () << " x " << color_img.height (
 
   m_index_buffer = gl::buffer (gl::buffer::index, idx);
   m_index_buffer_type = gl::make_index_type<index_type> ();
-  m_index_buffer_count = idx.size ();
+  m_index_buffer_count = (unsigned int)idx.size ();
 
   // wireframe index buffer (quad edges only)
   idx.reserve (gridsize * gridsize * 2);
@@ -237,7 +237,7 @@ std::cout << "color_img = " << color_img.width () << " x " << color_img.height (
 
   m_wireframe_index_buffer = gl::buffer (gl::buffer::index, idx);
   m_wireframe_index_buffer_type = gl::make_index_type<index_type> ();
-  m_wireframe_index_buffer_count = idx.size ();
+  m_wireframe_index_buffer_count = (unsigned int)idx.size ();
 
 
   m_frame_number = 0;
@@ -276,12 +276,12 @@ void test_scene::render (unsigned int width, unsigned int height,
   m_shader->activate ();
 
   mat4<float> proj_trv =
-    mat4<float>::proj_perspective (M_PI/3, 1, (float)width / -(float)height,
+    mat4<float>::proj_perspective ((float)(M_PI/3), 1, (float)width / -(float)height,
                                    0.1f, 10000.0f);
 
   m_rotate_angle += delta_time.count () * 0.0000001f;
-  if (m_rotate_angle > 2*M_PI)
-    m_rotate_angle -= 2*M_PI;
+  if (m_rotate_angle > (float)(2*M_PI))
+    m_rotate_angle -= (float)(2*M_PI);
 
 #if 0
   mat4<float> cam_trv = mat4<float>::identity ()
@@ -292,7 +292,7 @@ void test_scene::render (unsigned int width, unsigned int height,
       * mat4<float>::identity ();
 #else
   mat4<float> cam_trv = mat4<float>::identity ()
-      * mat4<float>::translate (0, 0, -3.5)
+      * mat4<float>::translate (0, 0, -3.5f)
       * mat4<float>::rotate_x (0)
       * mat4<float>::rotate_z (0)
       * mat4<float>::identity ();

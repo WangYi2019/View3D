@@ -32,13 +32,13 @@ template <typename T> struct vec2
   constexpr vec2 (void) = default;
 
   template <typename XY> constexpr
-  vec2 (XY xy) : x (xy), y (xy) { }
+  vec2 (XY xy) : x ((T)xy), y ((T)xy) { }
 
   template <typename X, typename Y> constexpr
-  vec2 (X xx, Y yy) : x (xx), y (yy) { }
+  vec2 (X xx, Y yy) : x ((T)xx), y ((T)yy) { }
 
   template <typename S> constexpr explicit vec2 (const vec2<S>& rhs)
-  : x (rhs.x), y (rhs.y) { }
+  : x ((T)rhs.x), y ((T)rhs.y) { }
 
   template <typename S> constexpr explicit operator vec2<S> () const
   {
@@ -216,7 +216,7 @@ template <typename T> T inline constexpr dot (const vec2<T>& a, const vec2<T>& b
 
 template <typename T> T inline constexpr length (const vec2<T>& a)
 {
-  return std::sqrt (dot (a, a));
+  return (T)std::sqrt (dot (a, a));
 }
 
 template <typename T> vec2<T> inline constexpr normalize (const vec2<T>& a)
@@ -267,18 +267,18 @@ template <typename T> struct vec3
   constexpr vec3 (void) = default;
 
   template <typename XYZ> constexpr
-  vec3 (XYZ xyz) : x (xyz), y (xyz), z (xyz) { }
+  vec3 (XYZ xyz) : x ((T)xyz), y ((T)xyz), z ((T)xyz) { }
 
   template <typename X, typename Y, typename Z> constexpr
   vec3 (X xx, Y yy, Z zz)
-  : x (xx), y (yy), z (zz) { }
+  : x ((T)xx), y ((T)yy), z ((T)zz) { }
 
   template <typename XY, typename Z> constexpr
   vec3 (const vec2<XY>& xy, Z zz)
-  : x (xy.x), y (xy.y), z (zz) { }
+  : x ((T)xy.x), y ((T)xy.y), z ((T)zz) { }
 
   template <typename S> constexpr explicit vec3 (const vec3<S>& rhs)
-  : x (rhs.x), y (rhs.y), z (rhs.z) { }
+  : x ((T)rhs.x), y ((T)rhs.y), z ((T)rhs.z) { }
 
   template <typename S> constexpr explicit operator vec3<S> () const
   {
@@ -449,7 +449,7 @@ template <typename T> constexpr inline vec3<T> cross (const vec3<T>& a, const ve
 
 template <typename T> constexpr inline T length (const vec3<T>& a)
 {
-  return std::sqrt (dot (a, a));
+  return (T)std::sqrt (dot (a, a));
 }
 
 template <typename T> constexpr vec3<T> inline normalize (const vec3<T>& a)
@@ -510,7 +510,7 @@ template <typename T> struct vec4
   #endif
 
   template <typename XYZW, typename E = typename std::enable_if<!is_vec<XYZW>::value>::type>
-  constexpr vec4 (XYZW xyzw) : x (xyzw), y (xyzw), z (xyzw), w (xyzw) { }
+  constexpr vec4 (XYZW xyzw) : x ((T)xyzw), y ((T)xyzw), z ((T)xyzw), w ((T)xyzw) { }
 
   template <typename X, typename Y, typename Z, typename W,
 	    typename E = typename std::enable_if<!is_vec<X>::value
@@ -518,16 +518,16 @@ template <typename T> struct vec4
 						&& !is_vec<Z>::value
 						&& !is_vec<W>::value>::type>
   constexpr vec4 (X xx, Y yy, Z zz, W ww)
-  : x (xx), y (yy), z (zz), w (ww) { }
+  : x ((T)xx), y ((T)yy), z ((T)zz), w ((T)ww) { }
 
   template <typename XYZ, typename W> constexpr vec4 (const vec3<XYZ>& xyz, W ww)
-  : x (xyz.x), y (xyz.y), z (xyz.z), w (ww) { }
+  : x ((T)xyz.x), y ((T)xyz.y), z ((T)xyz.z), w ((T)ww) { }
 
   template <typename XY, typename ZW> constexpr vec4 (const vec2<XY>& xy, const vec2<ZW>& zw)
-  : x (xy.x), y (xy.y), z (zw.x), w (zw.y) { }
+  : x ((T)xy.x), y ((T)xy.y), z ((T)zw.x), w ((T)zw.y) { }
 
   template <typename S> constexpr explicit vec4 (const vec4<S>& rhs)
-  : x (rhs.x), y (rhs.y), z (rhs.z), w (rhs.w) { }
+  : x ((T)rhs.x), y ((T)rhs.y), z ((T)rhs.z), w ((T)rhs.w) { }
 
   template <typename S> constexpr explicit operator vec4<S> () const
   {
@@ -649,7 +649,7 @@ template <typename T> struct vec4
   }
   template <typename S> friend vec4 operator / (const vec4& a, S b)
   {
-    T bb (b);
+    T bb ((T)b);
     #ifdef vec_mat_use_vector_extensions
     return { a.vec_ext / bb };
     #else
@@ -865,10 +865,10 @@ template <typename T> struct mat4
   scale (X x, Y y, Z z, W w)
   {
     mat4 m;
-    m.m00 = x; m.m10 = 0; m.m20 = 0; m.m30 = 0;
-    m.m01 = 0; m.m11 = y; m.m21 = 0; m.m31 = 0;
-    m.m02 = 0; m.m12 = 0; m.m22 = z; m.m32 = 0;
-    m.m03 = 0; m.m13 = 0; m.m23 = 0; m.m33 = w;
+    m.m00 = (T)x; m.m10 = 0; m.m20 = 0; m.m30 = 0;
+    m.m01 = 0; m.m11 = (T)y; m.m21 = 0; m.m31 = 0;
+    m.m02 = 0; m.m12 = 0; m.m22 = (T)z; m.m32 = 0;
+    m.m03 = 0; m.m13 = 0; m.m23 = 0; m.m33 = (T)w;
     return m;
   }
 
@@ -893,7 +893,7 @@ template <typename T> struct mat4
     m.m00 = 1; m.m10 = 0; m.m20 = 0; m.m30 = 0;
     m.m01 = 0; m.m11 = 1; m.m21 = 0; m.m31 = 0;
     m.m02 = 0; m.m12 = 0; m.m22 = 1; m.m32 = 0;
-    m.m03 = x; m.m13 = y; m.m23 = z; m.m33 = 1;
+    m.m03 = (T)x; m.m13 = (T)y; m.m23 = (T)z; m.m33 = 1;
     return m;
   }
 

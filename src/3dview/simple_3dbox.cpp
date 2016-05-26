@@ -87,7 +87,7 @@ struct simple_3dbox::mesh
     };
 
     solid_indices = gl::buffer (gl::buffer::index, idx);
-    solid_indices_count = idx.size ();
+    solid_indices_count = (unsigned int)idx.size ();
 
     idx =
     {
@@ -100,7 +100,7 @@ struct simple_3dbox::mesh
     };
 
     edge_indices = gl::buffer (gl::buffer::index, idx);
-    edge_indices_count = idx.size ();
+    edge_indices_count = (unsigned int)idx.size ();
   }
 };
 

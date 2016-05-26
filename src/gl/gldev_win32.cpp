@@ -129,7 +129,7 @@ struct gldev_win32 : gldev
 	int pixelformat = 0;
 	unsigned int numformats = 0;
 
-	bool valid = wglChoosePixelFormatARB (hdc, iattr, fattr, 1, &pixelformat, &numformats);
+	bool valid = wglChoosePixelFormatARB (hdc, iattr, fattr, 1, &pixelformat, &numformats) != 0;
 
 	if (!valid)
 	  std::cerr << "wglChoosePixelFormatAGB NG" << std::endl;

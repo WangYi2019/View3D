@@ -41,7 +41,7 @@ template<> struct from_string<float>
 {
   static float get (const std::string& s)
   {
-    return std::atof (s.c_str ());
+    return (float)std::atof (s.c_str ());
   }
 };
 } // namespace s_expr_impl_detail
