@@ -4,10 +4,21 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
+#if defined (WIN32) && !defined (_MSC_VER)
+
 #include "mingw.thread.h"
 #include <mutex>
 #include "mingw.mutex.h"
 #include "mingw.condition_variable.h"
+
+#else
+
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+#endif
+
 #include <atomic>
 
 #include <chrono>
@@ -169,7 +180,7 @@ void ack_thread_message (MSG& msg)
     *done = true;
 }
 
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_init (void)
 {
   g_thread = std::thread (thread_func);
@@ -178,7 +189,7 @@ view3d_init (void)
     std::this_thread::sleep_for (std::chrono::milliseconds (10));
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_finish (void)
 {
   if (g_thread.joinable ())
@@ -188,7 +199,7 @@ view3d_finish (void)
   }
 }
 
-void* JUTZE3D_API
+JUTZE3D_API void* 
 view3d_new_window (unsigned int desktop_pos_x, unsigned int desktop_pos_y,
 		   unsigned int width, unsigned int height, const char* title)
 {
@@ -216,19 +227,19 @@ view3d_new_window (unsigned int desktop_pos_x, unsigned int desktop_pos_y,
 }
 
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_enable_render (void)
 {
   post_thread_message_wait (WM_USER_3DVIEW_ENABLE_RENDERING);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_disable_render (void)
 {
   post_thread_message_wait (WM_USER_3DVIEW_DISABLE_RENDERING);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_set_z_scale (float val)
 {
   set_z_scale_args args = { val };
@@ -236,14 +247,14 @@ view3d_set_z_scale (float val)
 }
 
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_resize_image (unsigned int width_pixels, unsigned int height_pixels)
 {
   resize_image_args args = { width_pixels, height_pixels };
   post_thread_message_wait (WM_USER_3DVIEW_RESIZE_IMAGE, &args);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_center_image (unsigned int x, unsigned int y,
 		     double x_rotate, double y_rotate)
 {
@@ -251,14 +262,14 @@ view3d_center_image (unsigned int x, unsigned int y,
   post_thread_message_wait (WM_USER_3DVIEW_CENTER_IMAGE, &args);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_fill_image (float r, float g, float b, float z)
 {
   fill_image_args args = { r, g, b, z };
   post_thread_message_wait (WM_USER_3DVIEW_FILL_IMAGE, &args);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_fill_image_area (unsigned int x, unsigned int y,
 		 unsigned int width, unsigned int height,
 		 float r, float g, float b, float z)
@@ -267,7 +278,7 @@ view3d_fill_image_area (unsigned int x, unsigned int y,
   post_thread_message_wait (WM_USER_3DVIEW_FILL_IMAGE_AREA, &args);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void 
 view3d_update_image_area_1 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const char* rgb_bmp_file,
@@ -282,7 +293,7 @@ view3d_update_image_area_1 (unsigned int x, unsigned int y,
 }
 
 
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
@@ -305,7 +316,7 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
   post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
 }
 
-unsigned int JUTZE3D_API
+JUTZE3D_API unsigned int
 view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y, unsigned int board_pos_z,
 		unsigned int box_size_x, unsigned int box_size_y, unsigned int box_size_z,
 		float fill_r, float fill_g, float fill_b, float fill_a,
@@ -322,14 +333,14 @@ view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y, unsigned int
   return args.new_box_obj_id;
 }
 
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_remove_box (unsigned int obj_id)
 {
   remove_box_args args = { obj_id };
   post_thread_message_wait (WM_USER_3DVIEW_REMOVE_BOX, &args);
 }
 
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_remove_all_boxes (void)
 {
   post_thread_message_wait (WM_USER_3DVIEW_REMOVE_ALL_BOXES);

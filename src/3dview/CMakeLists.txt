@@ -101,12 +101,19 @@ set_target_properties (jutze3d_dll PROPERTIES
 
 target_link_libraries (jutze3d_dll
   utils
-  pthread
   kernel32
   gdi32
   gl
   opengl32
 )
+
+if (MSVC)
+else ()
+target_link_libraries (jutze3d_dll
+  pthread
+)
+endif ()
+
 
 else ()
 

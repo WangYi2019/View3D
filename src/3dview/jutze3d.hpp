@@ -2,9 +2,17 @@
 #define includeguard_jutze3d_hpp_includeguard
 
 #ifdef JUTZE3D_EXPORTS
-  #define JUTZE3D_API __stdcall __declspec(dllexport)
+  #ifdef _MSC_VER
+    #define JUTZE3D_API __declspec(dllexport)
+  #else
+    #define JUTZE3D_API __stdcall __declspec(dllexport)
+  #endif
 #else
-  #define JUTZE3D_API __stdcall __declspec(dllimport)
+  #ifdef _MSC_VER
+    #define JUTZE3D_API __declspec(dllimport)
+  #else
+    #define JUTZE3D_API __stdcall __declspec(dllimport)
+  #endif
 #endif
 
 #ifdef __cplusplus
@@ -13,8 +21,8 @@ extern "C" {
 
 // --------------------------------------------------------------------------
 
-void JUTZE3D_API view3d_init (void);
-void JUTZE3D_API view3d_finish (void);
+JUTZE3D_API void view3d_init (void);
+JUTZE3D_API void view3d_finish (void);
 
 // --------------------------------------------------------------------------
 // create a new 3D view window
@@ -34,29 +42,29 @@ void JUTZE3D_API view3d_finish (void);
 // this function returns a HWND but we don't include windows.h in this file,
 // so use void* instead.
 //HWND JUTZE3D_API
-void* JUTZE3D_API
+JUTZE3D_API void*
 view3d_new_window (unsigned int desktop_pos_x, unsigned int desktop_pos_y,
 		   unsigned int width, unsigned int height, const char* title);
 
 // center the current image at the specified image coordinate.
 // x rotate and y rotate are angles in degree.
 // to get top-down 2D view set x rotate = y rotate = 0.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_center_image (unsigned int x, unsigned int y,
 		     double x_rotate, double y_rotate);
 
 // enable rendering of the view.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_enable_render (void);
 
 // disable rendering of the view.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_disable_render (void);
 
 // set the z value scale coefficient for the z image.  the values from the
 // z image are multiplied with this coefficient before display.  the default
 // value is 1.0.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_set_z_scale (float val);
 
 // --------------------------------------------------------------------------
@@ -64,16 +72,16 @@ view3d_set_z_scale (float val);
 // resize the current image.  initially the image is empty (width = height = 0).
 // when the image size is changed, the image is cleared and old image data
 // is discarded.  the pixel values (rgb and z) are initialized to 0.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_resize_image (unsigned int width_pixels, unsigned int height_pixels);
 
 // fill the whole image with the specified constant value.
 // the value range of the fill values is clamped to [0..1].
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_fill_image (float r, float g, float b, float z);
 
 // fill the specified image region with the specified constant value.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_fill_image_area (unsigned int x, unsigned int y,
 			unsigned int width, unsigned int height,
 			float r, float g, float b, float z);
@@ -89,7 +97,7 @@ view3d_fill_image_area (unsigned int x, unsigned int y,
 // FOV image of the part is known.
 // to use the full image (no crop), set src_x = src_y = 0 and
 // src_width = src_height = std::numeric_limits<unsigned int>::max ()
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_update_image_area_1 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const char* rgb_bmp_file,
@@ -104,7 +112,7 @@ view3d_update_image_area_1 (unsigned int x, unsigned int y,
 //   2 - unsigned 8 bit per component, 32 bit per pixel, RGBA order
 //
 // the height input format is fixed at unsigned 8 bit.
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
@@ -116,7 +124,7 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 // coordinates.  board_pos_z is the bottom z coordinate of the box.
 // returns the ID for the box object.  the object ID can be used to remove the
 // object.
-unsigned int JUTZE3D_API
+JUTZE3D_API unsigned int
 view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y,
 		unsigned int board_pos_z,
 		unsigned int box_size_x, unsigned int box_size_y,
@@ -124,10 +132,10 @@ view3d_add_box (unsigned int board_pos_x, unsigned int board_pos_y,
 		float fill_r, float fill_g, float fill_b, float fill_a,
 		float edge_r, float edge_g, float edge_b, float edge_a);
 
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_remove_box (unsigned int obj_id);
 
-void JUTZE3D_API
+JUTZE3D_API void
 view3d_remove_all_boxes (void);
 
 #ifdef __cplusplus
