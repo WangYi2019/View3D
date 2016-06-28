@@ -28,8 +28,8 @@ public:
   float tilt_angle (void) const { return m_tilt_angle; }
   void set_tilt_angle (float val);
 
-  float rotate_angle (void) const { return m_rotate_angle; }
-  void set_rotate_angle (float val);
+  const mat4<double>& rotate_trv (void) const { return m_rotate_trv; }
+  void set_rotate_trv (const mat4<double>& val) { m_rotate_trv = val; }
 
   float zoom (void) const { return m_zoom; }
   void set_zoom (float val);
@@ -56,7 +56,7 @@ private:
   std::vector<simple_3dbox> m_boxes;
 
   unsigned int m_frame_number;
-  float m_rotate_angle;
+  mat4<double> m_rotate_trv;
 
   float m_tilt_angle;
   float m_zoom;
@@ -69,7 +69,7 @@ private:
 
   unsigned int m_next_boxid = 0;
 
-  mat4<double> calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
+  mat4<double> calc_cam_trv (float zoom, float tilt_angle,
 			     const vec2<double>& scroll) const;
 };
 

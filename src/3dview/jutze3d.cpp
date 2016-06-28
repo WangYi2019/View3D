@@ -54,7 +54,7 @@ static bool quit = false;
 
 static vec2<double> drag_start_img_pos;
 static float drag_start_tilt_angle;
-static float drag_start_rot_angle;
+static mat4<double> drag_start_rot_trv;
 
 
 enum
@@ -497,7 +497,7 @@ void thread_func (void)
 	  auto&& args = *(center_image_args*)msg.lParam;
 	  g_scene->center_image ({ args.x, args.y });
 	  g_scene->set_tilt_angle ((float)args.x_rotate);
-	  g_scene->set_rotate_angle ((float)args.y_rotate);
+	  g_scene->set_rotate_trv (mat4<double>::rotate_z (args.y_rotate));
 	}
 	ack_thread_message (msg);
 	break;
@@ -652,7 +652,8 @@ static void window_input_event_clb (const input_event& e)
 	  if (e.button == input_event::button_right)
 	  {
 	    drag_start_tilt_angle = g_scene->tilt_angle ();
-	    drag_start_rot_angle = g_scene->rotate_angle ();
+	    drag_start_rot_trv = g_scene->rotate_trv ();
+	    drag_start_img_pos = g_scene->img_pos ();
 	  }
 	  break;
 
@@ -672,7 +673,15 @@ static void window_input_event_clb (const input_event& e)
 	  if (e.button == input_event::button_right)
 	  {
 	    g_scene->set_tilt_angle (drag_start_tilt_angle - e.drag_abs.y * 0.1f);
-	    g_scene->set_rotate_angle (drag_start_rot_angle + e.drag_abs.x * 0.1f);
+
+	    // rotate around the currently visible image center.
+	    // the image center is captured when the user presses the mouse
+	    // button to begin the rotation...
+	    g_scene->set_rotate_trv (
+		  mat4<double>::translate (vec3<double> (-drag_start_img_pos, 0))
+		* mat4<double>::rotate_z (deg_to_rad (e.drag_abs.x * 0.1f))
+		* mat4<double>::translate (vec3<double> (drag_start_img_pos, 0))
+		* drag_start_rot_trv);
 	  }
 	  break;
 
