@@ -28,11 +28,13 @@ test_scene1::test_scene1 (void)
   m_zoom = 1;
   m_last_proj_trv = mat4<double>::identity ();
   m_last_screen_size = { 1, 1 };
+  m_bAutoRotate = false;
 }
 
 test_scene1::test_scene1 (const char* file_desc_file)
 : test_scene1 ()
 {
+  m_bAutoRotate = false; 
   s_expr file_desc;
   std::fstream (file_desc_file, std::ios::in | std::ios::binary) >> file_desc;
 
@@ -76,6 +78,7 @@ void test_scene1::reset_view (void)
   m_tilt_angle = 0;
   m_rotate_angle = 0;
   m_zoom = 1;
+  m_bAutoRotate = false; 
 }
 
 void test_scene1::resize_image (const vec2<unsigned int>& size)
@@ -90,14 +93,18 @@ void test_scene1::set_tilt_angle (float val)
   m_tilt_angle = std::min (80.0f, std::max (0.0f, val));
 }
 
-void test_scene1::set_rotate_angle (float val)
+void test_scene1::set_rotate_angle (float val) 
 {
-  m_rotate_angle = std::min (180.0f, std::max (-180.0f, val));
+  if (val >= 360)
+	  m_rotate_angle = (int)val%360;
+  else if (val < -360)
+	  m_rotate_angle = 360 + (int)val % 360;
+  else
+	  m_rotate_angle = val;
 }
 
 void test_scene1::set_zoom (float val)
 {
-//  m_zoom = std::min (10.0f, std::max (0.0001f, val));
   m_zoom = std::min (10.0f, std::max (-10.0f, val));
 }
 
@@ -207,6 +214,12 @@ test_scene1::set_z_scale (float val)
   m_z_scale = val;
 }
 
+void
+test_scene1::AutoRotate()
+{
+	m_bAutoRotate = !m_bAutoRotate;
+}
+
 void test_scene1::render (unsigned int width, unsigned int height,
 			 std::chrono::microseconds delta_time,
 			 bool en_wireframe, bool en_debug_dist)
@@ -239,11 +252,14 @@ void test_scene1::render (unsigned int width, unsigned int height,
   auto viewport_trv =
     mat4<double>::scale (width * 0.5, height * 0.5, 1, 1)
     * mat4<double>::translate (1, 1, 0);
-/*
-  m_rotate_angle += delta_time.count () * 0.0000001f;
-  if (m_rotate_angle > 2*M_PI)
-    m_rotate_angle -= 2*M_PI;
-*/
+	
+  if (m_bAutoRotate) 
+  {
+
+	  m_rotate_angle += delta_time.count() * 0.00001f;
+	  if (m_rotate_angle > 2 * M_PI)
+		  m_rotate_angle -= 2 * M_PI;
+  }
 
   auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, m_img_pos);
 
@@ -251,7 +267,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   if (m_image != nullptr)
   {
-    zscale = (float)((10000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05);
+    zscale = (float)((12000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05);
 
     m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale * m_z_scale,
 		     en_wireframe, en_debug_dist);

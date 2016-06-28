@@ -622,12 +622,17 @@ static void window_input_event_clb (const input_event& e)
       switch (e.type)
       {
 	case input_event::key_down:
-	  if (e.keycode == input_event::key_esc)
-	    quit = true;
+		if (e.keycode == input_event::key_esc)
+		{
+			//quit = true; 
+			ShowWindow(HWND(g_window->handle()),SW_HIDE);
+		}
 	  else if (e.keycode == input_event::key_f1)
-	    en_wireframe = !en_wireframe;
+		g_scene->AutoRotate();
 	  else if (e.keycode == input_event::key_f2)
 	    en_debug_dist = !en_debug_dist;
+	  else if (e.keycode == input_event::key_f3)
+		en_wireframe = !en_wireframe;
 	  else if (e.keycode == input_event::key_space)
 	    g_scene->reset_view ();
 	  break;
@@ -677,7 +682,7 @@ static void window_input_event_clb (const input_event& e)
 	  break;
 
 	case input_event::mouse_wheel:
-	  g_scene->set_zoom (g_scene->zoom () + e.wheel_delta * 0.0125f);
+	  g_scene->set_zoom (g_scene->zoom () + e.wheel_delta * 0.025f);
 	  break;
       }
 }

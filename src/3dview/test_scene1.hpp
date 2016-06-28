@@ -51,12 +51,14 @@ public:
 
   void set_z_scale (float val);
 
+  void AutoRotate(); 
 private:
   std::unique_ptr<tiled_image> m_image;
   std::vector<simple_3dbox> m_boxes;
 
   unsigned int m_frame_number;
   float m_rotate_angle;
+  bool m_bAutoRotate; 
 
   float m_tilt_angle;
   float m_zoom;
