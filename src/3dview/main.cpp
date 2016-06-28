@@ -16,6 +16,8 @@
 
 #include "bmp_loader.hpp"
 
+#include "utils/utils.hpp"
+
 int main (int argc, const char* argv[])
 {
   if (argc < 8)
@@ -110,7 +112,7 @@ int main (int argc, const char* argv[])
 
   vec2<double> drag_start_img_pos;
   float drag_start_tilt_angle;
-  float drag_start_rot_angle;
+  mat4<double> drag_start_rot_trv;
 
   bool quit = false;
 
@@ -150,7 +152,8 @@ int main (int argc, const char* argv[])
 	  if (e.button == input_event::button_right)
 	  {
 	    drag_start_tilt_angle = scene.tilt_angle ();
-	    drag_start_rot_angle = scene.rotate_angle ();
+	    drag_start_rot_trv = scene.rotate_trv ();
+	    drag_start_img_pos = scene.img_pos ();
 	  }
 	  break;
 
@@ -170,8 +173,15 @@ int main (int argc, const char* argv[])
 	  if (e.button == input_event::button_right)
 	  {
 	    scene.set_tilt_angle (drag_start_tilt_angle - e.drag_abs.y * 0.1f);
-	    scene.set_rotate_angle (drag_start_rot_angle + e.drag_abs.x * 0.1f);
-		scene.screen_to_img ();
+
+	    // rotate around the currently visible image center.
+	    // the image center is captured when the user presses the mouse
+	    // button to begin the rotation...
+	    scene.set_rotate_trv (
+		  mat4<double>::translate (vec3<double> (-drag_start_img_pos, 0))
+		* mat4<double>::rotate_z (deg_to_rad (e.drag_abs.x * 0.1f))
+		* mat4<double>::translate (vec3<double> (drag_start_img_pos, 0))
+		* drag_start_rot_trv);
 	  }
 	  break;
 

@@ -526,6 +526,9 @@ template <typename T> struct vec4
   template <typename XY, typename ZW> constexpr vec4 (const vec2<XY>& xy, const vec2<ZW>& zw)
   : x ((T)xy.x), y ((T)xy.y), z ((T)zw.x), w ((T)zw.y) { }
 
+  template <typename XY, typename Z, typename W> constexpr vec4 (const vec2<XY>& xy, Z zz, W ww)
+  : x ((T)xy.x), y ((T)xy.y), z ((T)zz), w ((T)ww) { }
+
   template <typename S> constexpr explicit vec4 (const vec4<S>& rhs)
   : x ((T)rhs.x), y ((T)rhs.y), z ((T)rhs.z), w ((T)rhs.w) { }
 

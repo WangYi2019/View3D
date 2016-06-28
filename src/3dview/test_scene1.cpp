@@ -10,21 +10,19 @@
 #include "simple_3dbox.hpp"
 
 #include "s_expr.hpp"
+#include "utils/utils.hpp"
 
 #ifndef M_PI
   #define M_PI 3.14159265358979323846
 #endif
 
-static inline float deg_to_rad (float val)
-{
-  return val * float (M_PI / 180);
-}
+
 
 test_scene1::test_scene1 (void)
 {
   m_img_pos = { 0 };
   m_tilt_angle = 0;
-  m_rotate_angle = 0;
+  m_rotate_trv = mat4<double>::identity ();
   m_zoom = 1;
   m_last_proj_trv = mat4<double>::identity ();
   m_last_screen_size = { 1, 1 };
@@ -76,7 +74,7 @@ void test_scene1::reset_view (void)
 {
   m_img_pos = { 0 };
   m_tilt_angle = 0;
-  m_rotate_angle = 0;
+  m_rotate_trv = mat4<double>::identity ();
   m_zoom = 1;
   m_bAutoRotate = false; 
 }
@@ -91,16 +89,6 @@ void test_scene1::resize_image (const vec2<unsigned int>& size)
 void test_scene1::set_tilt_angle (float val)
 {
   m_tilt_angle = std::min (80.0f, std::max (0.0f, val));
-}
-
-void test_scene1::set_rotate_angle (float val) 
-{
-  if (val >= 360)
-	  m_rotate_angle = (int)val%360;
-  else if (val < -360)
-	  m_rotate_angle = 360 + (int)val % 360;
-  else
-	  m_rotate_angle = val;
 }
 
 void test_scene1::set_zoom (float val)
@@ -126,7 +114,7 @@ vec2<double> test_scene1::screen_to_img (void) const
 
   double img_sz = std::max (m_image->size ().x, m_image->size ().y);
 
-  auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, { 0, 0 });
+  auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, { 0, 0 });
 
   auto trv = m_last_proj_trv * cam_trv;
 
@@ -148,7 +136,7 @@ vec2<double> test_scene1::screen_to_img (void) const
 }
 
 mat4<double>
-test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
+test_scene1::calc_cam_trv (float zoom, float tilt_angle,
 			   const vec2<double>& scroll) const
 {
   if (m_image == nullptr)
@@ -163,12 +151,13 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle, float rot_angle,
 //      * mat4<double>::translate (0, 0, -zoom - 0.001f)
       * mat4<double>::translate (0, 0, -zoom - M_PI/3 *2 + 1)
 
-      // rotate around (0,0) center
       * mat4<double>::rotate_x (deg_to_rad (-tilt_angle))
-      * mat4<double>::rotate_z (deg_to_rad (rot_angle))
 
       // apply scrolling in -1,+1 screen coordinates
       * mat4<double>::translate (vec3<double> (scroll, 0))
+
+      // rotate (normally around the z axis around some point)
+      * m_rotate_trv
 
       // scale to -1,+1 range (based on max (width, height))
       * mat4<double>::scale (img_unit_scale, img_unit_scale, 1)
@@ -255,13 +244,15 @@ void test_scene1::render (unsigned int width, unsigned int height,
 	
   if (m_bAutoRotate) 
   {
-
-	  m_rotate_angle += delta_time.count() * 0.00001f;
-	  if (m_rotate_angle > 2 * M_PI)
-		  m_rotate_angle -= 2 * M_PI;
+	  float r = deg_to_rad(delta_time.count() * 0.00001f);
+	  m_rotate_trv =
+		  mat4<double>::translate(vec3<double>(-m_img_pos, 0))
+		  * mat4<double>::rotate_z(r)
+		  * mat4<double>::translate(vec3<double>(m_img_pos, 0))
+		  * m_rotate_trv;
   }
 
-  auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_rotate_angle, m_img_pos);
+  auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_img_pos);
 
   float zscale = 1;
 
