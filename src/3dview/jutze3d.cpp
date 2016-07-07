@@ -626,6 +626,7 @@ static void window_input_event_clb (const input_event& e)
 		{
 			//quit = true; 
 			ShowWindow(HWND(g_window->handle()),SW_HIDE);
+			g_scene->resize_image({ 10, 10 });
 		}
 	  else if (e.keycode == input_event::key_f1)
 		g_scene->AutoRotate();
