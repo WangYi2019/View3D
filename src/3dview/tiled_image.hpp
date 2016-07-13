@@ -8,8 +8,8 @@
 
 #include "gl/gl.hpp"
 #include "utils/vec_mat.hpp"
+#include "utils/lru_cache.hpp"
 #include "image.hpp"
-#include "lru_cache.hpp"
 
 class tiled_image
 {
@@ -136,8 +136,8 @@ private:
   std::array<std::vector<tile>, max_lod_level> m_tiles;
 
   // texture tile cache
-  mutable lru_cache<texture_key, gl::texture, load_texture_tile> m_rgb_texture_cache;
-  mutable lru_cache<texture_key, gl::texture, load_texture_tile> m_height_texture_cache;
+  mutable utils::lru_cache<texture_key, gl::texture, load_texture_tile> m_rgb_texture_cache;
+  mutable utils::lru_cache<texture_key, gl::texture, load_texture_tile> m_height_texture_cache;
 
   // candidate tiles for display.  modified during rendering.
   mutable std::vector<const tile*> m_candidate_tiles;
@@ -157,7 +157,7 @@ private:
 		  const vec2<unsigned int>& top_level_size);
 
   static void
-  invalidate_texture_cache (lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
+  invalidate_texture_cache (utils::lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
 			    const std::array<update_region, max_lod_level>& regions);
 
   tile_visibility

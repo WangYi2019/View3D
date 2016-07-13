@@ -3,8 +3,10 @@
 
 #include <map>
 #include <list>
-#include <iostream>
 #include <cassert>
+
+namespace utils
+{
 
 template <typename Key, typename Value, typename CreateFunc> class lru_cache
 {
@@ -74,4 +76,5 @@ private:
   CreateFunc m_create_func;
 };
 
+} // namespace utils
 #endif // includeguard_lru_cache_hpp_includeguard

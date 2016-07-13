@@ -873,7 +873,7 @@ void tiled_image::update (uint32_t x, uint32_t y, uint32_t width, uint32_t heigh
 }
 
 void tiled_image
-::invalidate_texture_cache (lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
+::invalidate_texture_cache (utils::lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
 			    const std::array<update_region, max_lod_level>& regions)
 {
   for (unsigned int i = 0; i < max_lod_level; ++i)
