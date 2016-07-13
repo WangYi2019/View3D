@@ -10,7 +10,6 @@
 #include "simple_3dbox.hpp"
 
 #include "s_expr.hpp"
-#include "utils/utils.hpp"
 #include "utils/math.hpp"
 
 #ifndef M_PI

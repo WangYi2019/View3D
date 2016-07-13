@@ -5,7 +5,6 @@
 #include <iostream>
 #include <cassert>
 
-#include "utils/utils.hpp"
 #include "display.hpp"
 #include "pixel_format.hpp"
 

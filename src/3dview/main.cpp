@@ -16,7 +16,7 @@
 
 #include "bmp_loader.hpp"
 
-#include "utils/utils.hpp"
+#include "utils/langcomp.hpp"
 #include "utils/math.hpp"
 
 using utils::vec2;

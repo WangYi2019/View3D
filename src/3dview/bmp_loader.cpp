@@ -6,6 +6,8 @@
 #include <cstddef>
 #include "bmp_loader.hpp"
 
+#include "utils/byte_order.hpp"
+
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
 typedef int32_t LONG;
@@ -76,7 +78,7 @@ image load_bmp_image (const char* filename)
     BITMAPFILEHEADER bfh;
     in.read ((char*)&bfh, sizeof (bfh));
 
-    if (bfh.bfType != 0x4D42) // FIXME: endian
+    if (bfh.bfType != utils::native_to (utils::little_endian, 0x4D42))
     {
       std::cerr << "load_bmp_image unknown file type" << std::endl;
       return { };

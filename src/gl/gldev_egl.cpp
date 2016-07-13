@@ -12,7 +12,6 @@
 #include "gldev.hpp"
 #include "display.hpp"
 #include "pixel_format.hpp"
-#include "utils/utils.hpp"
 
 #ifdef USE_GLES2
 

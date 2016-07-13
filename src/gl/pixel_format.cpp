@@ -2,7 +2,6 @@
 #include <cstring>
 #include <cctype>
 
-#include "utils/utils.hpp"
 #include "pixel_format.hpp"
 #include "gl.hpp"
 

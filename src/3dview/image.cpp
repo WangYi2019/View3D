@@ -5,8 +5,8 @@
 #include "image.hpp"
 
 #include "utils/vec_mat.hpp"
-#include "utils/utils.hpp"
-
+#include "utils/bits.hpp"
+#include "utils/byte_order.hpp"
 #include "utils/pp_for_each.hpp"
 
 using utils::vec2;
@@ -155,27 +155,25 @@ typename format_traits<F>::unpacked_type unpack_pixel (typename format_traits<F>
 template <pixel_format::fmt_t F>
 typename format_traits<F>::storage_type pack_pixel (typename format_traits<F>::unpacked_type);
 
+
 template<> constexpr vec4<uint8_t>
 unpack_pixel<pixel_format::rgba_8888> (uint32_t p)
 {
-  #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    return { (p >> 0) & 0xFF, (p >> 8) & 0xFF, (p >> 16) & 0xFF, (p >> 24) & 0xFF };
-  #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    return { (p >> 24) & 0xFF, (p >> 16) & 0xFF, (p >> 8) & 0xFF, (p >> 0) & 0xFF };
-  #else
-    #error unsupported endian
-  #endif
+  return utils::native_byte_order () == utils::little_endian
+	 ? vec4<uint8_t> ((p >> 0) & 0xFF, (p >> 8) & 0xFF, (p >> 16) & 0xFF, (p >> 24) & 0xFF)
+	 : utils::native_byte_order () == utils::big_endian
+	 ? vec4<uint8_t> ((p >> 24) & 0xFF, (p >> 16) & 0xFF, (p >> 8) & 0xFF, (p >> 0) & 0xFF)
+	 : vec4<uint8_t> ();
 }
+
 template<> constexpr uint32_t
 pack_pixel<pixel_format::rgba_8888> (vec4<uint8_t> p)
 {
-  #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    return (p.a << 24) | (p.b << 16) | (p.g << 8) | p.r;
-  #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    return (p.r << 24) | (p.g << 16) | (p.b << 8) | p.a;
-  #else
-    #error unsupported endian
-  #endif
+  return utils::native_byte_order () == utils::little_endian
+    	 ? ((p.a << 24) | (p.b << 16) | (p.g << 8) | p.r)
+	 : utils::native_byte_order () == utils::big_endian
+	 ? ((p.r << 24) | (p.g << 16) | (p.b << 8) | p.a)
+	 : 0;
 }
 
 

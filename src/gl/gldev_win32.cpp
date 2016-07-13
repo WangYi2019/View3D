@@ -31,7 +31,6 @@
 #include "gldev.hpp"
 #include "display.hpp"
 #include "pixel_format.hpp"
-#include "utils/utils.hpp"
 
 struct gldev_win32 : gldev
 {

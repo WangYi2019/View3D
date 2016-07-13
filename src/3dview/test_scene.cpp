@@ -3,6 +3,8 @@
 #include <vector>
 #include <iostream>
 
+#include "utils/bits.hpp"
+
 #include "test_scene.hpp"
 #include "bmp_loader.hpp"
 
@@ -14,6 +16,7 @@ using utils::vec2;
 using utils::vec4;
 using utils::mat4;
 
+using utils::ceil_pow2;
 
 struct test_scene::vertex
 {
