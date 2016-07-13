@@ -11,6 +11,7 @@
 
 #include "s_expr.hpp"
 #include "utils/utils.hpp"
+#include "utils/math.hpp"
 
 #ifndef M_PI
   #define M_PI 3.14159265358979323846
@@ -151,7 +152,7 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle,
 //      * mat4<double>::translate (0, 0, -zoom - 0.001f)
       * mat4<double>::translate (0, 0, -zoom - M_PI/3 *2 + 1)
 
-      * mat4<double>::rotate_x (deg_to_rad (-tilt_angle))
+      * mat4<double>::rotate_x (utils::deg_to_rad (-tilt_angle))
 
       // apply scrolling in -1,+1 screen coordinates
       * mat4<double>::translate (vec3<double> (scroll, 0))
@@ -235,7 +236,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
 		       : vec2<float> ((float)height / (float)width, -1);
 
   m_last_proj_trv =
-    mat4<double>::proj_perspective (deg_to_rad (60.0f), aspect.x, aspect.y,
+    mat4<double>::proj_perspective (utils::deg_to_rad (60.0f), aspect.x, aspect.y,
 				    0.0001f, 1000.0f);
 
   auto viewport_trv =
@@ -244,7 +245,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
 	
   if (m_bAutoRotate) 
   {
-	  float r = deg_to_rad(delta_time.count() * 0.00001f);
+	  float r = utils::deg_to_rad(delta_time.count() * 0.00001f);
 	  m_rotate_trv =
 		  mat4<double>::translate(vec3<double>(-m_img_pos, 0))
 		  * mat4<double>::rotate_z(r)

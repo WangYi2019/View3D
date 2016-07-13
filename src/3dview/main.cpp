@@ -17,6 +17,7 @@
 #include "bmp_loader.hpp"
 
 #include "utils/utils.hpp"
+#include "utils/math.hpp"
 
 int main (int argc, const char* argv[])
 {
@@ -179,7 +180,7 @@ int main (int argc, const char* argv[])
 	    // button to begin the rotation...
 	    scene.set_rotate_trv (
 		  mat4<double>::translate (vec3<double> (-drag_start_img_pos, 0))
-		* mat4<double>::rotate_z (deg_to_rad (e.drag_abs.x * 0.1f))
+		* mat4<double>::rotate_z (utils::deg_to_rad (e.drag_abs.x * 0.1f))
 		* mat4<double>::translate (vec3<double> (drag_start_img_pos, 0))
 		* drag_start_rot_trv);
 	  }
