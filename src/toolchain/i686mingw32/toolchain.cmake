@@ -1,6 +1,8 @@
 # ----------------------------------------------------------------------------
 # http://www.vtk.org/Wiki/images/c/c2/Toolchain-cross-mingw32-linux.cmake
 
+include(ProcessorCount)
+
 # the name of the target operating system
 SET(CMAKE_SYSTEM_NAME Windows)
 
@@ -13,7 +15,6 @@ SET(CMAKE_SYSTEM_NAME Windows)
 # for 32 or 64 bits mingw-w64
 # see http://mingw-w64.sourceforge.net/
 set(COMPILER_PREFIX "i686-w64-mingw32")
-#set(COMPILER_PREFIX "x86_64-w64-mingw32"
 
 # which compilers to use for C and C++
 find_program(CMAKE_RC_COMPILER NAMES ${COMPILER_PREFIX}-windres)
@@ -52,9 +53,21 @@ macro (mark_as_internal _var)
   set ( ${_var} ${${_var}} CACHE INTERNAL "" FORCE )
 endmacro ()
 
-get_filename_component (TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY CACHE)
-mark_as_internal (TOOLCHAIN_DIR)
+get_filename_component (TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY)
+get_filename_component (TOOLCHAIN_DIR ${TOOLCHAIN_DIR} ABSOLUTE CACHE)
+#mark_as_internal (TOOLCHAIN_DIR)
 
+if (NOT CMAKE_LIBRARIES_DIR OR CMAKE_LIBRARIES_DIR STREQUAL "")
+else ()
+  get_filename_component (LIBRARIES_DIR ${CMAKE_LIBRARIES_DIR} ABSOLUTE CACHE)
+#  mark_as_internal (BOARD_DIR)
+endif ()
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/defaults.cmake)
+  include (${CMAKE_CURRENT_SOURCE_DIR}/defaults.cmake)
+else ()
+  message ("does not exist " ${CMAKE_CURRENT_SOURCE_DIR}/defaults.cmake)
+endif ()
 
 # if LTO is used, we can't use "add_compile_options" because these will
 # not be added to the final linker options, which is needed for the whole
@@ -62,6 +75,8 @@ mark_as_internal (TOOLCHAIN_DIR)
 # https://cmake.org/pipermail/cmake-developers/2014-June/010623.html
 
 option (TARGET_LTO "Link time optimization (LTO)" ON)
+option (TARGET_FWEB "-fweb" OFF)
+option (TARGET_FPEEL_LOOPS "-fpeel-loops" OFF)
 option (TARGET_GC_SECTIONS "Linker GC sections" ON)
 option (TARGET_DATA_SECTIONS "Separate data sections" ON)
 option (TARGET_FUNCTION_SECTIONS "Separate function sections" OFF)
@@ -75,6 +90,15 @@ option (TARGET_ENABLE_ALL_WARNINGS "Enable all warnings" ON)
 option (TARGET_FULL_STATIC "Full static linking" ON)
 set (TARGET_OPTIMIZE "-O2" CACHE STRING "Optimization flags")
 option (TARGET_STRIP_SYMBOLS "Strip symbols" OFF)
+option (TARGET_DEBUG_INFO "Incude Debug Info" OFF)
+
+set (BUILD_PROCESSOR_COUNT "" CACHE STRING "Build Processor Count")
+
+if (NOT BUILD_PROCESSOR_COUNT OR BUILD_PROCESSOR_COUNT STREQUAL "")
+  ProcessorCount (BUILD_PROCESSOR_COUNT)
+  set (BUILD_PROCESSOR_COUNT "${BUILD_PROCESSOR_COUNT}" CACHE STRING "Build Processor Count" FORCE)
+  message ("build processor count set to ${BUILD_PROCESSOR_COUNT}")
+endif ()
 
 # if LTO is used it's better to disable function-sections as it
 # results in smaller code.
@@ -84,7 +108,15 @@ if (TARGET_ENABLE_ALL_WARNINGS)
 endif ()
 
 if (TARGET_LTO)
-  set (OPT_LTO "-flto -flto-compression-level=0")
+  set (OPT_LTO "-flto=${BUILD_PROCESSOR_COUNT} -flto-compression-level=0")
+endif ()
+
+if (TARGET_FWEB)
+  set (OPT_FWEB "-fweb")
+endif ()
+
+if (TARGET_FPEEL_LOOPS)
+  set (OPT_FPEEL_LOOPS "-fpeel-loops")
 endif ()
 
 if (TARGET_GC_SECTIONS)
@@ -143,6 +175,10 @@ if (TARGET_STRIP_SYMBOLS)
   set (TARGET_OPTIONS "${TARGET_OPTIONS} -s")
 endif ()
 
+if (TARGET_DEBUG_INFO)
+  set (TARGET_OPTIONS "${TARGET_OPTIONS} -g")
+endif ()
+
 set (CMAKE_C_FLAGS "\
 ${TARGET_OPTIMIZE} \
 ${OPT_C_EXCEPTIONS} \
@@ -153,6 +189,8 @@ ${OPT_FUNCTION_SECTIONS} \
 ${OPT_DATA_SECTIONS} \
 ${OPT_SAVE_TEMPS} \
 ${OPT_LTO} \
+${OPT_FWEB} \
+${OPT_FPEEL_LOOPS} \
 ${OPT_DISABLE_GLOBAL_DTORS} \
 " CACHE STRING "target_c_flags" FORCE)
 
@@ -167,6 +205,8 @@ ${OPT_FUNCTION_SECTIONS} \
 ${OPT_DATA_SECTIONS} \
 ${OPT_SAVE_TEMPS} \
 ${OPT_LTO} \
+${OPT_FWEB} \
+${OPT_FPEEL_LOOPS} \
 ${OPT_DISABLE_GLOBAL_DTORS} \
 " CACHE STRING "target_cxx_flags" FORCE)
 
@@ -179,5 +219,63 @@ CACHE STRING "target_ld_flags" FORCE)
 
 set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_CXX_FLAGS}"
 CACHE STRING "target_ld_flags_shared" FORCE)
+
+
+# ----------------------------------------------------------------------------
+macro (import_library _name)
+
+if ((${_name} STREQUAL "board") AND (BOARD_DIR))
+
+  add_subdirectory (${BOARD_DIR} "${CMAKE_CURRENT_BINARY_DIR}/board")
+
+else ()
+
+  if (LIBRARIES_DIR)
+
+    add_subdirectory (${LIBRARIES_DIR}/${_name} "${CMAKE_CURRENT_BINARY_DIR}/${_name}")
+
+    if (EXISTS ${LIBRARIES_DIR}/${_name}/${_name}.cmake)
+      include (${LIBRARIES_DIR}/${_name}/${_name}.cmake)
+    endif ()
+
+    include_directories (${LIBRARIES_DIR}/${_name}/../)
+
+  else ()
+
+    message (FATAL_ERROR "LIBRARIES_DIR not set, can't use import_library")
+
+  endif ()
+
+endif ()
+
+endmacro ()
+
+# ----------------------------------------------------------------------------
+# unfortunately this doesn't work for the top-level project.
+# for some reason the overriding macro doesn't get invoked.
+# thus we need to do the "include_directories" for the top-level project
+# explicitly.
+
+macro (project name)
+
+  if (INSIDE_PROJECT_MACRO_OVERRIDE)
+
+  else ()
+    set (INSIDE_PROJECT_MACRO_OVERRIDE TRUE)
+
+#message ("PROJECT ${name}")
+    _project (${name} ${ARGN})
+
+    if (LIBRARIES_DIR)
+#essage ("ADDING INC DIR ${LIBRARIES_DIR}")
+      include_directories (${LIBRARIES_DIR})
+    endif ()
+
+    unset (INSIDE_PROJECT_MACRO_OVERRIDE)
+  endif ()
+
+endmacro ()
+
+# ----------------------------------------------------------------------------
 
 endif ()
