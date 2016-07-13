@@ -8,9 +8,15 @@
 
 #ifndef MINGW_CONDITIONAL_VARIABLE_H
 #define MINGW_CONDITIONAL_VARIABLE_H
+
+#define WIN32_LEAN_AND_MEAN 1
+#include <windows.h>
+
+#include "/usr/lib/gcc/x86_64-w64-mingw32/4.9-win32/include/c++/mutex"
+#include "/usr/lib/gcc/x86_64-w64-mingw32/4.9-win32/include/c++/condition_variable"
+
 #include <atomic>
 #include <assert.h>
-#include <condition_variable>
 #include <chrono>
 #include <system_error>
 

@@ -9,6 +9,7 @@
 #ifndef WIN32STDTHREAD_H
 #define WIN32STDTHREAD_H
 
+#define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 #include <functional>
 #include <memory>

@@ -4,23 +4,10 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
-#if defined (WIN32) && !defined (_MSC_VER)
-
-#include "mingw.thread.h"
-#include <mutex>
-#include "mingw.mutex.h"
-#include "mingw.condition_variable.h"
-
-#else
-
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-
-#endif
-
 #include <atomic>
-
 #include <chrono>
 #include <limits>
 #include <iostream>

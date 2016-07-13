@@ -9,12 +9,17 @@
 #ifndef WIN32STDMUTEX_H
 #define WIN32STDMUTEX_H
 
+#define WIN32_LEAN_AND_MEAN 1
+#include <windows.h>
+
 #if !defined(STDTHREAD_STRICT_NONRECURSIVE_LOCKS) && !defined(NDEBUG)
     #define STDTHREAD_STRICT_NONRECURSIVE_LOCKS
 #endif
 
 #include <chrono>
 #include <system_error>
+#include "/usr/lib/gcc/i686-w64-mingw32/4.9-win32/include/c++/mutex"
+
 
 namespace std
 {

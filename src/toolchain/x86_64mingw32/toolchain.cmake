@@ -179,6 +179,15 @@ if (TARGET_DEBUG_INFO)
   set (TARGET_OPTIONS "${TARGET_OPTIONS} -g")
 endif ()
 
+# override include paths have to be specified at the very beginning
+# use cmake's facility for that or else the files in those directories will
+# not be dependency tracked.
+include_directories (BEFORE ${TOOLCHAIN_DIR}/include)
+
+if (BOARD_DIR)
+  include_directories (BEFORE ${BOARD_DIR}/include)
+endif ()
+
 set (CMAKE_C_FLAGS "\
 ${TARGET_OPTIMIZE} \
 ${OPT_C_EXCEPTIONS} \

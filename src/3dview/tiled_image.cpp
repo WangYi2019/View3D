@@ -29,31 +29,14 @@ use max texture size: 4096 x 4096
 
 */
 
-#if defined (WIN32) && !defined (_MSC_VER)
-
-#define WIN32_LEAN_AND_MEAN 1
-#include <windows.h>
-
-#include "mingw.thread.h"
-#include <mutex>
-#include "mingw.mutex.h"
-#include "mingw.condition_variable.h"
-#include <atomic>
-
-#else
-
 #include <thread>
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
-
-#endif
-
 #include <chrono>
 #include <limits>
 #include <iostream>
 #include <algorithm>
-
 
 #include "tiled_image.hpp"
 #include "bmp_loader.hpp"
