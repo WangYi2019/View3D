@@ -19,6 +19,10 @@
 #include "utils/utils.hpp"
 #include "utils/math.hpp"
 
+using utils::vec2;
+using utils::vec3;
+using utils::mat4;
+
 int main (int argc, const char* argv[])
 {
   if (argc < 8)

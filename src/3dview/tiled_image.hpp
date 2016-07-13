@@ -52,7 +52,7 @@ public:
   static_assert (texture_tile_size <= 4096, "");
 
   tiled_image (void);
-  tiled_image (const vec2<uint32_t>& size);
+  tiled_image (const utils::vec2<uint32_t>& size);
 
   tiled_image (const tiled_image&) = delete;
   tiled_image (tiled_image&&);
@@ -62,7 +62,7 @@ public:
 
   ~tiled_image (void);
 
-  const vec2<uint32_t>& size (void) const { return m_size; }
+  const utils::vec2<uint32_t>& size (void) const { return m_size; }
   bool empty (void) const { return m_size.x == 0 || m_size.y == 0; }
 
   void fill (int32_t x, int32_t y, uint32_t width, uint32_t height,
@@ -89,8 +89,8 @@ public:
 	       const void* height_data, uint32_t height_data_stride_bytes,
 	       pixel_format height_format);
 
-  void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-	       const mat4<double>& viewport_trv, float zscale,
+  void render (const utils::mat4<double>& cam_trv, const utils::mat4<double>& proj_trv,
+	       const utils::mat4<double>& viewport_trv, float zscale,
 	       bool render_wireframe,
 	       bool debug_dist) const;
 
@@ -122,7 +122,7 @@ private:
   static std::shared_ptr<shader> g_shader;
 
   // size of the whole image.
-  vec2<uint32_t> m_size;
+  utils::vec2<uint32_t> m_size;
 
   // for simplicity, keep the whole image mipmaps in memory.
   // one FOV image is 2048x2048 @ 32 bpp = 16 MByte, 20 FOVs = 320 MByte.
@@ -147,14 +147,14 @@ private:
 
   struct update_region
   {
-    vec2<unsigned int> tl;
-    vec2<unsigned int> br;
+    utils::vec2<unsigned int> tl;
+    utils::vec2<unsigned int> br;
   };
 
   static std::array<update_region, max_lod_level>
   update_mipmaps (std::array<image, max_lod_level>& img,
-		  const vec2<unsigned int>& top_level_xy,
-		  const vec2<unsigned int>& top_level_size);
+		  const utils::vec2<unsigned int>& top_level_xy,
+		  const utils::vec2<unsigned int>& top_level_size);
 
   static void
   invalidate_texture_cache (utils::lru_cache<texture_key, gl::texture, load_texture_tile>& cache,
@@ -162,8 +162,8 @@ private:
 
   tile_visibility
   calc_tile_visibility (const tile& t,
-			const mat4<double>& proj_cam_trv,
-			const mat4<double>& viewport_trv,
+			const utils::mat4<double>& proj_cam_trv,
+			const utils::mat4<double>& viewport_trv,
 			float zscale) const;
 };
 

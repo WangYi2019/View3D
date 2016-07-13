@@ -11,8 +11,8 @@ public:
   simple_3dbox (void) = delete;
 
   simple_3dbox (unsigned int id,
-		const vec3<double>& pos, const vec3<double>& size,
-		const vec4<float>& fill_color, const vec4<float>& edge_color);
+		const utils::vec3<double>& pos, const utils::vec3<double>& size,
+		const utils::vec4<float>& fill_color, const utils::vec4<float>& edge_color);
 
   simple_3dbox (const simple_3dbox& rhs);
   simple_3dbox (simple_3dbox&& rhs);
@@ -23,10 +23,10 @@ public:
   unsigned int id (void) const { return m_id; }
 
 
-  void render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-	       const mat4<double>& viewport_trv, float zscale) const;
+  void render (const utils::mat4<double>& cam_trv, const utils::mat4<double>& proj_trv,
+	       const utils::mat4<double>& viewport_trv, float zscale) const;
 
-  mat4<double> trv (float zscale) const;
+  utils::mat4<double> trv (float zscale) const;
 
 private:
   struct vertex;
@@ -38,11 +38,11 @@ private:
 
   unsigned int m_id;
 
-  vec3<double> m_pos;
-  vec3<double> m_size;
+  utils::vec3<double> m_pos;
+  utils::vec3<double> m_size;
 
-  vec4<float> m_fill_color;
-  vec4<float> m_edge_color;
+  utils::vec4<float> m_fill_color;
+  utils::vec4<float> m_edge_color;
 
   std::shared_ptr<shader> m_shader;
   std::shared_ptr<mesh> m_mesh;

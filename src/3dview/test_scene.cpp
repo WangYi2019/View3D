@@ -10,6 +10,11 @@
   #define M_PI 3.14159265358979323846
 #endif
 
+using utils::vec2;
+using utils::vec4;
+using utils::mat4;
+
+
 struct test_scene::vertex
 {
   vec2<float> pos;

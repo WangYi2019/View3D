@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <type_traits>
 
+namespace utils
+{
+
 #ifdef __GNUC__
   #define vec_mat_use_vector_extensions (1)
 #else
@@ -229,19 +232,26 @@ template <typename T> vec2<T> inline constexpr orthogonal (const vec2<T>& a)
   return vec2<T> (a.y, -a.x);
 }
 
+} // namespace utils
+
 namespace std
 {
-template <typename T> vec2<T> inline constexpr min (const vec2<T>& a, const vec2<T>& b)
+template <typename T> utils::vec2<T> inline constexpr
+min (const utils::vec2<T>& a, const utils::vec2<T>& b)
 {
-  return vec2<T> (std::min (a.x, b.x), std::min (a.y, b.y));
+  return { std::min (a.x, b.x), std::min (a.y, b.y) };
 }
 
-template <typename T> vec2<T> inline constexpr max (const vec2<T>& a, const vec2<T>& b)
+template <typename T> utils::vec2<T> inline constexpr
+max (const utils::vec2<T>& a, const utils::vec2<T>& b)
 {
-  return vec2<T> (std::max (a.x, b.x), std::max (a.y, b.y));
+  return { std::max (a.x, b.x), std::max (a.y, b.y) };
 }
 
 } // namespace std
+
+namespace utils
+{
 
 // --------------------------------------------------------------------------
 
@@ -457,19 +467,26 @@ template <typename T> constexpr vec3<T> inline normalize (const vec3<T>& a)
   return a * (T (1) / length (a));
 }
 
+} // namespace utils
+
 namespace std
 {
-template <typename T> constexpr inline vec3<T> min (const vec3<T>& a, const vec3<T>& b)
+template <typename T> constexpr inline utils::vec3<T>
+min (const utils::vec3<T>& a, const utils::vec3<T>& b)
 {
-  return vec3<T> (std::min (a.x, b.x), std::min (a.y, b.y), std::min (a.z, b.z));
+  return { std::min (a.x, b.x), std::min (a.y, b.y), std::min (a.z, b.z) };
 }
 
-template <typename T> constexpr inline vec3<T> max (const vec3<T>& a, const vec3<T>& b)
+template <typename T> constexpr inline utils::vec3<T>
+max (const utils::vec3<T>& a, const utils::vec3<T>& b)
 {
-  return vec3<T> (std::max (a.x, b.x), std::max (a.y, b.y), std::max (a.z, b.z));
+  return { std::max (a.x, b.x), std::max (a.y, b.y), std::max (a.z, b.z) };
 }
 
 } // namespace std
+
+namespace utils
+{
 
 // --------------------------------------------------------------------------
 
@@ -785,21 +802,28 @@ template <typename T> constexpr inline vec4<T> homogenize (const vec4<T>& a)
   return a * (T (1) / a.w);
 }
 
+} // namespace utils
+
 namespace std
 {
-template <typename T> constexpr inline vec4<T> min (const vec4<T>& a, const vec4<T>& b)
+template <typename T> constexpr inline utils::vec4<T>
+min (const utils::vec4<T>& a, const utils::vec4<T>& b)
 {
-  return vec4<T> (std::min (a.x, b.x), std::min (a.y, b.y),
-                  std::min (a.z, b.z), std::min (a.w, b.w));
+  return { std::min (a.x, b.x), std::min (a.y, b.y),
+	   std::min (a.z, b.z), std::min (a.w, b.w) };
 }
 
-template <typename T> constexpr inline vec4<T> max (const vec4<T>& a, const vec4<T>& b)
+template <typename T> constexpr inline utils::vec4<T>
+max (const utils::vec4<T>& a, const utils::vec4<T>& b)
 {
-  return vec4<T> (std::max (a.x, b.x), std::max (a.y, b.y),
-                  std::max (a.z, b.z), std::max (a.w, b.w));
+  return { std::max (a.x, b.x), std::max (a.y, b.y),
+	   std::max (a.z, b.z), std::max (a.w, b.w) };
 }
 
 } // namespace std
+
+namespace utils
+{
 
 // --------------------------------------------------------------------------
 
@@ -1121,5 +1145,5 @@ inline bool operator != (const vec4<A>& a, const vec4<B>& b)
   return (a.x != b.x) | (a.y != b.y) | (a.z != b.z) | (a.w != b.w);
 }
 
-
+} // namespace utils
 #endif // includeguard_vec_mat_hpp_includeguard

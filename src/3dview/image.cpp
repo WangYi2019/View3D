@@ -9,6 +9,10 @@
 
 #include "utils/pp_for_each.hpp"
 
+using utils::vec2;
+using utils::vec3;
+using utils::vec4;
+
 // https://en.wikipedia.org/wiki/Grayscale
 // Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
 static constexpr vec3<float> rgb_to_luma_coeffs = { 0.2126f, 0.7152f, 0.0722f };

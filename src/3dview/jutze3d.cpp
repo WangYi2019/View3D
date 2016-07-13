@@ -31,10 +31,17 @@
 #include "gl/gl.hpp"
 #include "gl/pixel_format.hpp"
 
+#include "utils/math.hpp"
+
 #include "tiled_image.hpp"
 #include "test_scene1.hpp"
 
 #include "jutze3d.hpp"
+
+using utils::vec2;
+using utils::vec3;
+using utils::mat4;
+using utils::deg_to_rad;
 
 static std::unique_ptr<display> g_display;
 static std::unique_ptr<gldev> g_gldev;

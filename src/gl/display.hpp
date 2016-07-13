@@ -53,10 +53,10 @@ struct input_event
   };
 
   type_t type = unknown;
-  vec2<int> pos = { 0 };
-  vec2<int> drag_start_pos = { 0 };
-  vec2<int> drag_delta = { 0 };
-  vec2<int> drag_abs = { 0 };
+  utils::vec2<int> pos = { 0 };
+  utils::vec2<int> drag_start_pos = { 0 };
+  utils::vec2<int> drag_delta = { 0 };
+  utils::vec2<int> drag_abs = { 0 };
   int button = no_button;
   int keycode = no_key;
 
@@ -75,8 +75,8 @@ struct window
 
   virtual void set_input_event_clb (const std::function<void (const input_event&)>& clb) = 0;
 
-  virtual vec2<int> size (void) const = 0;
-  virtual vec2<int> client_size (void) const = 0;
+  virtual utils::vec2<int> size (void) const = 0;
+  virtual utils::vec2<int> client_size (void) const = 0;
 };
 
 struct display

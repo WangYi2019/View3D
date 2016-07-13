@@ -1,6 +1,10 @@
 
 #include "simple_3dbox.hpp"
 
+using utils::vec3;
+using utils::vec4;
+using utils::mat4;
+
 // ----------------------------------------------------------------------------
 
 struct simple_3dbox::vertex

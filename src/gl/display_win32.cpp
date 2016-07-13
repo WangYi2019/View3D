@@ -11,6 +11,8 @@
 
 static input_event::key_code_t remap_key (unsigned int k);
 
+using utils::vec2;
+
 struct display_win32 : display
 {
   pixel_format m_pf;

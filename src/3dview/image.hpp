@@ -14,7 +14,7 @@ public:
   {
   }
 
-  image (pixel_format pf, const vec2<unsigned int>& size);
+  image (pixel_format pf, const utils::vec2<unsigned int>& size);
 
   image (const image& rhs);
   image (image&& rhs);
@@ -38,7 +38,7 @@ public:
 	   || m_format == pixel_format::invalid;
   }
 
-  const vec2<unsigned int>& size (void) const { return m_size; }
+  const utils::vec2<unsigned int>& size (void) const { return m_size; }
 
   unsigned int width (void) const { return m_size.x; }
   unsigned int height (void) const { return m_size.y; }
@@ -57,12 +57,12 @@ public:
     return &m_data.ptr[y * m_bytes_per_line];
   }
 
-  const void* data_at (const vec2<unsigned int>& xy) const
+  const void* data_at (const utils::vec2<unsigned int>& xy) const
   {
     return &m_data.ptr[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
   }
 
-  void* data_at (const vec2<unsigned int>& xy)
+  void* data_at (const utils::vec2<unsigned int>& xy)
   {
     return &m_data.ptr[xy.y * m_bytes_per_line + xy.x * m_format.bytes_per_pixel ()];
   }
@@ -78,18 +78,18 @@ public:
   struct fill_result
   {
     fill_result (void) { }
-    fill_result (const vec2<unsigned int>& tl, const vec2<unsigned int>& sz)
+    fill_result (const utils::vec2<unsigned int>& tl, const utils::vec2<unsigned int>& sz)
     : top_left (tl), size (sz) { }
 
-    vec2<unsigned int> top_left = { 0 };
-    vec2<unsigned int> size = { 0 };
+    utils::vec2<unsigned int> top_left = { 0 };
+    utils::vec2<unsigned int> size = { 0 };
   };
 
   fill_result
-  fill (const vec2<int>& xy, const vec2<unsigned int>& size,
-	const vec4<float>& rgba_value);
+  fill (const utils::vec2<int>& xy, const utils::vec2<unsigned int>& size,
+	const utils::vec4<float>& rgba_value);
 
-  fill_result fill (const vec4<float>& rgba_value)
+  fill_result fill (const utils::vec4<float>& rgba_value)
   {
     return fill ({ 0, 0 }, size (), rgba_value);
   }
@@ -105,29 +105,30 @@ public:
   struct copy_to_result
   {
     copy_to_result (void) { }
-    copy_to_result (const vec2<unsigned int>& src_tl, const vec2<unsigned int>& dst_tl,
-		    const vec2<unsigned int>& sz)
+    copy_to_result (const utils::vec2<unsigned int>& src_tl,
+		    const utils::vec2<unsigned int>& dst_tl,
+		    const utils::vec2<unsigned int>& sz)
     : src_top_left (src_tl), dst_top_left (dst_tl), size (sz) { }
 
-    vec2<unsigned int> src_top_left = { 0 };
-    vec2<unsigned int> dst_top_left = { 0 };
+    utils::vec2<unsigned int> src_top_left = { 0 };
+    utils::vec2<unsigned int> dst_top_left = { 0 };
 
-    vec2<unsigned int> size = { 0 };
+    utils::vec2<unsigned int> size = { 0 };
   };
 
   copy_to_result
-  copy_to (const vec2<int>& src_xy, const vec2<unsigned int>& src_size,
-	   image& dst, const vec2<int>& dst_xy = { 0, 0 }) const;
+  copy_to (const utils::vec2<int>& src_xy, const utils::vec2<unsigned int>& src_size,
+	   image& dst, const utils::vec2<int>& dst_xy = { 0, 0 }) const;
 
   copy_to_result
-  copy_to (const vec2<int>& src_xy,
-	   image& dst, const vec2<int>& dst_xy = { 0, 0 }) const
+  copy_to (const utils::vec2<int>& src_xy,
+	   image& dst, const utils::vec2<int>& dst_xy = { 0, 0 }) const
   {
     return copy_to (src_xy, size (), dst, dst_xy);
   }
 
   copy_to_result
-  copy_to (image& dst, const vec2<int>& dst_xy = { 0, 0 }) const
+  copy_to (image& dst, const utils::vec2<int>& dst_xy = { 0, 0 }) const
   {
     return copy_to ({0, 0}, size (), dst, dst_xy);
   }
@@ -140,7 +141,7 @@ public:
   // is not transferred to the resulting image.  however, when the resulting
   // image is assigned (copy constructor, copy assignment operator), a new
   // buffer will be created and the data will be copied.
-  image subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const;
+  image subimg (const utils::vec2<int>& xy, const utils::vec2<unsigned int>& sz) const;
 
 protected:
   struct data_buffer
@@ -192,7 +193,7 @@ protected:
     return (length_bytes + (align-1)) & ~(align-1);
   }
 
-  vec2<unsigned int> m_size;
+  utils::vec2<unsigned int> m_size;
   unsigned int m_bytes_per_line;
   pixel_format m_format;
   data_buffer m_data;
