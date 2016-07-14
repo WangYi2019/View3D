@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <algorithm>
-#include "gl/pixel_format.hpp"
+#include "img/pixel_format.hpp"
 #include "utils/vec_mat.hpp"
 
 class image

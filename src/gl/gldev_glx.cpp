@@ -14,7 +14,7 @@
 
 #include "gldev.hpp"
 #include "display.hpp"
-#include "pixel_format.hpp"
+#include "img/pixel_format.hpp"
 
 namespace
 {

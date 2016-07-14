@@ -44,6 +44,7 @@ endif ()
 
 add_subdirectory (${CMAKE_SOURCE_DIR}/../utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
+add_subdirectory (${CMAKE_SOURCE_DIR}/../img "${CMAKE_CURRENT_BINARY_DIR}/img")
 
 if (MSVC)
 else ()
@@ -54,8 +55,6 @@ add_executable (3dview
   main.cpp
   test_scene.cpp
   test_scene1.cpp
-  bmp_loader.cpp
-  image.cpp
   tiled_image.cpp
   simple_3dbox.cpp
   s_expr.cpp
@@ -68,6 +67,7 @@ target_link_libraries (3dview
   kernel32
   gdi32
   gl
+  img
   opengl32
 )
 
@@ -88,8 +88,6 @@ set (CMAKE_SHARED_LIBRARY_PREFIX "")
 add_library (jutze3d_dll SHARED
   jutze3d.cpp
   test_scene1.cpp
-  bmp_loader.cpp
-  image.cpp
   tiled_image.cpp
   simple_3dbox.cpp
   s_expr.cpp
@@ -105,6 +103,7 @@ target_link_libraries (jutze3d_dll
   kernel32
   gdi32
   gl
+  img
   opengl32
 )
 
@@ -121,6 +120,7 @@ else ()
 target_link_libraries (3dview
   utils
   gl
+  img
   pthread
   X11
   GL

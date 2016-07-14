@@ -6,7 +6,7 @@
 #include <cassert>
 
 #include "display.hpp"
-#include "pixel_format.hpp"
+#include "img/pixel_format.hpp"
 
 static input_event::key_code_t remap_key (unsigned int k);
 

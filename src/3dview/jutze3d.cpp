@@ -16,7 +16,6 @@
 #include "gl/display.hpp"
 #include "gl/gldev.hpp"
 #include "gl/gl.hpp"
-#include "gl/pixel_format.hpp"
 
 #include "utils/math.hpp"
 

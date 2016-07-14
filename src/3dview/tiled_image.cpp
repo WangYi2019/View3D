@@ -39,7 +39,7 @@ use max texture size: 4096 x 4096
 #include <algorithm>
 
 #include "tiled_image.hpp"
-#include "bmp_loader.hpp"
+#include "img/bmp_loader.hpp"
 
 using utils::vec2;
 using utils::vec3;

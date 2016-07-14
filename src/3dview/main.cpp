@@ -9,12 +9,9 @@
 #include "gl/display.hpp"
 #include "gl/gldev.hpp"
 #include "gl/gl.hpp"
-#include "gl/pixel_format.hpp"
 
 #include "test_scene.hpp"
 #include "test_scene1.hpp"
-
-#include "bmp_loader.hpp"
 
 #include "utils/langcomp.hpp"
 #include "utils/math.hpp"

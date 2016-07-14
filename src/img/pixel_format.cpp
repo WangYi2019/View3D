@@ -3,7 +3,7 @@
 #include <cctype>
 
 #include "pixel_format.hpp"
-#include "gl.hpp"
+#include "gl/gl.hpp"
 
 struct pixel_format_desc
 {

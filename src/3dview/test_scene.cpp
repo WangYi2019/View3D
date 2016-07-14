@@ -4,9 +4,9 @@
 #include <iostream>
 
 #include "utils/bits.hpp"
+#include "img/bmp_loader.hpp"
 
 #include "test_scene.hpp"
-#include "bmp_loader.hpp"
 
 #ifndef M_PI
   #define M_PI 3.14159265358979323846

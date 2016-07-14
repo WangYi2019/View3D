@@ -9,7 +9,7 @@
 #include "gl/gl.hpp"
 #include "utils/vec_mat.hpp"
 #include "utils/lru_cache.hpp"
-#include "image.hpp"
+#include "img/image.hpp"
 
 class tiled_image
 {

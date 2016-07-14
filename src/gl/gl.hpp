@@ -191,7 +191,7 @@ extern PFNGLDISCARDFRAMEBUFFEREXTPROC glInvalidateFramebuffer;
 #include <array>
 
 #include "utils/vec_mat.hpp"
-#include "pixel_format.hpp"
+#include "img/pixel_format.hpp"
 
 namespace gl
 {
