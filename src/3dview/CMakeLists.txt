@@ -45,7 +45,7 @@ endif ()
 
 add_subdirectory (${CMAKE_SOURCE_DIR}/../utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
-add_subdirectory (${CMAKE_SOURCE_DIR}/../img "${CMAKE_CURRENT_BINARY_DIR}/img")
+add_subdirectory (${CMAKE_SOURCE_DIR}/../../img "${CMAKE_CURRENT_BINARY_DIR}/img")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../s_expr "${CMAKE_CURRENT_BINARY_DIR}/s_expr")
 
 if (MSVC)

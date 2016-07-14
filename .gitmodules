@@ -7,3 +7,6 @@
 [submodule "gl"]
 	path = gl
 	url = git@bitbucket.org:jutze/gl.git
+[submodule "img"]
+	path = img
+	url = git@bitbucket.org:jutze/img.git
