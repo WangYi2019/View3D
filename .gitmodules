@@ -4,3 +4,6 @@
 [submodule "src/utils"]
 	path = src/utils
 	url = git@bitbucket.org:jutze/utils.git
+[submodule "gl"]
+	path = gl
+	url = git@bitbucket.org:jutze/gl.git

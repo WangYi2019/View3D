@@ -6,6 +6,7 @@ set (CMAKE_CXX_STANDARD 14)
 
 include_directories (
   ${CMAKE_SOURCE_DIR}/..
+  ${CMAKE_SOURCE_DIR}/../..
 )
 
 if (WIN32)
@@ -43,7 +44,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=core-avx-i -mtune=intel")
 endif ()
 
 add_subdirectory (${CMAKE_SOURCE_DIR}/../utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
-add_subdirectory (${CMAKE_SOURCE_DIR}/../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
+add_subdirectory (${CMAKE_SOURCE_DIR}/../../gl "${CMAKE_CURRENT_BINARY_DIR}/gl")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../img "${CMAKE_CURRENT_BINARY_DIR}/img")
 add_subdirectory (${CMAKE_SOURCE_DIR}/../s_expr "${CMAKE_CURRENT_BINARY_DIR}/s_expr")
 
