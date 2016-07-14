@@ -1,9 +1,3 @@
-[submodule "src/toolchain"]
-	path = src/toolchain
-	url = git@bitbucket.org:jutze/toolchain.git
-[submodule "src/utils"]
-	path = src/utils
-	url = git@bitbucket.org:jutze/utils.git
 [submodule "gl"]
 	path = gl
 	url = git@bitbucket.org:jutze/gl.git
@@ -13,3 +7,9 @@
 [submodule "s_expr"]
 	path = s_expr
 	url = git@bitbucket.org:jutze/s_expr.git
+[submodule "toolchain"]
+	path = toolchain
+	url = git@bitbucket.org:jutze/toolchain.git
+[submodule "utils"]
+	path = utils
+	url = git@bitbucket.org:jutze/utils.git
