@@ -10,3 +10,6 @@
 [submodule "img"]
 	path = img
 	url = git@bitbucket.org:jutze/img.git
+[submodule "s_expr"]
+	path = s_expr
+	url = git@bitbucket.org:jutze/s_expr.git
