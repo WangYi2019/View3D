@@ -68,6 +68,9 @@ struct RGBQUAD
 };
 #pragma pack()
 
+namespace img
+{
+
 image load_bmp_image (const char* filename)
 {
   try
@@ -188,3 +191,5 @@ image load_bmp_image (const char* filename)
     return { };
   }
 }
+
+} // namespace img

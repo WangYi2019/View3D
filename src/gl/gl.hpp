@@ -201,6 +201,9 @@ template<typename T> using vec3 = utils::vec3<T>;
 template<typename T> using vec4 = utils::vec4<T>;
 template<typename T> using mat4 = utils::mat4<T>;
 
+using pixel_format = img::pixel_format;
+using ds_format = img::ds_format;
+
 extern void check_log_error_1 (const char* file, int lineno);
 #define gl_check_log_error() do { gl::check_log_error_1 (__FILE__, __LINE__); } while (0)
 

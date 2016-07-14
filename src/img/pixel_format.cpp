@@ -5,6 +5,9 @@
 #include "pixel_format.hpp"
 #include "gl/gl.hpp"
 
+namespace img
+{
+
 struct pixel_format_desc
 {
   pixel_format fmt;
@@ -122,3 +125,5 @@ std::ostream& operator << (std::ostream& out, const ds_format& rhs)
 {
   return out << rhs.str ();
 }
+
+} // namespace img

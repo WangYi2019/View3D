@@ -6,7 +6,10 @@
 #include <functional>
 #include "utils/vec_mat.hpp"
 
+namespace img
+{
 class pixel_format;
+}
 
 struct window;
 struct display;
@@ -86,7 +89,7 @@ struct display
   virtual std::unique_ptr<window> create_window (int visual_id, int width, int height) = 0;
 
   // implemented by the concrete device.
-  static std::unique_ptr<display> make_new (pixel_format, int swapinterval, int multisample);
+  static std::unique_ptr<display> make_new (img::pixel_format, int swapinterval, int multisample);
 };
 
 #endif // includeguard_display_hpp_includeguard

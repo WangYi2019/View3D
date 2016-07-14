@@ -9,6 +9,9 @@
 #include "utils/byte_order.hpp"
 #include "utils/pp_for_each.hpp"
 
+namespace img
+{
+
 using utils::vec2;
 using utils::vec3;
 using utils::vec4;
@@ -847,3 +850,5 @@ image image::subimg (const vec2<int>& xy, const vec2<unsigned int>& sz) const
 
   return std::move (res);
 }
+
+} // namespace img

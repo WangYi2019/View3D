@@ -18,6 +18,10 @@ using utils::mat4;
 
 using utils::ceil_pow2;
 
+using img::image;
+using img::load_bmp_image;
+using img::pixel_format;
+
 struct test_scene::vertex
 {
   vec2<float> pos;

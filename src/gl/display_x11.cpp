@@ -13,6 +13,7 @@
 static input_event::key_code_t remap_key (KeySym k);
 
 using utils::vec2;
+using img::pixel_format;
 
 struct window_x11 : window
 {

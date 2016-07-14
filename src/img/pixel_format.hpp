@@ -1,8 +1,11 @@
 
-#ifndef includeguard_pixelformat_hpp_includeguard
-#define includeguard_pixelformat_hpp_includeguard
+#ifndef includeguard_img_pixelformat_hpp_includeguard
+#define includeguard_img_pixelformat_hpp_includeguard
 
 #include <iosfwd>
+
+namespace img
+{
 
 class pixel_format
 {
@@ -107,5 +110,5 @@ private:
 std::ostream& operator << (std::ostream& out, const pixel_format&);
 std::ostream& operator << (std::ostream& out, const ds_format&);
 
-
-#endif // includeguard_pixelformat_hpp_includeguard
+} // namespace img
+#endif // includeguard_img_pixelformat_hpp_includeguard

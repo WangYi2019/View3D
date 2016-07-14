@@ -32,6 +32,9 @@
 #include "display.hpp"
 #include "img/pixel_format.hpp"
 
+using img::pixel_format;
+using img::ds_format;
+
 struct gldev_win32 : gldev
 {
   display& m_display;

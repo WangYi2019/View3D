@@ -46,6 +46,10 @@ using utils::vec3;
 using utils::vec4;
 using utils::mat4;
 
+using img::image;
+using img::load_bmp_image;
+using img::pixel_format;
+
 // ----------------------------------------------------------------------------
 
 struct tiled_image::texture_key

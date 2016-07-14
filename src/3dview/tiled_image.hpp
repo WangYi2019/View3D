@@ -85,9 +85,9 @@ public:
 
   void update (uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 	       const void* rgb_data, uint32_t rgb_data_stride_bytes,
-	       pixel_format rgb_format,
+	       img::pixel_format rgb_format,
 	       const void* height_data, uint32_t height_data_stride_bytes,
-	       pixel_format height_format);
+	       img::pixel_format height_format);
 
   void render (const utils::mat4<double>& cam_trv, const utils::mat4<double>& proj_trv,
 	       const utils::mat4<double>& viewport_trv, float zscale,
@@ -104,9 +104,9 @@ private:
 
   struct load_texture_tile
   {
-    std::reference_wrapper<std::array<image, max_lod_level>> m_img;
+    std::reference_wrapper<std::array<img::image, max_lod_level>> m_img;
 
-    load_texture_tile (std::array<image, max_lod_level>& img) : m_img (img) { }
+    load_texture_tile (std::array<img::image, max_lod_level>& img) : m_img (img) { }
     load_texture_tile (void) = delete;
     load_texture_tile (const load_texture_tile&) = default;
     load_texture_tile (load_texture_tile&&) = default;
@@ -126,8 +126,8 @@ private:
 
   // for simplicity, keep the whole image mipmaps in memory.
   // one FOV image is 2048x2048 @ 32 bpp = 16 MByte, 20 FOVs = 320 MByte.
-  std::array<image, max_lod_level> m_rgb_image;
-  std::array<image, max_lod_level> m_height_image;
+  std::array<img::image, max_lod_level> m_rgb_image;
+  std::array<img::image, max_lod_level> m_height_image;
 
   // a reference to the shared shader.
   std::shared_ptr<shader> m_shader;
@@ -152,7 +152,7 @@ private:
   };
 
   static std::array<update_region, max_lod_level>
-  update_mipmaps (std::array<image, max_lod_level>& img,
+  update_mipmaps (std::array<img::image, max_lod_level>& img,
 		  const utils::vec2<unsigned int>& top_level_xy,
 		  const utils::vec2<unsigned int>& top_level_size);
 

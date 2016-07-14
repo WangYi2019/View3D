@@ -6,6 +6,9 @@
 #include "img/pixel_format.hpp"
 #include "utils/vec_mat.hpp"
 
+namespace img
+{
+
 class image
 {
 public:
@@ -199,10 +202,12 @@ protected:
   data_buffer m_data;
 };
 
+} // namespace img
+
 namespace std
 {
 
-template<> inline void swap (image& a, image& b)
+template<> inline void swap (img::image& a, img::image& b)
 {
   a.swap (b);
 }

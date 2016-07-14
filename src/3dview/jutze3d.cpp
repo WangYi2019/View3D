@@ -28,6 +28,8 @@ using utils::vec2;
 using utils::vec3;
 using utils::mat4;
 using utils::deg_to_rad;
+using img::pixel_format;
+using img::ds_format;
 
 static std::unique_ptr<display> g_display;
 static std::unique_ptr<gldev> g_gldev;

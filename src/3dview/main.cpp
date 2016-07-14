@@ -20,6 +20,9 @@ using utils::vec2;
 using utils::vec3;
 using utils::mat4;
 
+using img::pixel_format;
+using img::ds_format;
+
 int main (int argc, const char* argv[])
 {
   if (argc < 8)

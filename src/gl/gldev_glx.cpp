@@ -16,6 +16,9 @@
 #include "display.hpp"
 #include "img/pixel_format.hpp"
 
+using img::pixel_format;
+using img::ds_format;
+
 namespace
 {
 PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT_;

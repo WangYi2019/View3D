@@ -13,6 +13,9 @@
 #include "display.hpp"
 #include "img/pixel_format.hpp"
 
+using img::pixel_format;
+using img::ds_format;
+
 #ifdef USE_GLES2
 
 PFNGLMAPBUFFEROESPROC glMapBuffer = 0;
