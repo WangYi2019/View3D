@@ -9,7 +9,7 @@
 #include "tiled_image.hpp"
 #include "simple_3dbox.hpp"
 
-#include "s_expr.hpp"
+#include "s_expr/s_expr.hpp"
 #include "utils/math.hpp"
 
 #ifndef M_PI
