@@ -1,3 +1,6 @@
 [submodule "src/toolchain"]
 	path = src/toolchain
 	url = git@bitbucket.org:jutze/toolchain.git
+[submodule "src/utils"]
+	path = src/utils
+	url = git@bitbucket.org:jutze/utils.git
