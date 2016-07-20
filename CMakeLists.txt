@@ -4,10 +4,6 @@ project (3dview)
 
 set (CMAKE_CXX_STANDARD 14)
 
-include_directories (
-  ${CMAKE_SOURCE_DIR}/
-)
-
 if (WIN32)
 
 add_definitions (
@@ -42,17 +38,13 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=core-avx-i -mtune=intel")
 
 endif ()
 
-add_subdirectory (utils)
-add_subdirectory (gl)
-add_subdirectory (img)
-add_subdirectory (s_expr)
 
-if (MSVC)
-else ()
-SET_SOURCE_FILES_PROPERTIES (image.cpp PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math")
-endif ()
+import_library (utils)
+import_library (gl)
+import_library (img)
+import_library (s_expr)
 
-add_executable (3dview
+add_target_executable (3dview
   main.cpp
   test_scene.cpp
   test_scene1.cpp
@@ -86,7 +78,7 @@ add_definitions (
 # remove the "lib" prefix from the final dll file
 set (CMAKE_SHARED_LIBRARY_PREFIX "")
 
-add_library (jutze3d_dll SHARED
+add_target_library (jutze3d_dll SHARED
   jutze3d.cpp
   test_scene1.cpp
   tiled_image.cpp
