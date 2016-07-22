@@ -184,11 +184,9 @@ public:
 
   void render_wireframe_stairs (void) const
   {
-/*
     gl::draw_indexed (gl::lines, sizeof (vertex),
 		      m_wireframe_stairs_index_buffer, m_index_buffer_type,
 		      m_wireframe_stairs_index_buffer_count);
-*/
   }
 
   void render_outline (void) const
@@ -265,7 +263,6 @@ private:
     for (unsigned int y = 0; y < size.y; ++y)
       for (unsigned int x = 0; x < size.x; ++x)
       {
-
 	// top cap
 	idx.push_back ((x + 0) + ((y + 0) * grid_stride) + offset_x_y);
 	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
@@ -275,7 +272,6 @@ private:
 	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
 	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
 
-
 	// right side wall
 	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
 	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x_y1);
@@ -284,7 +280,6 @@ private:
 	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
 	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x_y);
 	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x_y1);
-
 
 	// bottom side wall
 	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
@@ -328,6 +323,44 @@ private:
 
     m_wireframe_index_buffer = gl::buffer (gl::buffer::index, idx);
     m_wireframe_index_buffer_count = (unsigned int)idx.size ();
+
+
+    idx.clear ();
+
+    for (unsigned int y = 0; y < size.y; ++y)
+      for (unsigned int x = 0; x < size.x; ++x)
+      {
+	// top cap
+	idx.push_back ((x + 0) + ((y + 0) * grid_stride) + offset_x_y);
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+
+	idx.push_back ((x + 0) + ((y + 0) * grid_stride) + offset_x_y);
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
+
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+
+	// right side wall
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x_y);
+
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x_y1);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+
+	// bottom side wall
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y);
+
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y);
+      }
+
+    m_wireframe_stairs_index_buffer = gl::buffer (gl::buffer::index, idx);
+    m_wireframe_stairs_index_buffer_count = (unsigned int)idx.size ();
+
 
     // outline index buffer
     idx.reserve (4*2);
@@ -1469,7 +1502,7 @@ std::cout
     glDisable (GL_DEPTH_TEST);
 
     m_shader->color = { 0 };
-    m_shader->zbias = 0.001f;
+    m_shader->zbias = 0.00001f;
 
     for (const tile* t : m_visible_tiles)
     {
@@ -1486,13 +1519,15 @@ std::cout
       m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
       m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
-      glLineWidth (0.025f * t->lod () + 0.125f);
+//      glLineWidth (0.025f * t->lod () + 0.125f);
+      glLineWidth (0.5f);
       if (stairs_mode)
 	t->mesh ().render_wireframe_stairs ();
       else
 	t->mesh ().render_wireframe ();
 
-      glLineWidth (0.5f * t->lod () + 0.75f);
+//      glLineWidth (0.5f * t->lod () + 0.75f);
+      glLineWidth (1.5f);
       t->mesh ().render_outline ();
     }
   }
