@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "utils/bits.hpp"
+#include "utils/langcomp.hpp"
 #include "img/bmp_loader.hpp"
 
 #include "test_scene.hpp"
@@ -55,8 +56,8 @@ struct test_scene::shader : public gl::shader
     named_parameter (zbias);
   }
 
-  vertex_shader_text
-  (
+  virtual std::vector<const char*> vertex_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
     varying vec2 color_uv;
 
     void main (void)
@@ -70,17 +71,19 @@ struct test_scene::shader : public gl::shader
       color_uv = uv;
       gl_Position = mvp * vec4 (pos, height.r * 0.1 + zbias, 1.0);
     }
-  )
 
-  fragment_shader_text
-  (
+  )gltext" }; }
+
+
+  virtual std::vector<const char*> fragment_shader_text_str (void) override { return { linenum_prefix R"gltext(
     varying vec2 color_uv;
 
     void main (void)
     {
       gl_FragColor = texture2D (color_texture, color_uv) + offset_color;
     }
-  )
+
+  )gltext" }; }
 };
 
 

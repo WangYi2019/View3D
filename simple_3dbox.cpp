@@ -1,5 +1,6 @@
 
 #include "simple_3dbox.hpp"
+#include "utils/langcomp.hpp"
 
 using utils::vec3;
 using utils::vec4;
@@ -34,21 +35,23 @@ struct simple_3dbox::shader : public gl::shader
     named_parameter (zscale);
   }
 
-  vertex_shader_text
-  (
+  virtual std::vector<const char*> vertex_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
     void main (void)
     {
       gl_Position = mvp * vec4 (pos.x, pos.y, pos.z * zscale, 1.0);
     }
-  )
 
-  fragment_shader_text
-  (
+  )gltext" }; }
+
+  virtual std::vector<const char*> fragment_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
     void main (void)
     {
       gl_FragColor = color;
     }
-  )
+
+  )gltext" }; }
 };
 
 std::shared_ptr<simple_3dbox::shader> simple_3dbox::g_shader;

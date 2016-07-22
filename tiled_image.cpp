@@ -40,6 +40,7 @@ use max texture size: 4096 x 4096
 
 #include "tiled_image.hpp"
 #include "img/bmp_loader.hpp"
+#include "utils/langcomp.hpp"
 
 using utils::vec2;
 using utils::vec3;
@@ -557,8 +558,8 @@ struct tiled_image::shader : public gl::shader
     named_parameter (texture_border);
   }
 
-  vertex_shader_text
-  (
+  virtual std::vector<const char*> vertex_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
     varying vec2 color_uv;
 
     void main (void)
@@ -573,17 +574,21 @@ struct tiled_image::shader : public gl::shader
       float height = texture2D (height_texture, z_uv).r;
       gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
     }
-  )
 
-  fragment_shader_text
-  (
+  )gltext" }; }
+
+
+  virtual std::vector<const char*> fragment_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
     varying vec2 color_uv;
 
     void main (void)
     {
       gl_FragColor = texture2D (color_texture, color_uv) * color + offset_color;
     }
-  )
+
+  )gltext" }; }
+
 };
 
 std::shared_ptr<tiled_image::shader> tiled_image::g_shader;
