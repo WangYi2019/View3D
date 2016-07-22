@@ -45,6 +45,7 @@ static void window_input_event_clb (const input_event& e);
 
 static bool en_wireframe = false;
 static bool en_debug_dist = false;
+static bool en_stairs_mode = false;
 static bool quit = false;
 
 static vec2<double> drag_start_img_pos;
@@ -596,7 +597,7 @@ Lcontinue:
 
       g_scene->render (win_sz.x, win_sz.y,
 		       std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
-		       en_wireframe, en_debug_dist);
+		       en_wireframe, en_stairs_mode, en_debug_dist);
 
       g_gldev->swap_buffers ();
     }
@@ -628,7 +629,9 @@ static void window_input_event_clb (const input_event& e)
 	  else if (e.keycode == input_event::key_f2)
 	    en_debug_dist = !en_debug_dist;
 	  else if (e.keycode == input_event::key_f3)
-		en_wireframe = !en_wireframe;
+	    en_wireframe = !en_wireframe;
+	  else if (e.keycode == input_event::key_f4)
+	    en_stairs_mode = !en_stairs_mode;
 	  else if (e.keycode == input_event::key_space)
 	    g_scene->reset_view ();
 	  break;

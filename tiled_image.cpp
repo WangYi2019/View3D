@@ -105,14 +105,34 @@ public:
 
     m_size = size;
 
+    // we generate two sets of vertices into one buffer.  the first set
+    // is the normal grid vertices.  the second set is the same but with
+    // pos.x being negative.  this is used for "stair-case" rendering mode,
+    // where at some point (x,y) we need to use the texture coordinates
+    // (x,y) or (x-1,y) or (x,y-1) or (x-1,y-1).
     std::vector<vertex> vtx;
-    vtx.reserve (size.x * size.y);
+    vtx.reserve ((size.x + 1) * (size.y + 1) * 4);
 
     // the integer coordinates are scaled in the shader into the 0..1 range.
     // they are also used to address textures, which might have another scale.
-    for (unsigned int y = 0; y < size.y + 1; ++y)
-      for (unsigned int x = 0; x < size.x + 1; ++x)
+    for (int y = 0; y < (int)size.y + 1; ++y)
+      for (int x = 0; x < (int)size.x + 1; ++x)
 	vtx.emplace_back (vec2<float> (x, y));
+
+    // vertex set for (x-1,y)
+    for (int y = 0; y < (int)size.y + 1; ++y)
+      for (int x = 0; x < (int)size.x + 1; ++x)
+	vtx.emplace_back (vec2<float> (-x, y));
+
+    // vertex set for (x,y-1)
+    for (int y = 0; y < (int)size.y + 1; ++y)
+      for (int x = 0; x < (int)size.x + 1; ++x)
+	vtx.emplace_back (vec2<float> (x, -y));
+
+    // vertex set for (x-1,y-1)
+    for (int y = 0; y < (int)size.y + 1; ++y)
+      for (int x = 0; x < (int)size.x + 1; ++x)
+	vtx.emplace_back (vec2<float> (-x, -y));
 
     m_vertex_buffer = gl::buffer (gl::buffer::vertex, vtx);
     m_vertex_buffer_count = (unsigned int)vtx.size ();
@@ -148,11 +168,27 @@ public:
 		      m_index_buffer, m_index_buffer_type, m_index_buffer_count);
   }
 
+  void render_textured_stairs (void) const
+  {
+    gl::draw_indexed (gl::triangles, sizeof (vertex),
+		      m_index_buffer_stairs, m_index_buffer_type,
+		      m_index_buffer_stairs_count);
+  }
+
   void render_wireframe (void) const
   {
     gl::draw_indexed (gl::lines, sizeof (vertex),
 		      m_wireframe_index_buffer, m_index_buffer_type,
 		      m_wireframe_index_buffer_count);
+  }
+
+  void render_wireframe_stairs (void) const
+  {
+/*
+    gl::draw_indexed (gl::lines, sizeof (vertex),
+		      m_wireframe_stairs_index_buffer, m_index_buffer_type,
+		      m_wireframe_stairs_index_buffer_count);
+*/
   }
 
   void render_outline (void) const
@@ -182,12 +218,21 @@ private:
   gl::buffer m_outline_index_buffer;
   unsigned int m_outline_index_buffer_count;
 
+
+  gl::buffer m_index_buffer_stairs;
+  unsigned int m_index_buffer_stairs_count;
+
+  gl::buffer m_wireframe_stairs_index_buffer;
+  unsigned int m_wireframe_stairs_index_buffer_count;
+
+
   template <typename IndexType>
   void build_index_buffers (const vec2<uint32_t>& size)
   {
     m_index_buffer_type = gl::make_index_type<IndexType> ();
 
-    // every cell in the grid consists of 2 triangles.
+    // every cell in the grid consists of 2 triangles in the normal case
+    // or 6 triangles for stairs rendering mode.
     std::vector<IndexType> idx;
     idx.reserve (size.x * size.y * 6);
 
@@ -207,6 +252,53 @@ private:
 
     m_index_buffer = gl::buffer (gl::buffer::index, idx);
     m_index_buffer_count = (unsigned int)idx.size ();
+
+
+    // "stairs" version, which uses replicated vertices with
+    // index >= size.x*size.y
+    idx.clear ();
+    const unsigned int offset_x_y   = (size.x + 1) * (size.y + 1) * 0;
+    const unsigned int offset_x1_y  = (size.x + 1) * (size.y + 1) * 1;
+    const unsigned int offset_x_y1  = (size.x + 1) * (size.y + 1) * 2;
+    const unsigned int offset_x1_y1 = (size.x + 1) * (size.y + 1) * 3;
+
+    for (unsigned int y = 0; y < size.y; ++y)
+      for (unsigned int x = 0; x < size.x; ++x)
+      {
+
+	// top cap
+	idx.push_back ((x + 0) + ((y + 0) * grid_stride) + offset_x_y);
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
+
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+
+
+	// right side wall
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x_y1);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x1_y);
+	idx.push_back ((x + 1) + ((y + 0) * grid_stride) + offset_x_y);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x_y1);
+
+
+	// bottom side wall
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y1);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y);
+
+	idx.push_back ((x + 0) + ((y + 1) * grid_stride) + offset_x_y);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y1);
+	idx.push_back ((x + 1) + ((y + 1) * grid_stride) + offset_x1_y);
+      }
+
+    m_index_buffer_stairs = gl::buffer (gl::buffer::index, idx);
+    m_index_buffer_stairs_count = (unsigned int)idx.size ();
+
 
     // wireframe index buffer (quad edges only)
     idx.reserve (size.x * size.y * 4);
@@ -438,10 +530,15 @@ struct tiled_image::shader : public gl::shader
 
     void main (void)
     {
-      color_uv = (pos + texture_border) * texture_scale;
+      // could also use gl_VertexID and an index number threshold uniform
+      // but that requires min. gles 3
+      vec2 p = abs (pos);
 
-      float height = texture2D (height_texture, color_uv).r;
-      gl_Position = mvp * vec4 (pos * tile_scale, height * zscale + zbias, 1.0);
+      color_uv = (p + texture_border) * texture_scale;
+      vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
+
+      float height = texture2D (height_texture, z_uv).r;
+      gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
     }
   )
 
@@ -1216,6 +1313,7 @@ tiled_image::calc_tile_visibility (const tile& t,
 void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
 			  const mat4<double>& viewport_trv, float zscale,
 			  bool render_wireframe,
+			  bool stairs_mode,
 			  bool debug_dist) const
 {
 //  (10000 / 10000) * 0.05 = 0.05
@@ -1358,7 +1456,10 @@ std::cout
     m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
     m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
-    t->mesh ().render_textured ();
+    if (stairs_mode)
+      t->mesh ().render_textured_stairs ();
+    else
+      t->mesh ().render_textured ();
   }
 
 
@@ -1385,8 +1486,11 @@ std::cout
       m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
       m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
-      // glLineWidth (0.025f * t->lod () + 0.125f);
-      // t->mesh ().render_wireframe ();
+      glLineWidth (0.025f * t->lod () + 0.125f);
+      if (stairs_mode)
+	t->mesh ().render_wireframe_stairs ();
+      else
+	t->mesh ().render_wireframe ();
 
       glLineWidth (0.5f * t->lod () + 0.75f);
       t->mesh ().render_outline ();

@@ -214,7 +214,8 @@ test_scene1::AutoRotate()
 
 void test_scene1::render (unsigned int width, unsigned int height,
 			 std::chrono::microseconds delta_time,
-			 bool en_wireframe, bool en_debug_dist)
+			 bool en_wireframe, bool en_stairs_mode,
+			 bool en_debug_dist)
 {
   glViewport (0, 0, width, height);
   glClearColor (0.5f, 0.5f, 0.5f, 1);
@@ -264,7 +265,7 @@ void test_scene1::render (unsigned int width, unsigned int height,
     zscale = (float)((12000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05);
 
     m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale * m_z_scale,
-		     en_wireframe, en_debug_dist);
+		     en_wireframe, en_stairs_mode, en_debug_dist);
   }
 
   gl_check_log_error ();

@@ -92,6 +92,7 @@ public:
   void render (const utils::mat4<double>& cam_trv, const utils::mat4<double>& proj_trv,
 	       const utils::mat4<double>& viewport_trv, float zscale,
 	       bool render_wireframe,
+	       bool stairs_mode,
 	       bool debug_dist) const;
 
 private:
