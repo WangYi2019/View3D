@@ -66,6 +66,21 @@ test_scene1::test_scene1 (const char* file_desc_file)
       if (m_image != nullptr)
 	m_image->update (x, y, rgb_file.c_str (), height_file.c_str ());
     }
+    else if (a0 == "fill")
+    {
+      int x = i (1).as<int> ();
+      int y = i (2).as<int> ();
+      int w = i (3).as<int> ();
+      int h = i (4).as<int> ();
+
+      float r = i (5).as<float> ();
+      float g = i (6).as<float> ();
+      float b = i (7).as<float> ();
+      float z = i (8).as<float> ();
+
+      if (m_image != nullptr)
+	m_image->fill (x, y, w, h, r, g, b, z);
+    }
   }
 }
 

@@ -21,7 +21,6 @@ using utils::vec3;
 using utils::mat4;
 
 using img::pixel_format;
-using img::ds_format;
 
 int main (int argc, const char* argv[])
 {
@@ -31,7 +30,7 @@ int main (int argc, const char* argv[])
                  "<executable> <width> <height> <swapinterval> <rgba> "
                  "<ds> <multisample> <file description file>"
                  "\n"
-                 "example:  800 480 0 RGBA_8888 DS_24_8 0 files.txt"
+                 "example:  800 480 0 rgba8 d24_s8 0 files.txt"
               << std::endl;
 
     return 0;
@@ -41,7 +40,7 @@ int main (int argc, const char* argv[])
   const int window_height = std::atoi (argv[2]);
   const int swap_interval = std::atoi (argv[3]);
   const pixel_format rgba = pixel_format (argv[4]);
-  const ds_format ds = ds_format (argv[5]);
+  const pixel_format ds = pixel_format (argv[5]);
   const int multisample = std::atoi (argv[6]);
   const char* file_desc_file = argv[7];
   bool en_wireframe = false;

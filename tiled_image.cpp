@@ -726,14 +726,14 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 /*
       // for lower levels, use lower color resolution images.
       m_rgb_image[i] = image (sz.x <= 512 || sz.y <= 512
-			      ? pixel_format::rgb_555
-			      : pixel_format::rgba_8888, sz);
+			      ? pixel_format::rgb5
+			      : pixel_format::rgba8, sz);
 */
-      m_rgb_image[i] = image (pixel_format::rgba_8888, sz);
-//    m_rgb_image[i] = image (pixel_format::bgr_888, sz);
+      m_rgb_image[i] = image (pixel_format::rgba8, sz);
+//    m_rgb_image[i] = image (pixel_format::bgr8, sz);
       m_rgb_image[i].fill ({ 0 });
 
-      m_height_image[i] = image (pixel_format::l_8, sz);
+      m_height_image[i] = image (pixel_format::r8, sz);
       m_height_image[i].fill ({ 0 });
     }
   }

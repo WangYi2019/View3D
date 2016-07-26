@@ -29,7 +29,6 @@ using utils::vec3;
 using utils::mat4;
 using utils::deg_to_rad;
 using img::pixel_format;
-using img::ds_format;
 
 static std::unique_ptr<display> g_display;
 static std::unique_ptr<gldev> g_gldev;
@@ -299,16 +298,16 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
   pixel_format rgb_format_pf;
   switch (rgb_format)
   {
-    case 0: rgb_format_pf = pixel_format::rgb_888; break;
-    case 1: rgb_format_pf = pixel_format::bgr_888; break;
-    case 2: rgb_format_pf = pixel_format::rgba_8888; break;
+    case 0: rgb_format_pf = pixel_format::rgb8; break;
+    case 1: rgb_format_pf = pixel_format::bgr8; break;
+    case 2: rgb_format_pf = pixel_format::rgba8; break;
     default: return;
   }
 
   update_image_area2_args args = { x, y, width, height, rgb_data, rgb_data_stride_bytes,
 				   rgb_format_pf,
 				   height_data, height_data_stride_bytes,
-				   pixel_format::l_8 };
+				   pixel_format::r8 };
   post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
 }
 
@@ -347,8 +346,8 @@ void thread_func (void)
 {
   unsigned int multisample = 0;
   unsigned int swapinterval = 1;
-  auto pf = pixel_format::rgba_8888;
-  auto ds = ds_format::ds_24_8;
+  auto pf = pixel_format::rgba8;
+  auto ds = pixel_format::d24_s8;
 
   g_display = display::make_new (pf, swapinterval, multisample);
   g_gldev = gldev::make_new (*g_display, pf, ds, multisample);

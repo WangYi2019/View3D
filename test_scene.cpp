@@ -101,13 +101,13 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
 
   if (color_img.empty ())
   {
-    color_img = image (pixel_format::rgba_f32, { 32, 32 });
+    color_img = image (pixel_format::rgba32f, { 32, 32 });
     color_img.fill ({ 1, 0, 0, 0 });
   }
 
   if (height_img.empty ())
   {
-    height_img = image (pixel_format::l_8, { 32, 32 });
+    height_img = image (pixel_format::r8, { 32, 32 });
     height_img.fill ({ 0, 0, 0, 0 });
    // height_img.fill (0.125f, 0.5, 0.25f, 1);
   }
@@ -123,7 +123,7 @@ test_scene::test_scene (const char* rgb_img_file, const char* height_img_file, u
 */
 
   {
-    image tmp (pixel_format::rgba_8888,
+    image tmp (pixel_format::rgba8,
 	       { ceil_pow2 (color_img.width ()), ceil_pow2 (color_img.height ()) });
 
 //    color_img.copy_to (tmp);
