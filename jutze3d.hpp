@@ -67,6 +67,10 @@ view3d_disable_render (void);
 JUTZE3D_API void
 view3d_set_z_scale (float val);
 
+//set val1 is the tile_angle,and set val2 is rotate_trv
+JUTZE3D_API void
+view3d_set_angle(float val1, float val2);
+
 // --------------------------------------------------------------------------
 
 // resize the current image.  initially the image is empty (width = height = 0).

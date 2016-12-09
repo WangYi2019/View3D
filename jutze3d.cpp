@@ -68,6 +68,7 @@ enum
   WM_USER_3DVIEW_REMOVE_BOX,
   WM_USER_3DVIEW_REMOVE_ALL_BOXES,
   MW_USER_3DVIEW_SET_Z_SCALE,
+  WM_USER_3DVIEW_SET_ANGLE
 };
 
 struct create_window_args
@@ -153,6 +154,12 @@ struct remove_box_args
 struct set_z_scale_args
 {
   float value;
+};
+
+struct set_angle_args
+{
+  float title_angle;
+  float rotate_trv_angle;
 };
 
 void post_thread_message_wait (unsigned int msg, void* args = nullptr)
@@ -241,6 +248,12 @@ view3d_set_z_scale (float val)
   post_thread_message_wait (MW_USER_3DVIEW_SET_Z_SCALE, &args);
 }
 
+JUTZE3D_API void
+view3d_set_angle(float val1, float val2)
+{
+  set_angle_args args = { val1,val2 };
+  post_thread_message_wait(WM_USER_3DVIEW_SET_ANGLE, &args);
+}
 
 JUTZE3D_API void 
 view3d_resize_image (unsigned int width_pixels, unsigned int height_pixels)
@@ -578,6 +591,17 @@ void thread_func (void)
 	  g_scene->set_z_scale (args.value);
 	}
 	ack_thread_message (msg);
+	break;
+
+      case WM_USER_3DVIEW_SET_ANGLE:
+	if (g_scene != nullptr)
+	{
+	  auto&& args = *(set_angle_args*)msg.lParam;
+	  g_scene->set_tilt_angle(args.title_angle);
+	  g_scene->set_rotate_trv(mat4<double>::translate(vec3<double>(0, 0, 0))
+				  * mat4<double>::rotate_z(args.rotate_trv_angle));
+	}
+	ack_thread_message(msg);
 	break;
 
       default:
