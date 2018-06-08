@@ -90,7 +90,7 @@ public:
 	       img::pixel_format height_format);
 
   void render (const utils::mat4<double>& cam_trv, const utils::mat4<double>& proj_trv,
-	       const utils::mat4<double>& viewport_trv, float zscale,
+	       const utils::mat4<double>& viewport_trv,
 	       bool render_wireframe,
 	       bool stairs_mode,
 	       bool debug_dist) const;
@@ -124,6 +124,11 @@ private:
 
   // size of the whole image.
   utils::vec2<uint32_t> m_size;
+
+  // z scale of the heightmap texture.  depends on the texel format used.
+  // e.g. r8 = 1/256, r16 = 1/65536, r16ui = 1, r32f = 1
+  // although integer textures are too restrictive and not useful.
+  float m_texture_z_scale;
 
   // for simplicity, keep the whole image mipmaps in memory.
   // one FOV image is 2048x2048 @ 32 bpp = 16 MByte, 20 FOVs = 320 MByte.

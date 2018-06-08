@@ -1,6 +1,43 @@
 
+(size 2048 2048)
+;(size 1024 1024)
+
+(fov 0 0
+  "../3dview/testFOV/012.bmp"
+;  "../3dview/testFOV/012.rgb8.le.w2040.h2040"
+  "../3dview/testFOV/012_13.r16ui.le.w2040.h2040"
+;  "../3dview/testFOV/012_13.r32f.le.w2040.h2040"
+)
+
+
+
+(
+(size 2024 512)
+
+(fov 0 0
+  "../3dview/test_data/00.bmp"
+  "../3dview/test_data/00z.bmp"
+)
+)
+
+
+(
+(size 2504 2504)
+
+(fov 0 0
+  "/home/oleg/20151130133409/4/20151130133409view4.bmp"
+  "/home/oleg/20151130133409/4/20151130133409view4-3d3-13.bmp"
+)
+)
+
+
+
+
+(
+
 (size 8469 10192)
 
+; (size 30576 30576)
 
 (fov 6348 8152
   "/home/oleg/20151130133409/1/20151130133409view1.bmp"
@@ -104,3 +141,4 @@
 )
 
 
+)

@@ -160,7 +160,16 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle,
   if (m_image == nullptr)
     return mat4<double>::zero ();
 
-  double img_unit_scale = 2.0 / std::max (m_image->size ().x, m_image->size ().y);
+  // scale factor to convert image coordinates to -1..+1 coordinates.
+  // this is needed because the image coordinates can't be displayed 1:1.
+  // the exact scale factor is not so important actually, but it has to
+  // be in a range which will allow displaying the whole image on the screen
+  // when zoomed out.
+  // if the scale factor is too big, the image will appear
+  // too big and will require higher m_zoom value to fit the image on the screen.
+  // if m_zoom is too big, the image will intersect the z-far plane and there
+  // will be z fighting artefacts.
+  double unit_scale = 2.0 / std::max (m_image->size ().x, m_image->size ().y);
 
   return
       mat4<double>::identity ()
@@ -177,8 +186,8 @@ test_scene1::calc_cam_trv (float zoom, float tilt_angle,
       // rotate (normally around the z axis around some point)
       * m_rotate_trv
 
-      // scale to -1,+1 range (based on max (width, height))
-      * mat4<double>::scale (img_unit_scale, img_unit_scale, 1)
+      // scale image into to -1,+1 range
+      * mat4<double>::scale (unit_scale, unit_scale, unit_scale * m_z_scale)
 
       // move image to (0,0) center
       * mat4<double>::translate (vec3<double> (vec2<double> (m_image->size ()) * -0.5, 0))
@@ -273,18 +282,14 @@ void test_scene1::render (unsigned int width, unsigned int height,
 
   auto cam_trv = calc_cam_trv (m_zoom, m_tilt_angle, m_img_pos);
 
-  float zscale = 1;
-
   if (m_image != nullptr)
   {
-    zscale = (float)((12000.0 / std::max (m_image->size ().x, m_image->size ().y)) * 0.05);
-
-    m_image->render (cam_trv, m_last_proj_trv, viewport_trv, zscale * m_z_scale,
+    m_image->render (cam_trv, m_last_proj_trv, viewport_trv,
 		     en_wireframe, en_stairs_mode, en_debug_dist);
   }
 
   gl_check_log_error ();
 
   for (auto&& b : m_boxes)
-    b.render (cam_trv, m_last_proj_trv, viewport_trv, zscale);
+    b.render (cam_trv, m_last_proj_trv, viewport_trv);
 }

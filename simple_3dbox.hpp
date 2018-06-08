@@ -24,9 +24,9 @@ public:
 
 
   void render (const utils::mat4<double>& cam_trv, const utils::mat4<double>& proj_trv,
-	       const utils::mat4<double>& viewport_trv, float zscale) const;
+	       const utils::mat4<double>& viewport_trv) const;
 
-  utils::mat4<double> trv (float zscale) const;
+  utils::mat4<double> trv (void) const;
 
 private:
   struct vertex;

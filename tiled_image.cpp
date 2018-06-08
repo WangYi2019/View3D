@@ -40,7 +40,9 @@ use max texture size: 4096 x 4096
 
 #include "tiled_image.hpp"
 #include "img/bmp_loader.hpp"
+#include "img/raw_loader.hpp"
 #include "utils/langcomp.hpp"
+#include "utils/text.hpp"
 
 using utils::vec2;
 using utils::vec3;
@@ -49,6 +51,7 @@ using utils::mat4;
 
 using img::image;
 using img::load_bmp_image;
+using img::load_raw_image;
 using img::pixel_format;
 
 // ----------------------------------------------------------------------------
@@ -496,6 +499,8 @@ public:
     return *m_grid_mesh;
   }
 
+  // transformation matrix of the tile mesh into image coordinates
+  // (z scale = 1).
   const mat4<double>& trv (void) const { return m_trv; }
 
   const std::array<tile*, 4> subtiles (void) const { return m_subtiles; }
@@ -717,6 +722,11 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
   m_shader = g_shader;
 
   // setup mipmaps for the whole image.
+  const auto color_texture_format = pixel_format::rgba8;
+
+  const auto z_texture_format = pixel_format::r32f;
+  m_texture_z_scale = 1.0f;
+
   {
     vec2<unsigned int> sz (size);
     for (unsigned int i = 0; i < max_lod_level && sz.x > 0 && sz.y > 0;
@@ -729,11 +739,10 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 			      ? pixel_format::rgb5
 			      : pixel_format::rgba8, sz);
 */
-      m_rgb_image[i] = image (pixel_format::rgba8, sz);
-//    m_rgb_image[i] = image (pixel_format::bgr8, sz);
+      m_rgb_image[i] = image (color_texture_format, sz);
       m_rgb_image[i].fill ({ 0 });
 
-      m_height_image[i] = image (pixel_format::r8, sz);
+      m_height_image[i] = image (z_texture_format, sz);
       m_height_image[i].fill ({ 0 });
     }
   }
@@ -890,9 +899,15 @@ tiled_image::update (int32_t x, int32_t y,
   {
     std::array<tiled_image::update_region, tiled_image::max_lod_level> res;
     res.fill ({ { 0 }, { 0 } });
+
     try
     {
-      image img = load_bmp_image (rgb_bmp_file);
+      image img;
+
+      if (utils::ends_with (rgb_bmp_file, ".bmp"))
+        img = load_bmp_image (rgb_bmp_file);
+      else
+        img = load_raw_image (rgb_bmp_file);
 
       auto area = img.copy_to ({ src_x, src_y }, { src_width, src_height },
 			       m_rgb_image[0], { x, y });
@@ -912,7 +927,12 @@ tiled_image::update (int32_t x, int32_t y,
     res.fill ({ { 0 }, { 0 } });
     try
     {
-      image img = load_bmp_image (height_bmp_file);
+      image img;
+
+      if (utils::ends_with (height_bmp_file, ".bmp"))
+        img = load_bmp_image (height_bmp_file);
+      else
+        img = load_raw_image (height_bmp_file);
 
       auto area = img.copy_to ({ src_x, src_y },  { src_width, src_height },
 			       m_height_image[0], { x, y });
@@ -1349,7 +1369,7 @@ tiled_image::calc_tile_visibility (const tile& t,
 
 
 void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
-			  const mat4<double>& viewport_trv, float zscale,
+			  const mat4<double>& viewport_trv,
 			  bool render_wireframe,
 			  bool stairs_mode,
 			  bool debug_dist) const
@@ -1422,7 +1442,7 @@ std::cout
     auto&& t = m_candidate_tiles.back ();
     m_candidate_tiles.pop_back ();
 
-    auto tv = calc_tile_visibility (*t, proj_cam_trv, viewport_trv, zscale);
+    auto tv = calc_tile_visibility (*t, proj_cam_trv, viewport_trv, 1);
     if (tv.visible)
     {
       double lod_d = tv.display_area / tv.image_area;
@@ -1478,7 +1498,7 @@ std::cout
   m_shader->zbias = 0;
   m_shader->color = { 1 };
 
-  m_shader->zscale = zscale;
+  m_shader->zscale = m_texture_z_scale;
 
   for (const tile* t : m_visible_tiles)
   {

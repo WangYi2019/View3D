@@ -62,7 +62,10 @@ private:
 
   float m_tilt_angle;
   float m_zoom;
-  float m_z_scale = 1.0f;
+
+  // example calibration data
+  // XYZ size of 1 pixel = 18.3 x 18.3 x 1 micrometers
+  float m_z_scale = 1.0f/18.3f;
 
   utils::vec2<double> m_img_pos;
 

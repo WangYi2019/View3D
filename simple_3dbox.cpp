@@ -23,7 +23,6 @@ struct simple_3dbox::shader : public gl::shader
 {
   uniform< mat4<float>, highp > mvp;
   uniform< vec4<float>, lowp > color;
-  uniform< float, highp> zscale;
 
   attribute< vec3<float>, highp > pos;
 
@@ -32,14 +31,13 @@ struct simple_3dbox::shader : public gl::shader
     named_parameter (mvp);
     named_parameter (color);
     named_parameter (pos);
-    named_parameter (zscale);
   }
 
   virtual std::vector<const char*> vertex_shader_text_str (void) override { return { linenum_prefix R"gltext(
 
     void main (void)
     {
-      gl_Position = mvp * vec4 (pos.x, pos.y, pos.z * zscale, 1.0);
+      gl_Position = mvp * vec4 (pos.x, pos.y, pos.z, 1.0);
     }
 
   )gltext" }; }
@@ -71,7 +69,7 @@ struct simple_3dbox::mesh
 
   mesh (void)
   {
-    const float z_top = 1.0f / 256.0f;
+    const float z_top = 1;
     const float z_bot = 0;
 
     std::vector<vertex> vtx =
@@ -134,20 +132,19 @@ simple_3dbox::simple_3dbox (simple_3dbox&& rhs) = default;
 simple_3dbox& simple_3dbox::operator = (const simple_3dbox& rhs) = default;
 simple_3dbox& simple_3dbox::operator = (simple_3dbox&& rhs) = default;
 
-mat4<double> simple_3dbox::trv (float zscale) const
+mat4<double> simple_3dbox::trv (void) const
 {
   return
-	mat4<double>::translate (m_pos.x, m_pos.y, m_pos.z * zscale * (1.0/256.0))
+	mat4<double>::translate (m_pos.x, m_pos.y, m_pos.z)
 	 * mat4<double>::scale (m_size);
 }
 
 void simple_3dbox::render (const mat4<double>& cam_trv,
 			   const mat4<double>& proj_trv,
-			   const mat4<double>& viewport_trv, float zscale) const
+			   const mat4<double>& viewport_trv) const
 {
   m_shader->activate ();
-  m_shader->zscale = zscale;
-  m_shader->mvp = mat4<float> (proj_trv * cam_trv * trv (zscale));
+  m_shader->mvp = mat4<float> (proj_trv * cam_trv * trv ());
   m_shader->pos = gl::vertex_attrib (m_mesh->vertices, &vertex::pos);
 
   glDisable (GL_TEXTURE_2D);
