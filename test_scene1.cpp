@@ -50,7 +50,7 @@ test_scene1::test_scene1 (const char* file_desc_file)
       unsigned int w = i (1).as<unsigned int> ();
       unsigned int h = i (2).as<unsigned int> ();
       std::cout << "creating new image with size: " << w << " x " << h << std::endl;
-      m_image = std::make_unique<tiled_image> (vec2<unsigned int> (w, h));
+      m_image = std::make_unique<tiled_image> (vec2<unsigned int> (w, h), m_use_uint16_heightmap);
     }
     else if (a0 == "fov")
     {
@@ -100,7 +100,7 @@ void test_scene1::reset_view (void)
 void test_scene1::resize_image (const vec2<unsigned int>& size)
 {
   std::cout << "creating new image with size: " << size.x << " x " << size.y << std::endl;
-  m_image = std::make_unique<tiled_image> (size);
+  m_image = std::make_unique<tiled_image> (size, m_use_uint16_heightmap);
   reset_view ();
 }
 

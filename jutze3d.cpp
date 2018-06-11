@@ -51,6 +51,7 @@ static vec2<double> drag_start_img_pos;
 static float drag_start_tilt_angle;
 static mat4<double> drag_start_rot_trv;
 
+static bool g_use_uint16_heightmap = false;
 
 enum
 {
@@ -199,6 +200,12 @@ view3d_finish (void)
     PostThreadMessage (GetThreadId (g_thread.native_handle ()), WM_USER_3DVIEW_QUIT, 0, 0);
     g_thread.join ();
   }
+}
+
+JUTZE3D_API void
+view3d_use_uint16_heightmap (int val)
+{
+  g_use_uint16_heightmap = val != 0;
 }
 
 JUTZE3D_API void* 
@@ -494,6 +501,7 @@ void thread_func (void)
 	if (g_scene != nullptr)
 	{
 	  auto&& args = *(resize_image_args*)msg.lParam;
+	  g_scene->set_use_uint16_heightmap (g_use_uint16_heightmap);
 	  g_scene->resize_image ({ args.width, args.height });
 	}
 	ack_thread_message (msg);

@@ -52,6 +52,10 @@ public:
   void set_z_scale (float val);
 
   void AutoRotate(); 
+
+  void set_use_uint16_heightmap (bool val = true) { m_use_uint16_heightmap = val; }
+  bool use_uint16_heightmap (void) const { return m_use_uint16_heightmap; }
+
 private:
   std::unique_ptr<tiled_image> m_image;
   std::vector<simple_3dbox> m_boxes;
@@ -62,6 +66,10 @@ private:
 
   float m_tilt_angle;
   float m_zoom;
+
+  // if set to true, the next image creation/resize will create an image
+  // with a 16 bit heightmap instead of 32 bit float heightmap.
+  bool m_use_uint16_heightmap = false;
 
   // example calibration data
   // XYZ size of 1 pixel = 18.3 x 18.3 x 1 micrometers

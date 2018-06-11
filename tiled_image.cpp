@@ -607,9 +607,9 @@ void tiled_image::load_texture_tile::operator () (const texture_key& k, gl::text
 
   auto&& img = m_img.get ()[k.lod];
 
-  if (tex.empty () || tex.format () != img.format ())
+  if (tex.empty () || tex.format () != img.texture_format ())
   {
-    tex = gl::texture (img.format (), { texture_tile_size + texture_border * 2 });
+    tex = gl::texture (img.texture_format (), { texture_tile_size + texture_border * 2 });
     tex.set_address_mode_u (gl::texture::clamp);
     tex.set_address_mode_v (gl::texture::clamp);
     tex.set_min_filter (gl::texture::linear);
@@ -706,9 +706,10 @@ FIXME: replicate corners, too
 
 // ----------------------------------------------------------------------------
 
-tiled_image::tiled_image (void) : tiled_image (vec2<uint32_t> (0, 0)) { }
+tiled_image::tiled_image (bool use_uint16_heightmap)
+: tiled_image (vec2<uint32_t> (0, 0), use_uint16_heightmap) { }
 
-tiled_image::tiled_image (const vec2<uint32_t>& size)
+tiled_image::tiled_image (const vec2<uint32_t>& size, bool use_uint16_heightmap)
 : m_size (size),
   m_rgb_texture_cache (load_texture_tile (m_rgb_image), 1024),
   m_height_texture_cache (load_texture_tile (m_height_image), 1024)
@@ -724,8 +725,24 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
   // setup mipmaps for the whole image.
   const auto color_texture_format = pixel_format::rgba8;
 
-  const auto z_texture_format = pixel_format::r32f;
-  m_texture_z_scale = 1.0f;
+  // for the heightmap, there are 2 reasonable formats
+  // r16
+  //    scale = 65536
+  //    copy from r32f:  reinterpret destination data as r16ui to avoid rescaling
+  //                     the image format in cpu ram is r16ui.
+  //                     the gpu texture format is r16.  the data is reinterpreted
+  //                     when uploading textures.
+  //    copy from r16:   treat input data as r16ui.
+  //
+  // r32f
+  //    scale = 1
+  //    copy from r32f:  1:1
+  //    copy from r16:   reinterpret source data as r16ui to avoid rescaling,
+  //                     extend int to float
+
+  const auto z_texture_cpu_format = use_uint16_heightmap ? pixel_format::r16ui : pixel_format::r32f;
+  const auto z_texture_gpu_format = use_uint16_heightmap ? pixel_format::r16 : pixel_format::r32f;
+  m_texture_z_scale = use_uint16_heightmap ? 65536.0f : 1.0f;
 
   {
     vec2<unsigned int> sz (size);
@@ -739,10 +756,10 @@ tiled_image::tiled_image (const vec2<uint32_t>& size)
 			      ? pixel_format::rgb5
 			      : pixel_format::rgba8, sz);
 */
-      m_rgb_image[i] = image (color_texture_format, sz);
+      m_rgb_image[i] = cpu_image (color_texture_format, sz, color_texture_format);
       m_rgb_image[i].fill ({ 0 });
 
-      m_height_image[i] = image (z_texture_format, sz);
+      m_height_image[i] = cpu_image (z_texture_cpu_format, sz, z_texture_gpu_format);
       m_height_image[i].fill ({ 0 });
     }
   }
@@ -1039,7 +1056,7 @@ void tiled_image
 }
 
 std::array<tiled_image::update_region, tiled_image::max_lod_level>
-tiled_image::update_mipmaps (std::array<image, max_lod_level>& img,
+tiled_image::update_mipmaps (std::array<cpu_image, max_lod_level>& img,
 			     const vec2<unsigned int>& top_level_xy,
 			     const vec2<unsigned int>& top_level_size)
 {

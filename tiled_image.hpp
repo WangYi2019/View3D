@@ -51,8 +51,8 @@ public:
   // textures > 4096 can be problematic it seems.
   static_assert (texture_tile_size <= 4096, "");
 
-  tiled_image (void);
-  tiled_image (const utils::vec2<uint32_t>& size);
+  tiled_image (bool use_uint16_heightmap = false);
+  tiled_image (const utils::vec2<uint32_t>& size, bool use_uint16_heightmap = false);
 
   tiled_image (const tiled_image&) = delete;
   tiled_image (tiled_image&&);
@@ -103,11 +103,32 @@ private:
   struct tile_visibility;
   struct texture_key;
 
+  class cpu_image;
+
+  // since the gpu texture format might be different from the cpu image
+  // store that, as part of the image.
+  class cpu_image : public img::image
+  {
+  public:
+    cpu_image (void) : img::image (), m_texture_format (img::pixel_format::invalid) { }
+
+    cpu_image (img::pixel_format pf, const utils::vec2<unsigned int>& size,
+	       img::pixel_format texture_format)
+    : img::image (pf, size), m_texture_format (texture_format)
+    {
+    }
+
+    auto texture_format (void) const { return m_texture_format; }
+
+  private:
+    img::pixel_format m_texture_format;
+  };
+
   struct load_texture_tile
   {
-    std::reference_wrapper<std::array<img::image, max_lod_level>> m_img;
+    std::reference_wrapper<std::array<cpu_image, max_lod_level>> m_img;
 
-    load_texture_tile (std::array<img::image, max_lod_level>& img) : m_img (img) { }
+    load_texture_tile (std::array<cpu_image, max_lod_level>& img) : m_img (img) { }
     load_texture_tile (void) = delete;
     load_texture_tile (const load_texture_tile&) = default;
     load_texture_tile (load_texture_tile&&) = default;
@@ -132,8 +153,8 @@ private:
 
   // for simplicity, keep the whole image mipmaps in memory.
   // one FOV image is 2048x2048 @ 32 bpp = 16 MByte, 20 FOVs = 320 MByte.
-  std::array<img::image, max_lod_level> m_rgb_image;
-  std::array<img::image, max_lod_level> m_height_image;
+  std::array<cpu_image, max_lod_level> m_rgb_image;
+  std::array<cpu_image, max_lod_level> m_height_image;
 
   // a reference to the shared shader.
   std::shared_ptr<shader> m_shader;
@@ -158,7 +179,7 @@ private:
   };
 
   static std::array<update_region, max_lod_level>
-  update_mipmaps (std::array<img::image, max_lod_level>& img,
+  update_mipmaps (std::array<cpu_image, max_lod_level>& img,
 		  const utils::vec2<unsigned int>& top_level_xy,
 		  const utils::vec2<unsigned int>& top_level_size);
 

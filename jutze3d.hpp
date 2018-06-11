@@ -24,6 +24,14 @@ extern "C" {
 JUTZE3D_API void view3d_init (void);
 JUTZE3D_API void view3d_finish (void);
 
+// if 'val' is non-zero, the 3dviews that will be created
+// will use the uint16 image/texture format for the internal heightmap
+// representation.
+// the default is to use float32 as the internal heightmap representation.
+// this function can be called at any time.  the next image that will be
+// created/resized will use the new setting.
+JUTZE3D_API void view3d_use_uin16_heightmap (int val);
+
 // --------------------------------------------------------------------------
 // create a new 3D view window
 // use standard win32 functions to
