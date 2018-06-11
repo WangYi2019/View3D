@@ -123,13 +123,17 @@ view3d_update_image_area_1 (unsigned int x, unsigned int y,
 //   1 - unsigned 8 bit per component, 24 bit per pixel, BGR order
 //   2 - unsigned 8 bit per component, 32 bit per pixel, RGBA order
 //
-// the height input format is fixed at unsigned 8 bit.
+// the height format can have the following values:
+//   0 - unsigned 8 bit
+//   2 - unsigned 16 bit
+//   3 - float 32 bit
 JUTZE3D_API void
 view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
 			    unsigned int rgb_format,
-			    const void* height_data, unsigned int height_data_stride_bytes);
+			    const void* height_data, unsigned int height_data_stride_bytes,
+			    unsigned int height_format);
 
 // adds a new 3D box to the board.
 // board_pos_x, board_pos_y is the top-left corner of the box in board image

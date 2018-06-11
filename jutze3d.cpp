@@ -313,7 +313,8 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
 			    unsigned int rgb_format,
-			    const void* height_data, unsigned int height_data_stride_bytes)
+			    const void* height_data, unsigned int height_data_stride_bytes,
+			    unsigned int height_format)
 {
   pixel_format rgb_format_pf;
   switch (rgb_format)
@@ -324,10 +325,19 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
     default: return;
   }
 
+  pixel_format z_format_pf;
+  switch (height_format)
+  {
+    case 0: z_format_pf = pixel_format::r8ui; break;
+    case 1: z_format_pf = pixel_format::r16ui; break;
+    case 2: z_format_pf = pixel_format::r32f; break;
+    default: return;
+  }
+
   update_image_area2_args args = { x, y, width, height, rgb_data, rgb_data_stride_bytes,
 				   rgb_format_pf,
 				   height_data, height_data_stride_bytes,
-				   pixel_format::r8 };
+				   z_format_pf };
   post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
 }
 

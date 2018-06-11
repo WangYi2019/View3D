@@ -39,7 +39,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=core-avx-i -mtune=intel")
 endif ()
 
 set (IMG_PROC_ENABLE_PIXEL_FORMATS
-  rgba8 rgba4 rgb5_a1 rgb8 r5_g6_b5 rgb5 rgb4 r8 rgba32f r3_g3_b2 bgr8 r16 r16i r16ui r32f rbg8 r32 r32i r32ui
+  rgba8 rgba4 rgb5_a1 rgb8 r5_g6_b5 rgb5 rgb4 r8 r8ui rgba32f r3_g3_b2 bgr8 r16 r16ui r32f rbg8
 )
 
 # message ("IMG PROC FORMATS: ${IMG_PROC_ENABLE_PIXEL_FORMATS}")
