@@ -577,7 +577,7 @@ struct tiled_image::shader : public gl::shader
       vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
 
       float height = texture2D (height_texture, z_uv).r;
-      gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
+      gl_Position = mvp * vec4 (p * tile_scale, max (0.0, height * zscale + zbias), 1.0);
     }
 
   )gltext" }; }
