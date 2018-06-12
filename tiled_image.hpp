@@ -93,11 +93,15 @@ public:
 	       const utils::mat4<double>& viewport_trv,
 	       bool render_wireframe,
 	       bool stairs_mode,
-	       bool debug_dist) const;
+	       bool debug_dist,
+	       bool heightmap) const;
+
+  void set_heightmap_palette (const std::vector<std::pair<unsigned int, utils::vec4<float>>>& val);
 
 private:
   struct vertex;
   struct shader;
+  struct heightmap_shader;
   class grid_mesh;
   class tile;
   struct tile_visibility;
@@ -142,6 +146,7 @@ private:
   // shader and geomety is shared amongst image instances.
   static std::vector<std::shared_ptr<grid_mesh>> g_grid_meshes;
   static std::shared_ptr<shader> g_shader;
+  static std::shared_ptr<heightmap_shader> g_heightmap_shader;
 
   // size of the whole image.
   utils::vec2<uint32_t> m_size;
@@ -158,6 +163,7 @@ private:
 
   // a reference to the shared shader.
   std::shared_ptr<shader> m_shader;
+  std::shared_ptr<heightmap_shader> m_heightmap_shader;
 
   // all tiles in the image.
   std::array<std::vector<tile>, max_lod_level> m_tiles;
@@ -171,6 +177,12 @@ private:
 
   // actually visible tiles for display.   modified during rendering.
   mutable std::vector<const tile*> m_visible_tiles;
+
+  // color palette and some additional info for heightmap visualization.
+  gl::texture m_heightmap_palette;
+  unsigned int m_heightmap_palette_min_value = 0;
+  unsigned int m_heightmap_palette_max_value = 0;
+  unsigned int m_heightmap_step_size = 0;
 
   struct update_region
   {

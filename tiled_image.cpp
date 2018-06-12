@@ -37,12 +37,14 @@ use max texture size: 4096 x 4096
 #include <limits>
 #include <iostream>
 #include <algorithm>
+#include <experimental/numeric>
 
 #include "tiled_image.hpp"
 #include "img/bmp_loader.hpp"
 #include "img/raw_loader.hpp"
 #include "utils/langcomp.hpp"
 #include "utils/text.hpp"
+#include "utils/bits.hpp"
 
 using utils::vec2;
 using utils::vec3;
@@ -576,8 +578,8 @@ struct tiled_image::shader : public gl::shader
       color_uv = (p + texture_border) * texture_scale;
       vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
 
-      float height = texture2D (height_texture, z_uv).r;
-      gl_Position = mvp * vec4 (p * tile_scale, max (0.0, height * zscale + zbias), 1.0);
+      float height = max (0.0, texture2D (height_texture, z_uv).r);
+      gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
     }
 
   )gltext" }; }
@@ -597,6 +599,61 @@ struct tiled_image::shader : public gl::shader
 };
 
 std::shared_ptr<tiled_image::shader> tiled_image::g_shader;
+
+struct tiled_image::heightmap_shader : public tiled_image::shader
+{
+  uniform< sampler2D, mediump > heightmap_palette;
+  uniform< float, highp> heightmap_min_val;
+  uniform< float, highp> heightmap_max_val;
+
+  // texture scale = 1/step_size * 1/texture.size.x
+  uniform< float, highp> heightmap_texture_scale;
+
+  heightmap_shader (void)
+  {
+    named_parameter (heightmap_palette);
+    named_parameter (heightmap_min_val);
+    named_parameter (heightmap_max_val);
+    named_parameter (heightmap_texture_scale);
+  }
+
+  virtual std::vector<const char*> vertex_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
+    varying vec2 color_uv;
+
+    void main (void)
+    {
+      // could also use gl_VertexID and an index number threshold uniform
+      // but that requires min. gles 3
+      vec2 p = abs (pos);
+
+      vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
+
+      float height = clamp (texture2D (height_texture, z_uv).r,
+			    heightmap_min_val, heightmap_max_val);
+
+      color_uv = vec2 ((height - heightmap_min_val) * heightmap_texture_scale, 0.0);
+
+      gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
+    }
+
+  )gltext" }; }
+
+
+  virtual std::vector<const char*> fragment_shader_text_str (void) override { return { linenum_prefix R"gltext(
+
+    varying vec2 color_uv;
+
+    void main (void)
+    {
+      gl_FragColor = texture2D (heightmap_palette, color_uv) * color + offset_color;
+    }
+
+  )gltext" }; }
+
+};
+
+std::shared_ptr<tiled_image::heightmap_shader> tiled_image::g_heightmap_shader;
 
 // ----------------------------------------------------------------------------
 
@@ -720,7 +777,11 @@ tiled_image::tiled_image (const vec2<uint32_t>& size, bool use_uint16_heightmap)
   if (g_shader == nullptr)
     g_shader = std::make_shared<shader> ();
 
+  if (g_heightmap_shader == nullptr)
+    g_heightmap_shader = std::make_shared<heightmap_shader> ();
+
   m_shader = g_shader;
+  m_heightmap_shader = g_heightmap_shader;
 
   // setup mipmaps for the whole image.
   const auto color_texture_format = pixel_format::rgba8;
@@ -834,6 +895,7 @@ tiled_image::tiled_image (tiled_image&& rhs)
   m_rgb_image (std::move (rhs.m_rgb_image)),
   m_height_image (std::move (rhs.m_height_image)),
   m_shader (std::move (rhs.m_shader)),
+  m_heightmap_shader (std::move (rhs.m_heightmap_shader)),
   m_tiles (std::move (rhs.m_tiles)),
   m_rgb_texture_cache (std::move (rhs.m_rgb_texture_cache)),
   m_height_texture_cache (std::move (rhs.m_height_texture_cache)),
@@ -851,6 +913,7 @@ tiled_image& tiled_image::operator = (tiled_image&& rhs)
     m_rgb_image = std::move (rhs.m_rgb_image);
     m_height_image = std::move (rhs.m_height_image);
     m_shader = std::move (rhs.m_shader);
+    m_heightmap_shader = std::move (rhs.m_heightmap_shader);
     m_tiles = std::move (rhs.m_tiles);
     m_rgb_texture_cache = std::move (rhs.m_rgb_texture_cache);
     m_height_texture_cache = std::move (rhs.m_height_texture_cache);
@@ -869,6 +932,9 @@ tiled_image::~tiled_image (void)
 {
   if (m_shader != nullptr && m_shader.use_count () == 2)
     g_shader = nullptr;
+
+  if (m_heightmap_shader != nullptr && m_heightmap_shader.use_count () == 2)
+    g_heightmap_shader = nullptr;
 }
 
 
@@ -1383,13 +1449,132 @@ tiled_image::calc_tile_visibility (const tile& t,
   return res;
 }
 
+void tiled_image
+::set_heightmap_palette (const std::vector<std::pair<unsigned int, utils::vec4<float>>>& val_)
+{
+  std::vector<std::pair<unsigned int, utils::vec4<float>>> val = val_;
+  std::sort (val.begin (), val.end (), [] (const auto& a, const auto& b)
+  {
+    return a.first < b.first;
+  });
 
+  // for rendering, all palette entries must be equally spaced,
+  // i.e. the distance (in heightmap values) must be the same.
+  // if it's not, use the greatest common divisor of all unique distances
+  // as a step size for the palette.  for example
+  // 40, 50, 60 -> step size = 10
+  // 40, 60 -> step size = 20
+
+  if (val.size () > 1)
+  {
+    m_heightmap_palette_min_value = val.front ().first;
+    m_heightmap_palette_max_value = val.back ().first;
+
+    // if there are 2 or more entires in the palette, it will result in at least
+    // 1 delta value.
+    std::vector<unsigned int> height_steps;
+    height_steps.reserve (val.size ());
+
+    for (unsigned int i = 1; i < val.size (); ++i)
+      height_steps.push_back (val[i].first - val[i-1].first);
+
+    std::sort (height_steps.begin (), height_steps.end ());
+    auto new_e = std::unique (height_steps.begin (), height_steps.end ());
+    height_steps.erase (new_e, height_steps.end ());
+
+    std::cout << "unique heightmap palette steps:";
+    for (const auto& v : height_steps)
+      std::cout << "\n   " << v;
+
+    std::cout << std::endl;
+
+    if (height_steps.size () > 1)
+    {
+      unsigned int gcd_val = height_steps.front ();
+      for (unsigned int i = 1; i < height_steps.size (); ++i)
+	gcd_val = std::experimental::gcd (gcd_val, height_steps[i]);
+
+      m_heightmap_step_size = gcd_val;
+    }
+    else
+      m_heightmap_step_size = height_steps.front ();
+
+    std::cout << "m_heightmap_step_size = " << m_heightmap_step_size << std::endl;
+
+    // create the interpolated palette values with uniform step sizes
+    std::vector<vec4<uint8_t>> palette;
+    palette.reserve ((val.back ().first - val.front ().first) / m_heightmap_step_size + 4);
+
+
+    // replicate last input value to make the calculation loop below simpler.
+    val.push_back (val.back ());
+
+    unsigned int step_val = val.front ().first;
+
+    for (auto input_entry = val.begin (); step_val <= val.back ().first;
+	 step_val += m_heightmap_step_size)
+    {
+      if (step_val >= (input_entry+1)->first)
+	++input_entry;
+
+      const float x =
+	(input_entry+1)->first == input_entry->first
+	? 0.0f
+	: (float)(step_val - input_entry->first)
+		/ ((input_entry+1)->first - input_entry->first);
+
+      palette.push_back (
+	(vec4<uint8_t>)clamp ((input_entry->second * (1-x) + (input_entry+1)->second * x) * 255, 0, 255));
+    }
+
+    // replicate last palette entry for bilinear interpolation texture sampling
+    palette.push_back (palette.back ());
+
+    std::cout << "palette size: " << palette.size () << std::endl;
+
+    m_heightmap_palette =
+	gl::texture (pixel_format::rgba8, { utils::ceil_pow2 (palette.size ()), 32 });
+
+    // load the same pixel row twice for bilinear interpolation texture sampling
+    m_heightmap_palette.upload (palette.data (), { 0, 0 }, { palette.size (), 1 });
+    m_heightmap_palette.upload (palette.data (), { 0, 1 }, { palette.size (), 1 });
+  }
+  else if (val.size () == 1)
+  {
+    m_heightmap_palette_min_value = val.front ().first;
+    m_heightmap_palette_max_value = val.back ().first;
+    m_heightmap_step_size = 0;
+
+    img::image tmp (pixel_format::rgba8, { 32, 32 });
+    tmp.fill (val.front ().second);
+
+    m_heightmap_palette = gl::texture (pixel_format::rgba8, tmp.size (), tmp.data ());
+  }
+  else
+  {
+    m_heightmap_palette_min_value = 0;
+    m_heightmap_palette_max_value = 0;
+    m_heightmap_step_size = 0;
+
+    m_heightmap_palette = { };
+  }
+
+  if (!m_heightmap_palette.empty ())
+  {
+    m_heightmap_palette.set_address_mode_u (gl::texture::clamp);
+    m_heightmap_palette.set_address_mode_v (gl::texture::clamp);
+    m_heightmap_palette.set_min_filter (gl::texture::linear);
+    m_heightmap_palette.set_mag_filter (gl::texture::linear);
+  }
+
+}
 
 void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_trv,
 			  const mat4<double>& viewport_trv,
 			  bool render_wireframe,
 			  bool stairs_mode,
-			  bool debug_dist) const
+			  bool debug_dist,
+			  bool heightmap) const
 {
 //  (10000 / 10000) * 0.05 = 0.05
 //  (10000/ 2000) * 0.05 = 0.25
@@ -1397,10 +1582,32 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 //  const float zscale = 0.05f;
 //  const float zscale = (10000.0 / std::max (m_size.x, m_size.y)) * 0.05; 
 
-  m_shader->activate ();
-  m_shader->color_texture = 0;
-  m_shader->height_texture = 1;
-  m_shader->texture_border = texture_border;
+  shader* use_shader;
+
+  if (heightmap)
+  {
+    m_heightmap_shader->activate ();
+    use_shader = m_heightmap_shader.get ();
+
+    m_heightmap_shader->heightmap_palette = 2;
+    m_heightmap_shader->heightmap_min_val = m_heightmap_palette_min_value;
+    m_heightmap_shader->heightmap_max_val = m_heightmap_palette_max_value;
+    m_heightmap_shader->heightmap_texture_scale =
+	m_heightmap_palette.empty ()
+	? 0.0f
+	: (1.0f / m_heightmap_step_size) * (1.0f / m_heightmap_palette.size ().x);
+
+    m_heightmap_palette.bind (2);
+  }
+  else
+  {
+    m_shader->activate ();
+    use_shader = m_shader.get ();
+  }
+
+  use_shader->color_texture = 0;
+  use_shader->height_texture = 1;
+  use_shader->texture_border = texture_border;
 
   static const std::array<vec4<float>, max_lod_level> lod_colors =
   {
@@ -1511,16 +1718,16 @@ std::cout
   glEnable (GL_DEPTH_TEST);
   glDisable (GL_BLEND);
 
-  m_shader->offset_color = { 0 };
-  m_shader->zbias = 0;
-  m_shader->color = { 1 };
+  use_shader->offset_color = { 0 };
+  use_shader->zbias = 0;
+  use_shader->color = { 1 };
 
-  m_shader->zscale = m_texture_z_scale;
+  use_shader->zscale = m_texture_z_scale;
 
   for (const tile* t : m_visible_tiles)
   {
-    m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
-    m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
+    use_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
+    use_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
 
     auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
     auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
@@ -1528,8 +1735,8 @@ std::cout
     t0.bind (0);
     t1.bind (1);
 
-    m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
-    m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
+    use_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
+    use_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
     if (stairs_mode)
       t->mesh ().render_textured_stairs ();
@@ -1543,14 +1750,14 @@ std::cout
     glDisable (GL_TEXTURE_2D);
     glDisable (GL_DEPTH_TEST);
 
-    m_shader->color = { 0 };
-    m_shader->zbias = 0.00001f;
+    use_shader->color = { 0 };
+    use_shader->zbias = 0.00001f;
 
     for (const tile* t : m_visible_tiles)
     {
-      m_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
-      m_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
-      m_shader->offset_color = lod_colors[t->lod ()];
+      use_shader->mvp = (mat4<float>)(proj_cam_trv2 * t->trv ());
+      use_shader->pos = gl::vertex_attrib (t->mesh ().vertex_buffer (), &vertex::pos);
+      use_shader->offset_color = lod_colors[t->lod ()];
 
       auto&& t0 = m_rgb_texture_cache.get ({ t->lod (), t->pos () });
       auto&& t1 = m_height_texture_cache.get ({ t->lod (), t->pos () });
@@ -1558,8 +1765,8 @@ std::cout
       t0.bind (0);
       t1.bind (1);
 
-      m_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
-      m_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
+      use_shader->tile_scale = 1.0f / vec2<float> (t->mesh ().size ());
+      use_shader->texture_scale = 1.0f / vec2<float> (t0.size ());
 
 //      glLineWidth (0.025f * t->lod () + 0.125f);
       glLineWidth (0.5f);

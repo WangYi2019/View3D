@@ -135,6 +135,29 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    const void* height_data, unsigned int height_data_stride_bytes,
 			    unsigned int height_format);
 
+// set the heightmap color palette of the current image for heightmap
+// visualization.
+// if the image is resized or re-initialized the heightmap palette data
+// will be reset to the internal default value.
+typedef struct
+{
+  unsigned int height;
+  float color_r;
+  float color_g;
+  float color_b;
+  float color_a;
+} view3d_heightmap_palette_entry;
+
+JUTZE3D_API void
+view3d_set_heightmap_palette (const view3d_heightmap_palette_entry* entries,
+			      unsigned int entry_count);
+
+// turn heightmap visualization rendering mode on/off.
+// if 'value' is zero, heightmap rendering is off (normal color rendering)
+// if 'value' is non-zero, heightmap rendering is on.
+JUTZE3D_API void
+view3d_set_heightmap_rendering (int value);
+
 // adds a new 3D box to the board.
 // board_pos_x, board_pos_y is the top-left corner of the box in board image
 // coordinates.  board_pos_z is the bottom z coordinate of the box.

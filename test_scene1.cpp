@@ -51,6 +51,28 @@ test_scene1::test_scene1 (const char* file_desc_file)
       unsigned int h = i (2).as<unsigned int> ();
       std::cout << "creating new image with size: " << w << " x " << h << std::endl;
       m_image = std::make_unique<tiled_image> (vec2<unsigned int> (w, h), m_use_uint16_heightmap);
+
+      m_image->set_heightmap_palette (
+      {
+	{ 60,  vec4<float> (  0,  54, 224, 255) * 1.0f/255.0f },
+	{ 110, vec4<float> (  0, 171, 200, 255) * 1.0f/255.0f },
+	{ 170, vec4<float> (  0, 223, 169, 255) * 1.0f/255.0f },
+	{ 230, vec4<float> (  0, 255, 107, 255) * 1.0f/255.0f },
+	{ 280, vec4<float> (  0, 255,  70, 255) * 1.0f/255.0f },
+	{ 340, vec4<float> (109, 254,  72, 255) * 1.0f/255.0f },
+	{ 400, vec4<float> (192, 235,  76, 255) * 1.0f/255.0f },
+	{ 450, vec4<float> (248, 190,  70, 255) * 1.0f/255.0f },
+	{ 510, vec4<float> (255, 127,  61, 255) * 1.0f/255.0f },
+	{ 570, vec4<float> (255,  66,  57, 255) * 1.0f/255.0f },
+
+/*
+	{   0,  vec4<float> (  64*0, 64*0, 64*0, 255) * 1.0f/255.0f },
+	{ 200,  vec4<float> (  64*1, 64*1, 64*1, 255) * 1.0f/255.0f },
+	{ 400,  vec4<float> (  64*2, 64*2, 64*2, 255) * 1.0f/255.0f },
+	{ 600,  vec4<float> (  64*3, 64*3, 64*3, 255) * 1.0f/255.0f },
+	{ 800,  vec4<float> (  64*4, 64*4, 64*4, 255) * 1.0f/255.0f },
+*/
+      });
     }
     else if (a0 == "fov")
     {
@@ -239,7 +261,7 @@ test_scene1::AutoRotate()
 void test_scene1::render (unsigned int width, unsigned int height,
 			 std::chrono::microseconds delta_time,
 			 bool en_wireframe, bool en_stairs_mode,
-			 bool en_debug_dist)
+			 bool en_debug_dist, bool en_heightmap)
 {
   glViewport (0, 0, width, height);
   glClearColor (0.5f, 0.5f, 0.5f, 1);
@@ -285,7 +307,8 @@ void test_scene1::render (unsigned int width, unsigned int height,
   if (m_image != nullptr)
   {
     m_image->render (cam_trv, m_last_proj_trv, viewport_trv,
-		     en_wireframe, en_stairs_mode, en_debug_dist);
+		     en_wireframe, en_stairs_mode, en_debug_dist,
+		     en_heightmap);
   }
 
   gl_check_log_error ();

@@ -45,6 +45,7 @@ static void window_input_event_clb (const input_event& e);
 static bool en_wireframe = false;
 static bool en_debug_dist = false;
 static bool en_stairs_mode = false;
+static bool en_heightmap = false;
 static bool quit = false;
 
 static vec2<double> drag_start_img_pos;
@@ -69,7 +70,8 @@ enum
   WM_USER_3DVIEW_REMOVE_BOX,
   WM_USER_3DVIEW_REMOVE_ALL_BOXES,
   MW_USER_3DVIEW_SET_Z_SCALE,
-  WM_USER_3DVIEW_SET_ANGLE
+  WM_USER_3DVIEW_SET_ANGLE,
+  WM_USER_3DVIEW_SET_HEIGHTMAP_PALETTE
 };
 
 struct create_window_args
@@ -161,6 +163,12 @@ struct set_angle_args
 {
   float title_angle;
   float rotate_trv_angle;
+};
+
+struct set_heightmap_palette_args
+{
+  const view3d_heightmap_palette_entry* entries;
+  unsigned int entry_count;
 };
 
 void post_thread_message_wait (unsigned int msg, void* args = nullptr)
@@ -369,6 +377,20 @@ JUTZE3D_API void
 view3d_remove_all_boxes (void)
 {
   post_thread_message_wait (WM_USER_3DVIEW_REMOVE_ALL_BOXES);
+}
+
+JUTZE3D_API void
+view3d_set_heightmap_palette (const view3d_heightmap_palette_entry* entries,
+			      unsigned int entry_count)
+{
+  set_heightmap_palette_args args = { entries, entry_count };
+  post_thread_message_wait (WM_USER_3DVIEW_SET_HEIGHTMAP_PALETTE, &args);
+}
+
+JUTZE3D_API void
+view3d_set_heightmap_rendering (int value)
+{
+  en_heightmap = value != 0;
 }
 
 
@@ -622,6 +644,25 @@ void thread_func (void)
 	ack_thread_message(msg);
 	break;
 
+      case WM_USER_3DVIEW_SET_HEIGHTMAP_PALETTE:
+	if (g_scene != nullptr)
+	{
+	  auto&& args = *(set_heightmap_palette_args*)msg.lParam;
+
+	  std::vector<std::pair<unsigned int, utils::vec4<float>>> tmp;
+	  tmp.reserve (args.entry_count);
+	  for (unsigned int i = 0; i < args.entry_count; ++i)
+	    tmp.push_back ({ args.entries[i].height,
+			     { args.entries[i].color_r,
+			       args.entries[i].color_g,
+			       args.entries[i].color_b,
+			       args.entries[i].color_a } });
+
+	  g_scene->image ()->set_heightmap_palette (tmp);
+	  ack_thread_message (msg);
+	  break;
+	}
+
       default:
 	TranslateMessage (&msg);
 	DispatchMessage (&msg);
@@ -638,7 +679,7 @@ Lcontinue:
 
       g_scene->render (win_sz.x, win_sz.y,
 		       std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
-		       en_wireframe, en_stairs_mode, en_debug_dist);
+		       en_wireframe, en_stairs_mode, en_debug_dist, en_heightmap);
 
       g_gldev->swap_buffers ();
     }
@@ -673,6 +714,8 @@ static void window_input_event_clb (const input_event& e)
 	    en_wireframe = !en_wireframe;
 	  else if (e.keycode == input_event::key_f4)
 	    en_stairs_mode = !en_stairs_mode;
+	  else if (e.keycode == input_event::key_f5)
+	    en_heightmap = !en_heightmap;
 	  else if (e.keycode == input_event::key_space)
 	    g_scene->reset_view ();
 	  break;

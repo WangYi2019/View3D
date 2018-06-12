@@ -46,6 +46,7 @@ int main (int argc, const char* argv[])
   bool en_wireframe = false;
   bool en_debug_dist = false;
   bool en_stairs_mode = false;
+  bool en_heightmap = false;
 
   std::cout << "using window size: " << window_width << " x " << window_height
             << std::endl;
@@ -144,6 +145,8 @@ int main (int argc, const char* argv[])
 	    en_debug_dist = !en_debug_dist;
 	  else if (e.keycode == input_event::key_f3)
 	    en_stairs_mode = !en_stairs_mode;
+	  else if (e.keycode == input_event::key_f5)
+	    en_heightmap = !en_heightmap;
 	  else if (e.keycode == input_event::key_space)
 	    scene.reset_view ();
 	  break;
@@ -218,7 +221,7 @@ int main (int argc, const char* argv[])
 
     scene.render (win_sz.x, win_sz.y,
 		  std::chrono::duration_cast<std::chrono::microseconds> (delta_time),
-		  en_wireframe, en_stairs_mode, en_debug_dist);
+		  en_wireframe, en_stairs_mode, en_debug_dist, en_heightmap);
 
     dev->swap_buffers ();
 
