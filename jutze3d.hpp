@@ -125,8 +125,8 @@ view3d_update_image_area_1 (unsigned int x, unsigned int y,
 //
 // the height format can have the following values:
 //   0 - unsigned 8 bit
-//   2 - unsigned 16 bit
-//   3 - float 32 bit
+//   1 - unsigned 16 bit
+//   2 - float 32 bit
 JUTZE3D_API void
 view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    unsigned int width, unsigned int height,
