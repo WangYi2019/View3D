@@ -55,7 +55,7 @@ using img::image;
 using img::load_bmp_image;
 using img::load_raw_image;
 using img::pixel_format;
-
+extern float g_bottom;
 // ----------------------------------------------------------------------------
 
 struct tiled_image::texture_key
@@ -578,7 +578,17 @@ struct tiled_image::shader : public gl::shader
       color_uv = (p + texture_border) * texture_scale;
       vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
 
-      float height = max (0.0, texture2D (height_texture, z_uv).r);
+     //float height = max (g_bottom, texture2D (height_texture, z_uv).r);//wangyi modify
+
+     float height =  texture2D (height_texture, z_uv).r;
+    if(height > 900)
+    {height = g_bottom;}
+
+
+else if(height<g_bottom)
+   {height = g_bottom;}
+
+
       gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
     }
 
@@ -622,16 +632,7 @@ struct tiled_image::heightmap_shader : public tiled_image::shader
     varying vec2 color_uv;
 
     void main (void)
-    {
-      // could also use gl_VertexID and an index number threshold uniform
-      // but that requires min. gles 3
-      vec2 p = abs (pos);
-
-      vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
-
-      float height = clamp (texture2D (height_texture, z_uv).r,
-			    heightmap_min_val, heightmap_max_val);
-
+    {m_vertex_buffer
       color_uv = vec2 ((height - heightmap_min_val) * heightmap_texture_scale, 0.0);
 
       gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
@@ -1591,7 +1592,7 @@ void tiled_image::render (const mat4<double>& cam_trv, const mat4<double>& proj_
 
     m_heightmap_shader->heightmap_palette = 2;
     m_heightmap_shader->heightmap_min_val = m_heightmap_palette_min_value;
-    m_heightmap_shader->heightmap_max_val = m_heightmap_palette_max_value;
+    m_heightmap_shader->heightmap_max_val = m_heightmap_palette_max_value;//wangyi maybe can modify
     m_heightmap_shader->heightmap_texture_scale =
 	m_heightmap_palette.empty ()
 	? 0.0f
@@ -1721,8 +1722,8 @@ std::cout
   use_shader->offset_color = { 0 };
   use_shader->zbias = 0;
   use_shader->color = { 1 };
-
-  use_shader->zscale = m_texture_z_scale;
+  
+  use_shader->zscale = m_texture_z_scale;//wangyi modify
 
   for (const tile* t : m_visible_tiles)
   {

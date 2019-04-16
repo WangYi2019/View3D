@@ -54,6 +54,8 @@ static mat4<double> drag_start_rot_trv;
 
 static bool g_use_uint16_heightmap = false;
 
+
+float g_bottom;
 enum
 {
   WM_USER_3DVIEW_QUIT = WM_USER,
@@ -139,6 +141,8 @@ struct update_image_area2_args
   pixel_format height_format;
 };
 
+
+
 struct add_box_args
 {
   unsigned int x, y, z;
@@ -184,7 +188,13 @@ void post_thread_message_wait (unsigned int msg, void* args = nullptr)
 }
 
 void ack_thread_message (MSG& msg)
-{
+{   
+         if(msg.message == WM_INPUTLANGCHANGEREQUEST)    //wy moidfy
+           {HKL hkl = (HKL)msg.lParam;
+           ActivateKeyboardLayout(hkl,KLF_REPLACELANG);
+     return;     }                                   //wy moidfy
+
+
   static_assert (sizeof (void*) <= sizeof (WPARAM), "");
   std::atomic<int>* done = (std::atomic<int>*)msg.wParam;
   if (done != nullptr)
@@ -324,6 +334,41 @@ view3d_update_image_area_2 (unsigned int x, unsigned int y,
 			    const void* height_data, unsigned int height_data_stride_bytes,
 			    unsigned int height_format)
 {
+  
+  pixel_format rgb_format_pf;
+  switch (rgb_format)
+  {
+    case 0: rgb_format_pf = pixel_format::rgb8; break;
+    case 1: rgb_format_pf = pixel_format::bgr8; break;
+    case 2: rgb_format_pf = pixel_format::rgba8; break;
+    default: return;
+  }
+
+  pixel_format z_format_pf;
+  switch (height_format)
+  {
+    case 0: z_format_pf = pixel_format::r8ui; break;
+    case 1: z_format_pf = pixel_format::r16ui; break;
+    case 2: z_format_pf = pixel_format::r32f; break;
+    default: return;
+  }
+
+  update_image_area2_args args = { x, y, width, height, rgb_data, rgb_data_stride_bytes,
+				   rgb_format_pf,
+				   height_data, height_data_stride_bytes,
+				   z_format_pf };
+  post_thread_message_wait (WM_USER_3DVIEW_UPDATE_IMAGE_AREA_2, &args);
+}
+
+JUTZE3D_API void
+view3d_update_image_area_2ex (unsigned int x, unsigned int y,
+			    unsigned int width, unsigned int height,
+			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
+			    unsigned int rgb_format,
+			    const void* height_data, unsigned int height_data_stride_bytes,
+			    unsigned int height_format,float bottom)//wangyi
+{
+  g_bottom = bottom;
   pixel_format rgb_format_pf;
   switch (rgb_format)
   {
@@ -440,10 +485,10 @@ void thread_func (void)
 
     switch (msg.message)
     {
-      case WM_QUIT:
-      case WM_USER_3DVIEW_QUIT:
-	shutting_down = true;
-        break;
+      case WM_QUIT://wy modify
+      case WM_USER_3DVIEW_QUIT://wy modify
+      shutting_down = true;//wy modify
+       break;//wy modify
 
       case WM_CLOSE:
 	if (shutting_down)
