@@ -578,18 +578,18 @@ struct tiled_image::shader : public gl::shader
       color_uv = (p + texture_border) * texture_scale;
       vec2 z_uv = (p + texture_border + min (sign (pos), vec2 (0.0))) * texture_scale;
 
-     //float height = max (g_bottom, texture2D (height_texture, z_uv).r);//wangyi modify
+     float height = max (g_bottom, texture2D (height_texture, z_uv).r);//wangyi modify
 
-     float height =  texture2D (height_texture, z_uv).r;
-    if(height > 900)
-    {height = g_bottom;}
-
-
-else if(height<g_bottom)
-   {height = g_bottom;}
+     //float height =  texture2D (height_texture, z_uv).r;
+    //if(height > 900)
+    //{height = 0.0;}
 
 
-      gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);
+//else if(height<g_bottom)
+//{height = g_bottom;}
+
+
+      gl_Position = mvp * vec4 (p * tile_scale, height * zscale + zbias, 1.0);//wangyi modify
     }
 
   )gltext" }; }

@@ -366,7 +366,7 @@ view3d_update_image_area_2ex (unsigned int x, unsigned int y,
 			    const void* rgb_data,  unsigned int rgb_data_stride_bytes,
 			    unsigned int rgb_format,
 			    const void* height_data, unsigned int height_data_stride_bytes,
-			    unsigned int height_format,float bottom)//wangyi
+			    unsigned int height_format,float bottom)
 {
   g_bottom = bottom;
   pixel_format rgb_format_pf;
